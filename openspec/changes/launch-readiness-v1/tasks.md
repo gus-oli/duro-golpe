@@ -50,4 +50,4 @@
 - [x] 6.4 Add a deterministic bootstrap flow for dependencies, migrations, match seed, outright seed, and badge seed
 - [x] 6.5 Complete the runtime environment contract, including webhook, frontend redirect, and WebSocket URL configuration
 - [x] 6.6 Remove or replace launch-blocking broken references tied to deferred push/PWA scope, including invalid manifest assumptions
-- [ ] 6.7 Run and document launch smoke scenarios for register/login, match browsing, prediction submission, league join/ranking, outrights, and live updates
+- [x] 6.7 Run and document launch smoke scenarios for register/login, match browsing, prediction submission, league join/ranking, outrights, and live updates

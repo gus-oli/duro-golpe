@@ -4,7 +4,7 @@ import { BadgeToastProvider } from '@/components/Badges/BadgeToastProvider'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Duro Golpe — Copa 2026',
+  title: 'Duro Golpe - Copa 2026',
   description: 'Plataforma de palpites para a Copa do Mundo 2026',
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, statusBarStyle: 'default' },
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0a0a0a',
+  themeColor: '#12213a',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -25,9 +25,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-green-700 focus:rounded focus:shadow"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:font-bold focus:text-[var(--pitch-dark)] focus:shadow-lg"
         >
-          Ir para conteúdo principal
+          Ir para conteudo principal
         </a>
         <BadgeToastProvider token={token}>
           <div id="main-content">{children}</div>

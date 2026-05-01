@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { TotalScore } from '@/components/Scoring/TotalScore'
 import { RankingClient } from '@/components/Leagues/RankingClient'
+import { PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
 
 interface League {
   id: string
@@ -122,40 +123,54 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
   const badgesMap = Object.fromEntries(badgesByUser.map(({ userId: uid, badges }) => [uid, badges]))
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
-      <Link href="/leagues" className="text-sm text-green-600 hover:underline mb-4 inline-block">
-        ← Minhas Ligas
-      </Link>
+    <PageShell>
+      <div className="space-y-8">
+        <Link href="/leagues" className="dg-button-secondary">
+          Voltar para Minhas Ligas
+        </Link>
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">{league.name}</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Código de convite:{' '}
-          <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">{league.inviteCode}</span>
-        </p>
-      </div>
-
-      {myTotal && token && (
-        <section aria-label="Minha pontuação" className="mb-6">
-          <h2 className="text-lg font-semibold mb-3">Minha Pontuação</h2>
-          <TotalScore
-            initialTotalPoints={myTotal.totalPoints}
-            initialExactScoreCount={myTotal.exactScoreCount}
-            initialWinnerGoalDiffCount={myTotal.winnerGoalDiffCount}
-            token={token}
-          />
+        <section className="dg-surface-dark p-5 sm:p-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusPill tone="open">Liga privada</StatusPill>
+                <span className="dg-chip bg-white/10 text-white/72">
+                  Codigo <span className="ml-1 font-mono">{league.inviteCode}</span>
+                </span>
+              </div>
+              <h1 className="mt-4 text-4xl font-black text-white sm:text-5xl">{league.name}</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/76">
+                Ranking vivo, pontuacao total e conquistas da rodada no mesmo painel.
+              </p>
+            </div>
+            <div className="rounded-md bg-white/10 p-4 text-white">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/62">Membros</p>
+              <p className="mt-1 font-[var(--font-display)] text-3xl font-black">{ranking.length}</p>
+            </div>
+          </div>
         </section>
-      )}
 
-      <section aria-label="Classificação">
-        <h2 className="text-lg font-semibold mb-3">Classificação</h2>
-        <RankingClient
-          leagueId={league.id}
-          initialRanking={ranking}
-          badgesMap={badgesMap}
-          token={token || null}
-        />
-      </section>
-    </main>
+        {myTotal && token && (
+          <section aria-label="Minha pontuacao" className="space-y-4">
+            <SectionHeader eyebrow="Meu desempenho" title="Minha Pontuacao" />
+            <TotalScore
+              initialTotalPoints={myTotal.totalPoints}
+              initialExactScoreCount={myTotal.exactScoreCount}
+              initialWinnerGoalDiffCount={myTotal.winnerGoalDiffCount}
+              token={token}
+            />
+          </section>
+        )}
+
+        <section aria-label="Classificacao" className="space-y-4">
+          <SectionHeader
+            eyebrow="Tabela"
+            title="Classificacao"
+            description="A disputa atualiza quando os resultados e especiais entram no placar."
+          />
+          <RankingClient leagueId={league.id} initialRanking={ranking} badgesMap={badgesMap} token={token || null} />
+        </section>
+      </div>
+    </PageShell>
   )
 }

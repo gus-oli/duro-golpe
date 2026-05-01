@@ -42,28 +42,40 @@ export function TotalScore({
   const progressPercent = Math.min(Math.round((totalPoints / MAX_POINTS) * 1000) / 10, 100)
 
   return (
-    <div className="rounded-xl border border-gray-200 p-4">
-      <div className="flex items-end gap-2 mb-3">
-        <span className="text-4xl font-bold text-green-700" aria-live="polite">
-          {totalPoints}
-        </span>
-        <span className="text-sm text-gray-500 mb-1">/ {MAX_POINTS} pts possíveis</span>
-      </div>
+    <div className="dg-surface overflow-hidden">
+      <div className="grid gap-5 p-5 sm:grid-cols-[1fr_1.2fr] sm:items-center">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Pontuacao total</p>
+          <div className="mt-2 flex items-end gap-2">
+            <span className="font-[var(--font-display)] text-5xl font-black leading-none text-[var(--pitch-dark)]" aria-live="polite">
+              {totalPoints}
+            </span>
+            <span className="pb-1 text-sm font-bold text-[var(--muted)]">/ {MAX_POINTS} pts</span>
+          </div>
+        </div>
 
-      <div className="w-full bg-gray-100 rounded-full h-2 mb-3" role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100}>
-        <div
-          className="bg-green-500 h-2 rounded-full transition-all duration-500"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
-
-      <div className="flex gap-4 text-sm text-gray-500">
-        <span>
-          Placar exato: <strong className="text-gray-700">{exactScoreCount}</strong>
-        </span>
-        <span>
-          Vencedor+Saldo: <strong className="text-gray-700">{winnerGoalDiffCount}</strong>
-        </span>
+        <div>
+          <div
+            className="h-3 w-full overflow-hidden rounded-full bg-[rgba(18,33,58,0.1)]"
+            role="progressbar"
+            aria-valuenow={progressPercent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div
+              className="h-full rounded-full bg-[linear-gradient(90deg,var(--pitch),var(--gold))] transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <span className="rounded-md bg-[rgba(12,143,79,0.1)] px-3 py-2 font-bold text-[var(--pitch-dark)]">
+              Exatos: {exactScoreCount}
+            </span>
+            <span className="rounded-md bg-[rgba(93,183,222,0.16)] px-3 py-2 font-bold text-[#164766]">
+              Saldo: {winnerGoalDiffCount}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   )

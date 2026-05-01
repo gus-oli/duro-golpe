@@ -1,5 +1,6 @@
 import { MatchDetailClient } from '@/components/MatchCard/MatchDetailClient'
 import { ScoreBreakdown } from '@/components/Scoring/ScoreBreakdown'
+import { PageShell, StatusPill } from '@/components/ui/Primitives'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 
@@ -56,6 +57,25 @@ function getUserIdFromToken(token: string): string | null {
   }
 }
 
+function statusMeta(status: Match['status']) {
+  if (status === 'LIVE') return { tone: 'live' as const, label: 'Ao vivo' }
+  if (status === 'FINISHED') return { tone: 'resolved' as const, label: 'Final' }
+  if (status === 'LOCKED') return { tone: 'locked' as const, label: 'Fechado' }
+  return { tone: 'open' as const, label: 'Aberto' }
+}
+
+function TeamPanel({ team }: { team: Match['homeTeam'] }) {
+  return (
+    <div className="dg-surface p-4 text-center">
+      {team.flagUrl && (
+        <img src={team.flagUrl} alt={team.name} className="mx-auto h-16 w-24 rounded-md object-cover shadow-md" />
+      )}
+      <p className="mt-4 font-[var(--font-display)] text-4xl font-black leading-none text-[var(--ink)]">{team.fifaCode}</p>
+      <p className="mt-2 text-sm font-bold uppercase tracking-[0.1em] text-[var(--muted)]">{team.name}</p>
+    </div>
+  )
+}
+
 export default async function MatchDetailPage({ params }: { params: Promise<{ matchId: string }> }) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value ?? null
@@ -70,71 +90,67 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
   if (!match) notFound()
 
   const kickoff = new Date(match.kickoffTime)
+  const meta = statusMeta(match.status)
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
-      <div className="rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="bg-gray-50 px-6 py-4 text-center">
-          <p className="text-xs text-gray-500 uppercase tracking-wide">{match.stage}</p>
-          <p className="text-sm text-gray-600 mt-1">
-            {kickoff.toLocaleString('pt-BR', {
-              weekday: 'short',
-              day: '2-digit',
-              month: 'short',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </p>
-          {match.venue && <p className="text-xs text-gray-400 mt-1">{match.venue}</p>}
-        </div>
+    <PageShell>
+      <div className="space-y-6">
+        <section className="dg-surface-dark overflow-hidden p-5 sm:p-7">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
+                <span className="dg-chip bg-white/10 text-white/75">{match.stage}</span>
+              </div>
+              <h1 className="mt-4 text-3xl font-black text-white sm:text-5xl">
+                {match.homeTeam.name} x {match.awayTeam.name}
+              </h1>
+              <p className="mt-3 text-sm font-medium leading-6 text-white/75">
+                {kickoff.toLocaleString('pt-BR', {
+                  weekday: 'long',
+                  day: '2-digit',
+                  month: 'long',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+                {match.venue ? ` / ${match.venue}` : ''}
+              </p>
+            </div>
+          </div>
+        </section>
 
-        <div className="flex items-center justify-between px-8 py-6">
-          <div className="text-center">
-            {match.homeTeam.flagUrl && (
-              <img
-                src={match.homeTeam.flagUrl}
-                alt={match.homeTeam.name}
-                className="w-16 h-10 object-cover mx-auto mb-2"
-              />
-            )}
-            <p className="font-bold text-xl">{match.homeTeam.fifaCode}</p>
-            <p className="text-sm text-gray-500">{match.homeTeam.name}</p>
+        <section className="grid gap-4 lg:grid-cols-[minmax(160px,0.8fr)_minmax(320px,1.2fr)_minmax(160px,0.8fr)] lg:items-start">
+          <TeamPanel team={match.homeTeam} />
+
+          <div className="dg-surface overflow-hidden">
+            <div className="border-b border-[var(--line)] bg-[rgba(255,253,244,0.78)] px-4 py-5 text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted)]">Central do palpite</p>
+            </div>
+            <MatchDetailClient
+              matchId={match.id}
+              initialStatus={match.status}
+              initialHome={match.homeScore}
+              initialAway={match.awayScore}
+              existingPrediction={prediction}
+              token={token}
+            />
           </div>
 
-          <MatchDetailClient
-            matchId={match.id}
-            initialStatus={match.status}
-            initialHome={match.homeScore}
-            initialAway={match.awayScore}
-            existingPrediction={prediction}
-            token={token}
-          />
-
-          <div className="text-center">
-            {match.awayTeam.flagUrl && (
-              <img
-                src={match.awayTeam.flagUrl}
-                alt={match.awayTeam.name}
-                className="w-16 h-10 object-cover mx-auto mb-2"
-              />
-            )}
-            <p className="font-bold text-xl">{match.awayTeam.fifaCode}</p>
-            <p className="text-sm text-gray-500">{match.awayTeam.name}</p>
-          </div>
-        </div>
+          <TeamPanel team={match.awayTeam} />
+        </section>
 
         {token && userId && match.status === 'FINISHED' && (
-          <div className="px-6 pb-5">
+          <section aria-label="Sua pontuacao">
             <ScoreBreakdown userId={userId} matchId={match.id} token={token} />
-          </div>
+          </section>
         )}
 
         {match.status === 'LIVE' && (
-          <div className="px-6 pb-5 text-center text-sm text-gray-400">
+          <div className="dg-surface px-5 py-4 text-center text-sm font-bold text-[var(--muted)]">
             Aguardando resultado final...
           </div>
         )}
       </div>
-    </main>
+    </PageShell>
   )
 }

@@ -12,7 +12,10 @@
     "test:watch": "vitest",
     "test:integration": "vitest run --project integration",
     "seed": "tsx src/data-providers/seed-matches.ts",
+    "seed:demo": "tsx src/dev/seed-demo.ts",
     "seed:smoke": "tsx src/dev/seed-smoke.ts",
+    "smoke:lock-match": "tsx src/dev/lock-match.ts",
+    "smoke:lock-outrights": "tsx src/dev/lock-outrights.ts",
     "outrights:resolve": "tsx src/outrights/resolve.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"

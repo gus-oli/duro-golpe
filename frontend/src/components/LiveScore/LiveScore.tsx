@@ -7,16 +7,16 @@ interface LiveScoreProps {
 
 export function LiveScore({ home, away }: LiveScoreProps) {
   if (home === null || home === undefined || away === null || away === undefined) {
-    return <span className="text-2xl font-bold text-gray-300">vs</span>
+    return <span className="dg-score-tile text-2xl">vs</span>
   }
 
   return (
     <span
-      className="text-4xl font-bold transition-all duration-300"
+      className="dg-score-tile text-4xl transition-all duration-300"
       aria-live="polite"
       aria-label={`Placar: ${home} a ${away}`}
     >
-      {home} â€“ {away}
+      {home} - {away}
     </span>
   )
 }

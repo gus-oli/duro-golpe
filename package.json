@@ -14,10 +14,13 @@
     "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
     "infra:up": "docker compose up -d db cache",
     "db:migrate": "npm --workspace=backend run db:migrate",
-    "bootstrap": "npm run infra:up && npm run db:migrate && npm --workspace=backend run seed",
+    "bootstrap": "npm run infra:up && npm run db:migrate && npm run seed:demo",
+    "bootstrap:provider": "npm run infra:up && npm run db:migrate && npm --workspace=backend run seed",
     "test:backend": "npm --workspace=backend run test",
+    "test:launch-smoke": "npm --workspace=backend run seed:smoke && node ./node_modules/@playwright/test/cli.js test frontend/tests/e2e/launch-smoke.spec.ts frontend/tests/e2e/live-score.spec.ts --project=chromium --workers=1",
     "test:e2e": "npx playwright test",
-    "seed": "npm --workspace=backend run seed"
+    "seed": "npm --workspace=backend run seed",
+    "seed:demo": "npm --workspace=backend run seed:demo"
   },
   "engines": {
     "node": ">=22.0.0"

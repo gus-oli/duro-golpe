@@ -1,117 +1,41 @@
-import { eq, sql } from 'drizzle-orm'
+import { createClient } from 'redis'
+import { config } from '../config.js'
 import { db } from '../db/index.js'
-import { matches, teams } from '../db/schema/index.js'
-import { seedBadges } from '../badges/seed.js'
-import { seedOutrightMarkets, seedOutrightOptions } from '../outrights/seed.js'
+import { outrightMarketResults, outrightMarkets } from '../db/schema/index.js'
+import { OUTRIGHT_LOCK_REDIS_KEY } from '../outrights/lock-scheduler.js'
+import { buildSmokeMatches, SMOKE_TEAMS } from '../seeds/smoke-dataset.js'
+import {
+  seedCatalogs,
+  upsertMatches as upsertSeedMatches,
+  upsertTeams as upsertSeedTeams,
+} from '../seeds/support.js'
 
-const TEAM_FIXTURES = [
-  {
-    apiFootballId: 'smoke-team-bra',
-    name: 'Brazil',
-    fifaCode: 'BRA',
-    flagUrl: 'https://example.com/flags/bra.png',
-  },
-  {
-    apiFootballId: 'smoke-team-fra',
-    name: 'France',
-    fifaCode: 'FRA',
-    flagUrl: 'https://example.com/flags/fra.png',
-  },
-] as const
+async function upsertSmokeMatch(teamIds: Record<string, string>): Promise<string> {
+  const matchIds = await upsertSeedMatches(buildSmokeMatches(), teamIds)
+  const matchId = matchIds['900001']
 
-const MATCH_FIXTURE = {
-  apiFootballId: '900001',
-  stage: 'Smoke Test',
-  venue: 'Arena Smoke',
-}
-
-async function upsertTeams(): Promise<Record<string, string>> {
-  const ids: Record<string, string> = {}
-
-  for (const team of TEAM_FIXTURES) {
-    const [row] = await db
-      .insert(teams)
-      .values({
-        apiFootballId: team.apiFootballId,
-        name: team.name,
-        fifaCode: team.fifaCode,
-        flagUrl: team.flagUrl,
-      })
-      .onConflictDoUpdate({
-        target: teams.apiFootballId,
-        set: {
-          name: team.name,
-          fifaCode: team.fifaCode,
-          flagUrl: team.flagUrl,
-        },
-      })
-      .returning({ id: teams.id, apiFootballId: teams.apiFootballId })
-
-    if (row?.apiFootballId) {
-      ids[row.apiFootballId] = row.id
-    }
-  }
-
-  return ids
-}
-
-async function upsertMatch(teamIds: Record<string, string>): Promise<string> {
-  const kickoffTime = new Date(Date.now() + 48 * 60 * 60 * 1000)
-
-  await db.execute(sql`
-    insert into "matches" (
-      "home_team_id",
-      "away_team_id",
-      "kickoff_time",
-      "stage",
-      "venue",
-      "status",
-      "home_score",
-      "away_score",
-      "api_football_id"
-    )
-    values (
-      ${teamIds['smoke-team-bra']},
-      ${teamIds['smoke-team-fra']},
-      ${kickoffTime},
-      ${MATCH_FIXTURE.stage},
-      ${MATCH_FIXTURE.venue},
-      'SCHEDULED'::match_status,
-      null,
-      null,
-      ${MATCH_FIXTURE.apiFootballId}
-    )
-    on conflict ("api_football_id") do update
-    set
-      "home_team_id" = excluded."home_team_id",
-      "away_team_id" = excluded."away_team_id",
-      "kickoff_time" = excluded."kickoff_time",
-      "stage" = excluded."stage",
-      "venue" = excluded."venue",
-      "status" = excluded."status",
-      "home_score" = excluded."home_score",
-      "away_score" = excluded."away_score"
-  `)
-
-  const [match] = await db
-    .select({ id: matches.id })
-    .from(matches)
-    .where(eq(matches.apiFootballId, MATCH_FIXTURE.apiFootballId))
-    .limit(1)
-
-  if (!match) {
+  if (!matchId) {
     throw new Error('Smoke match not found after upsert')
   }
 
-  return match.id
+  return matchId
+}
+
+async function upsertSmokeTeams(): Promise<Record<string, string>> {
+  return upsertSeedTeams(SMOKE_TEAMS)
 }
 
 async function main(): Promise<void> {
-  const teamIds = await upsertTeams()
-  const matchId = await upsertMatch(teamIds)
-  await seedOutrightMarkets()
-  await seedOutrightOptions()
-  await seedBadges()
+  const teamIds = await upsertSmokeTeams()
+  const matchId = await upsertSmokeMatch(teamIds)
+  await db.delete(outrightMarketResults)
+  await db.update(outrightMarkets).set({ status: 'OPEN' })
+  await seedCatalogs()
+
+  const redis = createClient({ url: config.REDIS_URL })
+  await redis.connect()
+  await redis.del(OUTRIGHT_LOCK_REDIS_KEY)
+  await redis.disconnect()
 
   console.info('[SmokeSeed] Ready')
   console.info(`[SmokeSeed] Match ID: ${matchId}`)

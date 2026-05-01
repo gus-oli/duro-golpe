@@ -7,13 +7,13 @@ export function LockOverlay({ isLocked }: LockOverlayProps) {
 
   return (
     <div
-      className="flex items-center justify-center gap-2 py-4 px-4 bg-orange-50 border-t border-orange-100 min-h-[48px]"
+      className="mx-4 mb-4 flex min-h-touch items-center justify-center gap-2 rounded-md border border-[rgba(143,61,18,0.2)] bg-[rgba(246,196,69,0.18)] px-4 py-3 text-sm font-bold text-[#8f3d12]"
       role="status"
       aria-label="Palpites encerrados para esta partida"
       aria-live="polite"
     >
-      <span className="text-lg" aria-hidden="true">🔒</span>
-      <span className="font-medium text-orange-700">Palpites encerrados</span>
+      <span aria-hidden="true">LOCK</span>
+      <span>Palpites encerrados</span>
     </div>
   )
 }

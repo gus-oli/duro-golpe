@@ -1,82 +1,78 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { PageShell } from '@/components/ui/Primitives'
 
 export default function JoinLeaguePage() {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [inviteCode, setInviteCode] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setIsSubmitting(true)
 
-    startTransition(async () => {
-      try {
-        const res = await fetch('/api/leagues/join', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ inviteCode: inviteCode.toUpperCase() }),
-        })
+    try {
+      const res = await fetch('/api/leagues/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviteCode: inviteCode.toUpperCase() }),
+      })
 
-        if (!res.ok) {
-          const body = (await res.json()) as { message?: string }
-          if (res.status === 404) {
-            setError('Código de convite inválido.')
-          } else if (res.status === 409) {
-            setError('Você já faz parte desta liga.')
-          } else {
-            setError(body.message ?? 'Erro ao entrar na liga.')
-          }
-          return
+      if (!res.ok) {
+        const body = (await res.json()) as { message?: string }
+        if (res.status === 404) {
+          setError('Codigo de convite invalido.')
+        } else if (res.status === 409) {
+          setError('Voce ja faz parte desta liga.')
+        } else {
+          setError(body.message ?? 'Erro ao entrar na liga.')
         }
-
-        const data = (await res.json()) as { leagueId: string }
-        router.push(`/leagues/${data.leagueId}`)
-      } catch {
-        setError('Não foi possível conectar ao servidor.')
+        return
       }
-    })
+
+      const data = (await res.json()) as { leagueId: string }
+      window.location.assign(`/leagues/${data.leagueId}`)
+    } catch {
+      setError('Nao foi possivel conectar ao servidor.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <main className="max-w-md mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Entrar em uma Liga</h1>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-        <div>
-          <label htmlFor="invite-code" className="block text-sm font-medium text-gray-700 mb-1">
-            Código de Convite
-          </label>
-          <input
-            id="invite-code"
-            type="text"
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-            maxLength={8}
-            required
-            placeholder="Ex: AB3KX7Z2"
-            className="w-full min-h-[48px] px-4 py-3 border border-gray-300 rounded-lg font-mono text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-green-500 uppercase"
-          />
-          <p className="text-xs text-gray-400 mt-1">8 caracteres, maiúsculos e números</p>
+    <PageShell narrow>
+      <div className="dg-surface mx-auto w-full max-w-lg overflow-hidden">
+        <div className="bg-[linear-gradient(135deg,var(--night),var(--pitch-dark))] px-6 py-7 text-white">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--gold)]">Convite</p>
+          <h1 className="mt-2 text-3xl font-black">Entrar em uma Liga</h1>
+          <p className="mt-2 text-sm leading-6 text-white/72">Use o codigo do grupo e entre direto na tabela.</p>
         </div>
 
-        {error && (
-          <p role="alert" className="text-red-600 text-sm">
-            {error}
-          </p>
-        )}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6" noValidate>
+          <div>
+            <label htmlFor="invite-code" className="dg-label">Codigo de Convite</label>
+            <input
+              id="invite-code"
+              type="text"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+              maxLength={8}
+              required
+              placeholder="Ex: AB3KX7Z2"
+              className="dg-input text-center font-mono text-lg font-black uppercase tracking-[0.18em]"
+            />
+            <p className="mt-2 text-xs font-medium text-[var(--muted)]">8 caracteres, maiusculos e numeros</p>
+          </div>
 
-        <button
-          type="submit"
-          disabled={isPending || inviteCode.length !== 8}
-          className="min-h-[48px] bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isPending ? 'Entrando...' : 'Entrar na Liga'}
-        </button>
-      </form>
-    </main>
+          {error && <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700">{error}</p>}
+
+          <button type="submit" disabled={isSubmitting || inviteCode.length !== 8} className="dg-button-primary w-full">
+            {isSubmitting ? 'Entrando...' : 'Entrar na Liga'}
+          </button>
+        </form>
+      </div>
+    </PageShell>
   )
 }

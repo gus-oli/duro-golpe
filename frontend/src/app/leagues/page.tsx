@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import Link from 'next/link'
+import { EmptyState, PageShell, SectionHeader } from '@/components/ui/Primitives'
 
 interface League {
   id: string
@@ -30,50 +31,60 @@ export default async function LeaguesPage() {
   const leagues = await getMyLeagues(token)
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Minhas Ligas</h1>
-        <div className="flex gap-2">
-          <Link
-            href="/leagues/join"
-            className="min-h-[48px] px-4 py-3 border border-green-600 text-green-700 rounded-lg font-medium hover:bg-green-50 flex items-center"
-          >
-            Entrar com código
-          </Link>
-          <Link
-            href="/leagues/new"
-            className="min-h-[48px] px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center"
-          >
-            Nova Liga
-          </Link>
-        </div>
-      </div>
+    <PageShell>
+      <div className="space-y-8">
+        <section className="dg-surface-dark p-5 sm:p-7">
+          <SectionHeader
+            inverse
+            eyebrow="Competicao privada"
+            title="Minhas Ligas"
+            description="A tabela onde cada placar pesa. Crie uma liga, chame a galera e acompanhe a briga por posicao."
+            actions={
+              <>
+                <Link href="/leagues/join" className="dg-button-secondary">
+                  Entrar com codigo
+                </Link>
+                <Link href="/leagues/new" className="dg-button-primary">
+                  Nova Liga
+                </Link>
+              </>
+            }
+          />
+        </section>
 
-      {leagues.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <p className="text-lg mb-2">Você ainda não faz parte de nenhuma liga.</p>
-          <p className="text-sm">Crie uma liga ou entre com um código de convite.</p>
-        </div>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {leagues.map((league) => (
-            <li key={league.id}>
-              <Link
-                href={`/leagues/${league.id}`}
-                className="flex items-center justify-between p-4 rounded-2xl border border-gray-200 hover:border-green-400 hover:bg-green-50 transition-colors"
-              >
-                <div>
-                  <p className="font-semibold text-gray-900">{league.name}</p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Código: <span className="font-mono">{league.inviteCode}</span>
-                  </p>
-                </div>
-                <span className="text-gray-400 text-xl" aria-hidden>›</span>
+        {leagues.length === 0 ? (
+          <EmptyState
+            title="Voce ainda nao esta em uma liga"
+            description="Crie uma liga ou entre com um codigo para transformar seus palpites em disputa."
+            action={
+              <Link href="/leagues/new" className="dg-button-primary">
+                Criar Liga
               </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+            }
+          />
+        ) : (
+          <ul className="grid gap-4 md:grid-cols-2">
+            {leagues.map((league) => (
+              <li key={league.id}>
+                <Link href={`/leagues/${league.id}`} className="dg-card-interactive block p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--pitch-dark)]">Liga</p>
+                      <h2 className="mt-2 truncate text-2xl font-black text-[var(--ink)]">{league.name}</h2>
+                      <p className="mt-3 text-sm font-bold text-[var(--muted)]">
+                        Codigo: <span className="font-mono text-[var(--night)]">{league.inviteCode}</span>
+                      </p>
+                    </div>
+                    <span className="rounded-md bg-[rgba(246,196,69,0.24)] px-3 py-2 text-sm font-black text-[#7c4a00]">
+                      Ver
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </PageShell>
   )
 }

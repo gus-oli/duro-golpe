@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import { MatchCard } from '@/components/MatchCard/MatchCard'
+import { EmptyState, PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
 
 export const revalidate = 300
 
@@ -44,25 +46,63 @@ function groupByDate(matches: Match[]): Map<string, Match[]> {
 export default async function MatchesPage() {
   const matches = await getMatches()
   const grouped = groupByDate(matches)
+  const liveCount = matches.filter((match) => match.status === 'LIVE').length
+  const openCount = matches.filter((match) => match.status === 'SCHEDULED').length
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Partidas</h1>
-
-      {matches.length === 0 && (
-        <p className="text-gray-500 text-center py-12">Nenhuma partida disponível.</p>
-      )}
-
-      {Array.from(grouped.entries()).map(([date, dayMatches]) => (
-        <section key={date} className="mb-8">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 capitalize">{date}</h2>
-          <div className="flex flex-col gap-3">
-            {dayMatches.map((match) => (
-              <MatchCard key={match.id} {...match} />
-            ))}
+    <PageShell>
+      <div className="space-y-8">
+        <section className="dg-surface-dark overflow-hidden p-5 sm:p-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--gold)]">Agenda da Copa</p>
+              <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">Partidas</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78">
+                Escolha o jogo, mande seu placar e acompanhe a virada da tabela.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:min-w-[280px]">
+              <div className="rounded-md bg-white/10 p-4 text-white">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/65">Abertas</p>
+                <p className="mt-1 font-[var(--font-display)] text-3xl font-black">{openCount}</p>
+              </div>
+              <div className="rounded-md bg-white/10 p-4 text-white">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/65">Ao vivo</p>
+                <p className="mt-1 font-[var(--font-display)] text-3xl font-black">{liveCount}</p>
+              </div>
+            </div>
           </div>
         </section>
-      ))}
-    </main>
+
+        {matches.length === 0 ? (
+          <EmptyState
+            title="Nenhuma partida disponivel"
+            description="Quando o calendario estiver carregado, os jogos aparecem aqui com status e horario."
+            action={
+              <Link href="/" className="dg-button-secondary">
+                Voltar para home
+              </Link>
+            }
+          />
+        ) : (
+          <div className="space-y-8">
+            {Array.from(grouped.entries()).map(([date, dayMatches]) => (
+              <section key={date} className="space-y-4">
+                <SectionHeader
+                  eyebrow="Rodada"
+                  title={date}
+                  actions={<StatusPill tone="neutral">{dayMatches.length} jogos</StatusPill>}
+                />
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {dayMatches.map((match) => (
+                    <MatchCard key={match.id} {...match} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+      </div>
+    </PageShell>
   )
 }

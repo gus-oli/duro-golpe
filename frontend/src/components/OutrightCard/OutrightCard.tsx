@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { StatusPill } from '@/components/ui/Primitives'
 
 interface OutrightOption {
   id: string
@@ -19,6 +20,12 @@ interface OutrightCardProps {
   options: OutrightOption[]
   userPrediction: { optionId: string } | null
   userSelections: string[]
+}
+
+function statusTone(status: OutrightCardProps['status']) {
+  if (status === 'OPEN') return { tone: 'open' as const, label: 'Aberto' }
+  if (status === 'RESOLVED') return { tone: 'resolved' as const, label: 'Resolvido' }
+  return { tone: 'locked' as const, label: 'Encerrado' }
 }
 
 export function OutrightCard({
@@ -40,6 +47,7 @@ export function OutrightCard({
   const [success, setSuccess] = useState(false)
   const isLocked = status !== 'OPEN'
   const canSubmit = !isLocked && selected.length >= selectionMin && selected.length <= selectionMax && !isPending
+  const meta = statusTone(status)
 
   function toggleOption(optionId: string) {
     if (isLocked || isPending) return
@@ -92,33 +100,33 @@ export function OutrightCard({
   }
 
   return (
-    <article className="rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="px-4 py-3 bg-gray-50 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="font-semibold text-gray-900">{name}</h2>
-          {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
-          <p className="text-[11px] uppercase tracking-wide text-gray-400 mt-1">
+    <article
+      className="dg-card overflow-hidden"
+      data-market-id={id}
+      data-market-name={name}
+      data-market-status={status}
+    >
+      <div className="border-b border-[var(--line)] bg-[rgba(255,253,244,0.78)] px-4 py-4 sm:px-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
+              <span className="dg-chip bg-[rgba(246,196,69,0.18)] text-[#7c4a00]">{pointValue} pts</span>
+            </div>
+            <h2 className="mt-3 text-xl font-black text-[var(--ink)]">{name}</h2>
+            {description && <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{description}</p>}
+          </div>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
             {optionType === 'TEAM' ? 'Selecao' : 'Jogador'}
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-sm font-bold text-green-700">{pointValue} pts</span>
-          {status === 'LOCKED' && (
-            <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Encerrado</span>
-          )}
-          {status === 'RESOLVED' && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Resolvido</span>
-          )}
-        </div>
       </div>
 
-      <div className="px-4 pt-3 text-xs text-gray-500">
-        {selectionMax === 1
-          ? 'Selecione 1 opcao.'
-          : `Selecione exatamente ${selectionMax} opcoes.`}
+      <div className="px-4 pt-4 text-sm font-bold text-[var(--muted)] sm:px-5">
+        {selectionMax === 1 ? 'Selecione 1 opcao.' : `Selecione exatamente ${selectionMax} opcoes.`}
       </div>
 
-      <ul className="p-2 flex flex-col gap-1" role="listbox" aria-label={`Opcoes para ${name}`}>
+      <ul className="grid gap-2 p-4 sm:grid-cols-2 sm:p-5" role="listbox" aria-label={`Opcoes para ${name}`}>
         {options.map((option) => {
           const isSelected = selected.includes(option.id)
           const selectionLimitReached = !isSelected && selected.length >= selectionMax
@@ -129,12 +137,13 @@ export function OutrightCard({
                 type="button"
                 onClick={() => toggleOption(option.id)}
                 disabled={isLocked || isPending || selectionLimitReached}
-                className={`w-full min-h-[48px] px-4 py-3 rounded-lg text-left text-sm font-medium transition-colors ${
+                data-option-id={option.id}
+                className={`min-h-touch w-full rounded-md border px-4 py-3 text-left text-sm font-bold transition ${
                   isSelected
-                    ? 'bg-green-600 text-white'
+                    ? 'border-[var(--pitch-dark)] bg-green-600 bg-[var(--pitch-dark)] text-white shadow-md'
                     : isLocked || selectionLimitReached
-                      ? 'bg-gray-50 text-gray-400 cursor-default'
-                      : 'bg-white border border-gray-200 hover:border-green-400 hover:bg-green-50 text-gray-800'
+                      ? 'border-[var(--line)] bg-[rgba(18,33,58,0.04)] text-[var(--muted)]'
+                      : 'border-[var(--line)] bg-white/70 text-[var(--ink)] hover:border-[var(--pitch)] hover:bg-[rgba(12,143,79,0.08)]'
                 }`}
               >
                 {option.label}
@@ -144,26 +153,21 @@ export function OutrightCard({
         })}
       </ul>
 
-      <div className="px-4 pb-4 pt-2 flex flex-col gap-3">
+      <div className="px-4 pb-5 sm:px-5">
         {error && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
             {error}
           </p>
         )}
 
         {success && (
-          <p role="status" className="text-sm text-green-600">
+          <p role="status" className="mb-3 rounded-md border border-[rgba(12,143,79,0.22)] bg-[rgba(12,143,79,0.1)] px-3 py-2 text-sm font-bold text-[var(--pitch-dark)]">
             Aposta especial salva com sucesso.
           </p>
         )}
 
         {!isLocked && (
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="min-h-[48px] w-full bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button type="button" onClick={handleSubmit} disabled={!canSubmit} className="dg-button-primary w-full">
             {isPending ? 'Salvando...' : hasPersistedSelection ? 'Atualizar Aposta' : 'Salvar Aposta'}
           </button>
         )}

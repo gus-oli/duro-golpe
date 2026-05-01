@@ -1,58 +1,60 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
+import { PageShell } from '@/components/ui/Primitives'
 
 export default function RegisterPage() {
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
-  const router = useRouter()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setIsSubmitting(true)
 
-    startTransition(async () => {
-      try {
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ displayName, email, password }),
-        })
-        const data = (await res.json()) as { error?: string }
-        if (!res.ok) {
-          setError(data.error ?? 'Erro ao criar conta')
-          return
-        }
-
-        router.push('/matches')
-      } catch {
-        setError('Erro de conexao')
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName, email, password }),
+      })
+      const data = (await res.json()) as { error?: string }
+      if (!res.ok) {
+        setError(data.error ?? 'Erro ao criar conta')
+        return
       }
-    })
+
+      window.location.assign('/matches')
+    } catch {
+      setError('Erro de conexao')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-center mb-8">Criar conta</h1>
+    <PageShell narrow className="flex items-center">
+      <div className="dg-surface mx-auto w-full max-w-md overflow-hidden">
+        <div className="bg-[linear-gradient(135deg,var(--night),var(--pitch-dark))] px-6 py-7 text-white">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--gold)]">Copa 2026</p>
+          <h1 className="mt-2 text-3xl font-black">Criar conta</h1>
+          <p className="mt-2 text-sm leading-6 text-white/72">Entre no bolao antes do apito inicial.</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
           <div>
-            <label htmlFor="displayName" className="block text-sm font-medium mb-1">
-              Nome
-            </label>
+            <label htmlFor="displayName" className="dg-label">Nome</label>
             <input
               id="displayName"
               type="text"
               autoComplete="name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full min-h-[48px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
+              className="dg-input"
               required
               minLength={2}
               maxLength={50}
@@ -60,54 +62,46 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
-              E-mail
-            </label>
+            <label htmlFor="email" className="dg-label">E-mail</label>
             <input
               id="email"
               type="email"
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full min-h-[48px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
+              className="dg-input"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
-              Senha
-            </label>
+            <label htmlFor="password" className="dg-label">Senha</label>
             <input
               id="password"
               type="password"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full min-h-[48px] px-4 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500"
+              className="dg-input"
               required
               minLength={8}
             />
           </div>
 
-          {error && <p role="alert" className="text-red-600 text-sm">{error}</p>}
+          {error && <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={isPending}
-            className="min-h-[48px] w-full bg-green-600 text-white font-semibold rounded-lg disabled:opacity-50 hover:bg-green-700"
-          >
-            {isPending ? 'Criando conta...' : 'Criar conta'}
+          <button type="submit" disabled={isSubmitting} className="dg-button-primary w-full">
+            {isSubmitting ? 'Criando conta...' : 'Criar conta'}
           </button>
-        </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
-          Ja tem conta?{' '}
-          <Link href="/login" className="text-green-600 font-medium hover:underline">
-            Entrar
-          </Link>
-        </p>
+          <p className="text-center text-sm font-medium text-[var(--muted)]">
+            Ja tem conta?{' '}
+            <Link href="/login" className="font-black text-[var(--pitch-dark)] hover:underline">
+              Entrar
+            </Link>
+          </p>
+        </form>
       </div>
-    </main>
+    </PageShell>
   )
 }

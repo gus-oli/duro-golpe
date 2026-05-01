@@ -5,7 +5,7 @@ import { eq, asc } from 'drizzle-orm'
 import { createClient } from 'redis'
 import { config } from '../config.js'
 
-const REDIS_KEY = 'outrights:locked'
+export const OUTRIGHT_LOCK_REDIS_KEY = 'outrights:locked'
 const LOCK_BEFORE_MS = 60 * 60 * 1000 // 1 hour
 
 export function startOutrightLockScheduler(): void {
@@ -14,7 +14,7 @@ export function startOutrightLockScheduler(): void {
     await redis.connect()
 
     try {
-      const alreadyLocked = await redis.get(REDIS_KEY)
+      const alreadyLocked = await redis.get(OUTRIGHT_LOCK_REDIS_KEY)
       if (alreadyLocked) return
 
       const [firstMatch] = await db
@@ -28,7 +28,7 @@ export function startOutrightLockScheduler(): void {
       const lockAt = new Date(firstMatch.kickoffTime.getTime() - LOCK_BEFORE_MS)
       if (new Date() >= lockAt) {
         await db.update(outrightMarkets).set({ status: 'LOCKED' }).where(eq(outrightMarkets.status, 'OPEN'))
-        await redis.set(REDIS_KEY, 'true')
+        await redis.set(OUTRIGHT_LOCK_REDIS_KEY, 'true')
         console.info('[OutrightLockScheduler] All outright markets locked')
       }
     } finally {

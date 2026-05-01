@@ -1,32 +1,25 @@
 import { db } from '../db/index.js'
-import { teams, matches } from '../db/schema/index.js'
 import { getTeams, getFixtures } from './api-football.js'
-import { eq } from 'drizzle-orm'
-import { seedBadges } from '../badges/seed.js'
 import { validateTournamentCounts } from '../tournament/constants.js'
-import { seedOutrightMarkets, seedOutrightOptions } from '../outrights/seed.js'
+import { seedCatalogs, upsertMatches, upsertTeams } from '../seeds/support.js'
 
 async function seedTeams(): Promise<Map<number, string>> {
   const apiTeams = await getTeams()
   const idMap = new Map<number, string>()
+  const idsByKey = await upsertTeams(
+    apiTeams.map((apiTeam) => ({
+      key: String(apiTeam.id),
+      apiFootballId: String(apiTeam.id),
+      name: apiTeam.name,
+      fifaCode: apiTeam.code,
+      flagUrl: apiTeam.logo,
+    })),
+  )
 
   for (const apiTeam of apiTeams) {
-    const [row] = await db
-      .insert(teams)
-      .values({
-        name: apiTeam.name,
-        fifaCode: apiTeam.code,
-        flagUrl: apiTeam.logo,
-        apiFootballId: String(apiTeam.id),
-      })
-      .onConflictDoUpdate({
-        target: teams.apiFootballId,
-        set: { name: apiTeam.name, flagUrl: apiTeam.logo },
-      })
-      .returning({ id: teams.id, apiFootballId: teams.apiFootballId })
-
-    if (row?.apiFootballId) {
-      idMap.set(apiTeam.id, row.id)
+    const teamId = idsByKey[String(apiTeam.id)]
+    if (teamId) {
+      idMap.set(apiTeam.id, teamId)
     }
   }
 
@@ -37,41 +30,31 @@ async function seedTeams(): Promise<Map<number, string>> {
 async function seedMatches(teamIdMap: Map<number, string>): Promise<void> {
   const fixtures = await getFixtures()
   validateTournamentCounts({ teamCount: teamIdMap.size, matchCount: fixtures.length })
-  let count = 0
+  const usableFixtures = fixtures.filter(
+    (fixture) => teamIdMap.has(fixture.teams.home.id) && teamIdMap.has(fixture.teams.away.id),
+  )
 
-  for (const fixture of fixtures) {
-    const homeId = teamIdMap.get(fixture.teams.home.id)
-    const awayId = teamIdMap.get(fixture.teams.away.id)
-    if (!homeId || !awayId) continue
+  await upsertMatches(
+    usableFixtures.map((fixture) => ({
+      apiFootballId: String(fixture.id),
+      homeTeamKey: String(fixture.teams.home.id),
+      awayTeamKey: String(fixture.teams.away.id),
+      kickoffTime: new Date(fixture.date),
+      stage: fixture.league.round,
+      venue: fixture.venue.name,
+      status: 'SCHEDULED',
+      homeScore: null,
+      awayScore: null,
+    })),
+    Object.fromEntries(
+      Array.from(teamIdMap.entries(), ([teamApiId, teamId]) => [String(teamApiId), teamId]),
+    ),
+  )
 
-    await db
-      .insert(matches)
-      .values({
-        homeTeamId: homeId,
-        awayTeamId: awayId,
-        kickoffTime: new Date(fixture.date),
-        stage: fixture.league.round,
-        venue: fixture.venue.name,
-        apiFootballId: String(fixture.id),
-      })
-      .onConflictDoUpdate({
-        target: matches.apiFootballId,
-        set: {
-          kickoffTime: new Date(fixture.date),
-          stage: fixture.league.round,
-          venue: fixture.venue.name,
-        },
-      })
-
-    count++
-  }
-
-  console.info(`Seeded ${count} matches`)
+  console.info(`Seeded ${usableFixtures.length} matches`)
 }
 
 const teamIdMap = await seedTeams()
 await seedMatches(teamIdMap)
-await seedOutrightMarkets()
-await seedOutrightOptions()
-await seedBadges()
+await seedCatalogs()
 process.exit(0)

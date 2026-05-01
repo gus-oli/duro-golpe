@@ -45,62 +45,61 @@ export function PredictionInput({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 p-4"
-      aria-disabled={locked}
-    >
-      <div className="flex items-center justify-center gap-4">
-        <div className="flex flex-col items-center">
-          <label className="text-sm text-gray-600 mb-1">Casa</label>
-          <input
-            type="number"
-            min={0}
-            max={99}
-            value={home}
-            onChange={(e) => setHome(e.target.value)}
-            className={`w-16 h-12 text-center text-2xl font-bold border-2 rounded-lg focus:outline-none transition-colors ${
-              isDisabled
-                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                : 'border-gray-300 focus:border-green-500'
-            }`}
-            aria-label="Gols do time da casa"
-            disabled={isDisabled}
-          />
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-4 p-4" aria-disabled={locked}>
+      <div className="rounded-md border border-[var(--line)] bg-white/70 p-4">
+        <p className="mb-4 text-center text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">
+          Seu palpite
+        </p>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
+          <div>
+            <label className="dg-label text-center" htmlFor="prediction-home">Casa</label>
+            <input
+              id="prediction-home"
+              type="number"
+              min={0}
+              max={99}
+              value={home}
+              onChange={(e) => setHome(e.target.value)}
+              className="dg-input text-center font-[var(--font-display)] text-3xl font-black"
+              aria-label="Gols do time da casa"
+              disabled={isDisabled}
+            />
+          </div>
 
-        <span className="text-2xl font-bold text-gray-400">-</span>
+          <span className="pb-3 text-xl font-black text-[var(--gold)]">x</span>
 
-        <div className="flex flex-col items-center">
-          <label className="text-sm text-gray-600 mb-1">Visitante</label>
-          <input
-            type="number"
-            min={0}
-            max={99}
-            value={away}
-            onChange={(e) => setAway(e.target.value)}
-            className={`w-16 h-12 text-center text-2xl font-bold border-2 rounded-lg focus:outline-none transition-colors ${
-              isDisabled
-                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                : 'border-gray-300 focus:border-green-500'
-            }`}
-            aria-label="Gols do time visitante"
-            disabled={isDisabled}
-          />
+          <div>
+            <label className="dg-label text-center" htmlFor="prediction-away">Visitante</label>
+            <input
+              id="prediction-away"
+              type="number"
+              min={0}
+              max={99}
+              value={away}
+              onChange={(e) => setAway(e.target.value)}
+              className="dg-input text-center font-[var(--font-display)] text-3xl font-black"
+              aria-label="Gols do time visitante"
+              disabled={isDisabled}
+            />
+          </div>
         </div>
       </div>
 
-      {error && <p role="alert" className="text-red-600 text-sm text-center">{error}</p>}
-      {success && <p role="status" className="text-green-600 text-sm text-center">Palpite enviado!</p>}
+      {error && (
+        <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
+          {error}
+        </p>
+      )}
+      {success && (
+        <p role="status" className="rounded-md border border-[rgba(12,143,79,0.22)] bg-[rgba(12,143,79,0.1)] px-3 py-2 text-sm font-bold text-[var(--pitch-dark)]">
+          Palpite enviado!
+        </p>
+      )}
 
       <button
         type="submit"
         disabled={isDisabled || home === '' || away === ''}
-        className={`min-h-[48px] w-full font-semibold rounded-lg transition-colors ${
-          locked
-            ? 'hidden'
-            : 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed'
-        }`}
+        className={locked ? 'hidden' : 'dg-button-primary w-full'}
         aria-hidden={locked}
         tabIndex={locked ? -1 : undefined}
       >

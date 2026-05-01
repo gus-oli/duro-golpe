@@ -102,11 +102,7 @@ export function MatchDetailClient({
 
   return (
     <>
-      <div
-        className="flex items-center justify-center"
-        role="region"
-        aria-label="Placar ao vivo"
-      >
+      <div className="flex items-center justify-center px-4 py-6" role="region" aria-label="Placar ao vivo">
         <LiveScore home={liveScore.home} away={liveScore.away} />
       </div>
 
@@ -120,12 +116,9 @@ export function MatchDetailClient({
           onSubmit={handlePredictionSubmit}
         />
       ) : (
-        <div className="text-center py-6 px-4 border-t border-gray-100">
-          <p className="text-gray-500 mb-3">Faça login para enviar seu palpite</p>
-          <a
-            href="/login"
-            className="inline-block min-h-[48px] px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
-          >
+        <div className="border-t border-[var(--line)] px-4 py-6 text-center">
+          <p className="mb-3 text-sm font-bold text-[var(--muted)]">Faca login para enviar seu palpite</p>
+          <a href="/login" className="dg-button-primary">
             Entrar
           </a>
         </div>
