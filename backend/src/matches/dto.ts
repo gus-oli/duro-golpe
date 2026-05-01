@@ -1,0 +1,86 @@
+import type { Match } from '../db/schema/matches.js'
+
+interface MatchTeamDto {
+  id: string
+  name: string
+  fifaCode: string
+  flagUrl: string | null
+}
+
+interface MatchPredictionDto {
+  predictedHome: number | null
+  predictedAway: number | null
+}
+
+export interface MatchProjection {
+  id: string
+  kickoffTime: Date
+  stage: string
+  venue: string | null
+  status: Match['status']
+  homeScore: number | null
+  awayScore: number | null
+  homeTeam: MatchTeamDto
+  awayTeam: MatchTeamDto
+  prediction: MatchPredictionDto | null
+}
+
+export interface MatchListItemDto {
+  id: string
+  kickoffTime: string
+  stage: string
+  venue: string | null
+  status: Match['status']
+  homeScore: number | null
+  awayScore: number | null
+  homeTeam: MatchTeamDto
+  awayTeam: MatchTeamDto
+  userPrediction: { predictedHome: number; predictedAway: number } | null
+}
+
+export interface MatchDetailDto extends MatchListItemDto {
+  currentScore?: { home: number; away: number }
+}
+
+function buildUserPrediction(prediction: MatchPredictionDto | null): MatchListItemDto['userPrediction'] {
+  if (!prediction || prediction.predictedHome === null || prediction.predictedAway === null) {
+    return null
+  }
+
+  return {
+    predictedHome: prediction.predictedHome,
+    predictedAway: prediction.predictedAway,
+  }
+}
+
+export function buildMatchListItemDto(projection: MatchProjection): MatchListItemDto {
+  return {
+    id: projection.id,
+    kickoffTime: projection.kickoffTime.toISOString(),
+    stage: projection.stage,
+    venue: projection.venue,
+    status: projection.status,
+    homeScore: projection.homeScore,
+    awayScore: projection.awayScore,
+    homeTeam: projection.homeTeam,
+    awayTeam: projection.awayTeam,
+    userPrediction: buildUserPrediction(projection.prediction),
+  }
+}
+
+export function buildMatchDetailDto(projection: MatchProjection): MatchDetailDto {
+  const dto: MatchDetailDto = buildMatchListItemDto(projection)
+
+  if (
+    (projection.status === 'LIVE' || projection.status === 'FINISHED') &&
+    projection.homeScore !== null &&
+    projection.awayScore !== null
+  ) {
+    dto.currentScore = {
+      home: projection.homeScore,
+      away: projection.awayScore,
+    }
+  }
+
+  return dto
+}

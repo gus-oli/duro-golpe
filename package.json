@@ -1,0 +1,28 @@
+{
+  "name": "duro-golpe",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm --workspace=backend run dev",
+    "dev:frontend": "npm --workspace=frontend run dev",
+    "typecheck:backend": "node ./node_modules/typescript/bin/tsc -p backend/tsconfig.json --noEmit",
+    "typecheck:frontend": "node ./node_modules/typescript/bin/tsc -p frontend/tsconfig.json --noEmit",
+    "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
+    "infra:up": "docker compose up -d db cache",
+    "db:migrate": "npm --workspace=backend run db:migrate",
+    "bootstrap": "npm run infra:up && npm run db:migrate && npm --workspace=backend run seed",
+    "test:backend": "npm --workspace=backend run test",
+    "test:e2e": "npx playwright test",
+    "seed": "npm --workspace=backend run seed"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}

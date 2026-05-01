@@ -1,0 +1,40 @@
+import { OUTRIGHT_MARKET_CODES, type OutrightMarketCode } from './catalog.js'
+
+export const PLAYER_MARKET_OPTIONS: Partial<Record<OutrightMarketCode, string[]>> = {
+  [OUTRIGHT_MARKET_CODES.TOP_SCORER]: [
+    'Kylian Mbappe',
+    'Erling Haaland',
+    'Vinicius Junior',
+    'Harry Kane',
+    'Lautaro Martinez',
+    'Julian Alvarez',
+    'Jude Bellingham',
+    'Florian Wirtz',
+    'Lamine Yamal',
+    'Endrick',
+  ],
+  [OUTRIGHT_MARKET_CODES.GOLDEN_BALL]: [
+    'Kylian Mbappe',
+    'Vinicius Junior',
+    'Jude Bellingham',
+    'Rodri',
+    'Pedri',
+    'Lamine Yamal',
+    'Jamal Musiala',
+    'Florian Wirtz',
+    'Lautaro Martinez',
+    'Julian Alvarez',
+  ],
+  [OUTRIGHT_MARKET_CODES.REVELATION]: [
+    'Lamine Yamal',
+    'Endrick',
+    'Warren Zaire-Emery',
+    'Joao Neves',
+    'Arda Guler',
+    'Pau Cubarsi',
+    'Kobbie Mainoo',
+    'Estevao',
+    'Savinho',
+    'Benjamin Sesko',
+  ],
+}
