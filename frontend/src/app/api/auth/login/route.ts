@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { shouldUseSecureAuthCookie } from '@/lib/auth-cookie'
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
   const response = NextResponse.json({ ok: true })
   response.cookies.set('auth_token', data.token!, {
     httpOnly: true,
-    secure: process.env['NODE_ENV'] === 'production',
+    secure: shouldUseSecureAuthCookie(),
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7,
     path: '/',

@@ -53,9 +53,12 @@ Hosted beta recommendations:
 API_URL=https://duro-golpe.example.com
 NEXT_PUBLIC_API_URL=https://duro-golpe.example.com
 NEXT_PUBLIC_WS_URL=wss://duro-golpe.example.com
+AUTH_COOKIE_SECURE=true
 ```
 
 The hosted beta intentionally uses one public origin so page requests, SSR fetches, auth redirects, API calls, and WebSocket traffic all resolve through the same domain.
+
+If you are temporarily validating the app over raw HTTP on a VM public IP before TLS is ready, set `AUTH_COOKIE_SECURE=false` in the frontend environment so the browser can store the auth cookie. Switch it back to `true` as soon as the public entrypoint is on HTTPS.
 
 ## Local Demo Bootstrap
 
