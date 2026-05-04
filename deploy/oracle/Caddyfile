@@ -1,0 +1,17 @@
+{$DOMAIN} {
+  encode gzip zstd
+
+  @backend_api path /api/v1/*
+  handle @backend_api {
+    reverse_proxy 127.0.0.1:3001
+  }
+
+  @backend_ws path /ws
+  handle @backend_ws {
+    reverse_proxy 127.0.0.1:3001
+  }
+
+  handle {
+    reverse_proxy 127.0.0.1:3000
+  }
+}

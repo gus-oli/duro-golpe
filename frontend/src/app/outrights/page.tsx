@@ -10,6 +10,7 @@ interface OutrightOption {
 
 interface OutrightMarket {
   id: string
+  code: string
   name: string
   description?: string | null
   pointValue: number

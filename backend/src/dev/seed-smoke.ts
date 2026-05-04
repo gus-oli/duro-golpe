@@ -39,6 +39,7 @@ async function main(): Promise<void> {
 
   console.info('[SmokeSeed] Ready')
   console.info(`[SmokeSeed] Match ID: ${matchId}`)
+  console.info(`SMOKE_MATCH_ID=${matchId}`)
   console.info('[SmokeSeed] Teams: Brazil vs France')
 }
 

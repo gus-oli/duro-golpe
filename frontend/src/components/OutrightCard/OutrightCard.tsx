@@ -10,6 +10,7 @@ interface OutrightOption {
 
 interface OutrightCardProps {
   id: string
+  code: string
   name: string
   description?: string | null
   pointValue: number
@@ -30,6 +31,7 @@ function statusTone(status: OutrightCardProps['status']) {
 
 export function OutrightCard({
   id,
+  code,
   name,
   description,
   pointValue,
@@ -102,7 +104,9 @@ export function OutrightCard({
   return (
     <article
       className="dg-card overflow-hidden"
+      data-smoke="outright-card"
       data-market-id={id}
+      data-market-code={code}
       data-market-name={name}
       data-market-status={status}
     >
@@ -138,6 +142,7 @@ export function OutrightCard({
                 onClick={() => toggleOption(option.id)}
                 disabled={isLocked || isPending || selectionLimitReached}
                 data-option-id={option.id}
+                aria-pressed={isSelected}
                 className={`min-h-touch w-full rounded-md border px-4 py-3 text-left text-sm font-bold transition ${
                   isSelected
                     ? 'border-[var(--pitch-dark)] bg-green-600 bg-[var(--pitch-dark)] text-white shadow-md'

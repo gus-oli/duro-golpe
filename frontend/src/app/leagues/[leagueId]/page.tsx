@@ -135,7 +135,14 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill tone="open">Liga privada</StatusPill>
                 <span className="dg-chip bg-white/10 text-white/72">
-                  Codigo <span className="ml-1 font-mono">{league.inviteCode}</span>
+                  Codigo{' '}
+                  <span
+                    className="ml-1 font-mono"
+                    data-smoke="league-invite-code"
+                    data-invite-code={league.inviteCode}
+                  >
+                    {league.inviteCode}
+                  </span>
                 </span>
               </div>
               <h1 className="mt-4 text-4xl font-black text-white sm:text-5xl">{league.name}</h1>

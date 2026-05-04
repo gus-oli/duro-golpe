@@ -12,11 +12,11 @@ test.describe('Live score WebSocket', () => {
     const webhookSecret = process.env.WEBHOOK_SECRET ?? ''
 
     if (!matchId) {
-      throw new Error('E2E_MATCH_ID must be set for live score smoke')
+      throw new Error('E2E_MATCH_ID is missing. Use "npm run test:launch-smoke" so the wrapper can seed and inject the smoke match automatically.')
     }
 
     if (!webhookSecret) {
-      throw new Error('WEBHOOK_SECRET must be set for live score smoke')
+      throw new Error('WEBHOOK_SECRET is missing. Set it in backend/.env or the current environment before running the launch smoke gate.')
     }
 
     await page.goto('/register')

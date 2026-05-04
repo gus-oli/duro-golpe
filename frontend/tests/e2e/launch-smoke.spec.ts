@@ -1,5 +1,15 @@
 import { execSync } from 'node:child_process'
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
+
+function marketCard(page: Page, marketCode: string) {
+  return page.locator(`[data-smoke="outright-card"][data-market-code="${marketCode}"]`)
+}
+
+function rankingEntry(page: Page, displayName: string) {
+  return page.locator('[data-smoke="ranking-entry"]').filter({
+    has: page.locator('[data-smoke="ranking-name"]', { hasText: displayName }),
+  })
+}
 
 test.describe('Launch smoke core journey', () => {
   test.skip(({ browserName }) => browserName !== 'chromium', 'Launch smoke runs as a single deterministic chromium gate.')
@@ -12,7 +22,7 @@ test.describe('Launch smoke core journey', () => {
     const uniqueSuffix = Date.now()
     const matchId = process.env.E2E_MATCH_ID ?? ''
     if (!matchId) {
-      throw new Error('E2E_MATCH_ID must be set for launch smoke tests')
+      throw new Error('E2E_MATCH_ID is missing. Use "npm run test:launch-smoke" so the wrapper can seed and inject the smoke match automatically.')
     }
 
     const userA = {
@@ -46,12 +56,11 @@ test.describe('Launch smoke core journey', () => {
     await expect(page).toHaveURL(/\/matches$/, { timeout: 15000 })
 
     await page.goto(`/matches/${matchId}`)
-    await expect(page.getByText(/Brazil/i)).toBeVisible()
-    await expect(page.getByText(/France/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Brazil x France/i })).toBeVisible()
     await page.getByRole('spinbutton', { name: /gols do time da casa/i }).fill('2')
     await page.getByRole('spinbutton', { name: /gols do time visitante/i }).fill('1')
     await page.getByRole('button', { name: /enviar palpite/i }).click()
-    await expect(page.getByText(/palpite enviado/i)).toBeVisible()
+    await expect(page.getByRole('status').filter({ hasText: /palpite enviado/i })).toBeVisible()
     await page.reload()
     await expect(page.getByRole('spinbutton', { name: /gols do time da casa/i })).toHaveValue('2')
     await expect(page.getByRole('spinbutton', { name: /gols do time visitante/i })).toHaveValue('1')
@@ -69,23 +78,23 @@ test.describe('Launch smoke core journey', () => {
       throw new Error('League ID missing from URL')
     }
 
-    const inviteCode = (await page.locator('span.font-mono').first().textContent())?.trim()
+    const inviteCode = (await page.locator('[data-smoke="league-invite-code"]').first().textContent())?.trim()
     if (!inviteCode || inviteCode.length !== 8) {
       throw new Error(`Unexpected invite code: ${inviteCode ?? 'empty'}`)
     }
 
     await page.goto('/outrights')
 
-    const championCard = page.locator('article').filter({ hasText: /Campe/i }).first()
+    const championCard = marketCard(page, 'CHAMPION')
     await championCard.getByRole('button', { name: 'Brazil' }).click()
     await championCard.getByRole('button', { name: /salvar aposta|atualizar aposta/i }).click()
-    await expect(championCard.getByText(/salva com sucesso/i)).toBeVisible()
+    await expect(championCard.getByRole('status').filter({ hasText: /salva com sucesso/i })).toBeVisible()
 
-    const finalistsCard = page.locator('article').filter({ hasText: /Finalistas/i }).first()
+    const finalistsCard = marketCard(page, 'FINALISTS')
     await finalistsCard.getByRole('button', { name: 'Brazil' }).click()
     await finalistsCard.getByRole('button', { name: 'France' }).click()
     await finalistsCard.getByRole('button', { name: /salvar aposta|atualizar aposta/i }).click()
-    await expect(finalistsCard.getByText(/salva com sucesso/i)).toBeVisible()
+    await expect(finalistsCard.getByRole('status').filter({ hasText: /salva com sucesso/i })).toBeVisible()
 
     execSync('npm.cmd --workspace=backend run smoke:lock-outrights', {
       cwd: process.cwd(),
@@ -94,12 +103,12 @@ test.describe('Launch smoke core journey', () => {
     })
 
     await page.reload()
-    await expect(championCard.getByText(/encerrado/i)).toBeVisible()
+    await expect(championCard).toHaveAttribute('data-market-status', 'LOCKED')
     await expect(championCard.getByRole('button', { name: /salvar aposta|atualizar aposta/i })).toHaveCount(0)
 
     const lockedChampionRequest = await championCard.evaluate(async (card) => {
       const marketId = card.getAttribute('data-market-id')
-      const selectedButton = card.querySelector<HTMLButtonElement>('button[data-option-id][class*="bg-green-600"]')
+      const selectedButton = card.querySelector<HTMLButtonElement>('button[data-option-id][aria-pressed="true"]')
       const optionId = selectedButton?.getAttribute('data-option-id')
       if (!marketId || !optionId) {
         throw new Error('Champion market metadata not found')
@@ -130,7 +139,7 @@ test.describe('Launch smoke core journey', () => {
     })
 
     await expect(page.getByRole('spinbutton', { name: /gols do time da casa/i })).toBeDisabled({ timeout: 15000 })
-    await expect(page.getByText(/palpites encerrados/i)).toBeVisible()
+    await expect(page.getByRole('status', { name: /palpites encerrados/i })).toBeVisible()
 
     const pageB = await browser.newPage()
     await pageB.goto('/register')
@@ -158,8 +167,8 @@ test.describe('Launch smoke core journey', () => {
     await expect(pageB.locator('#invite-code')).toHaveValue(inviteCode)
     await pageB.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit())
     await expect(pageB).toHaveURL(/\/leagues\/[^/]+$/)
-    await expect(pageB.getByText(userA.name)).toBeVisible()
-    await expect(pageB.getByText(userB.name)).toBeVisible()
+    await expect(rankingEntry(pageB, userA.name)).toBeVisible()
+    await expect(rankingEntry(pageB, userB.name)).toBeVisible()
 
     execSync('npm.cmd --workspace=backend run outrights:resolve -- CHAMPION Brazil', {
       cwd: process.cwd(),
@@ -167,7 +176,7 @@ test.describe('Launch smoke core journey', () => {
       stdio: 'pipe',
     })
 
-    await expect(pageB.getByText(/120\s+pts/i)).toBeVisible({ timeout: 15000 })
+    await expect(rankingEntry(pageB, userA.name)).toHaveAttribute('data-total-points', '120', { timeout: 15000 })
 
     await pageB.close()
   })

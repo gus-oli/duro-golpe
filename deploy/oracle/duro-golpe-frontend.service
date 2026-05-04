@@ -1,0 +1,17 @@
+[Unit]
+Description=Duro Golpe frontend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/duro-golpe/current
+EnvironmentFile=/srv/duro-golpe/shared/frontend.env
+ExecStart=/usr/bin/npm --workspace=frontend run start -- --hostname 127.0.0.1 --port 3000
+Restart=always
+RestartSec=5
+User=duro-golpe
+Group=duro-golpe
+
+[Install]
+WantedBy=multi-user.target

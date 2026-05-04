@@ -1,0 +1,17 @@
+[Unit]
+Description=Duro Golpe backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/duro-golpe/current
+EnvironmentFile=/srv/duro-golpe/shared/backend.env
+ExecStart=/usr/bin/npm --workspace=backend run start
+Restart=always
+RestartSec=5
+User=duro-golpe
+Group=duro-golpe
+
+[Install]
+WantedBy=multi-user.target

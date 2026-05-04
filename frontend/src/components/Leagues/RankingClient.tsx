@@ -71,7 +71,14 @@ export function RankingClient({ leagueId, initialRanking, badgesMap, token }: Ra
   return (
     <ol className="grid gap-3">
       {ranking.map((entry) => (
-        <li key={entry.userId} className="dg-card p-4">
+        <li
+          key={entry.userId}
+          className="dg-card p-4"
+          data-smoke="ranking-entry"
+          data-user-id={entry.userId}
+          data-user-name={entry.displayName}
+          data-total-points={entry.totalPoints}
+        >
           <div className="flex items-center gap-4">
             <span
               className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md font-[var(--font-display)] text-xl font-black ${podiumClass(entry.position)}`}
@@ -93,13 +100,18 @@ export function RankingClient({ leagueId, initialRanking, badgesMap, token }: Ra
             )}
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-base font-black text-[var(--ink)]">{entry.displayName}</p>
+              <p className="truncate text-base font-black text-[var(--ink)]" data-smoke="ranking-name">
+                {entry.displayName}
+              </p>
               <p className="mt-1 text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
                 Exatos {entry.exactScoreCount} / Saldo {entry.winnerGoalDiffCount}
               </p>
             </div>
 
-            <p className="shrink-0 text-right font-[var(--font-display)] text-2xl font-black text-[var(--pitch-dark)]">
+            <p
+              className="shrink-0 text-right font-[var(--font-display)] text-2xl font-black text-[var(--pitch-dark)]"
+              data-smoke="ranking-points"
+            >
               {entry.totalPoints}
               <span className="ml-1 text-xs text-[var(--muted)]">pts</span>
             </p>
