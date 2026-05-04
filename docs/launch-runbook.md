@@ -258,14 +258,15 @@ Smoke helpers:
 Run these checks after each hosted release:
 
 1. Open the public home page and confirm it loads over HTTPS.
-2. Open `/matches` and confirm server-rendered match cards appear.
+2. Open a protected route such as `/matches` while logged out and confirm the redirect stays on `https://<domain>/login?...` instead of leaking `localhost` or another upstream host.
 3. Register or log in and confirm authenticated navigation still reaches `/matches`, `/leagues`, and `/outrights`.
-4. Call `https://<domain>/api/v1/matches` and confirm the backend responds with `200`.
-5. Open a match detail page, submit a prediction, refresh, and confirm the persisted prediction still appears.
-6. Open a league page and confirm ranking entries render.
-7. Confirm the browser establishes a WebSocket connection to `wss://<domain>/ws`.
-8. Check `systemctl status duro-golpe-backend duro-golpe-frontend` and confirm both services are healthy.
-9. Check Caddy logs and backend logs for startup or proxy errors.
+4. Confirm server-rendered match cards appear on `/matches`.
+5. Call `https://<domain>/api/v1/matches` and confirm the backend responds with `200`.
+6. Open a match detail page, submit a prediction, refresh, and confirm the persisted prediction still appears.
+7. Open a league page and confirm ranking entries render.
+8. Confirm the browser establishes a WebSocket connection to `wss://<domain>/ws`.
+9. Check `systemctl status duro-golpe-backend duro-golpe-frontend` and confirm both services are healthy.
+10. Check Caddy logs and backend logs for startup or proxy errors.
 
 If you want deterministic smoke coverage, run the smoke flow against a disposable verification environment instead of the shared public beta database.
 
