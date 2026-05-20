@@ -2,14 +2,37 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { requireAuth } from '../auth/middleware.js'
 import { validateBody } from '../middleware/validate.js'
-import { createPrediction, updatePrediction, getPredictionByUser } from './service.js'
+import { createPrediction, updatePrediction, getPredictionByUser, savePredictionsBatch } from './service.js'
 
 const predictionSchema = z.object({
   predictedHome: z.number().int().min(0).max(99),
   predictedAway: z.number().int().min(0).max(99),
 })
 
+const batchPredictionSchema = z.object({
+  predictions: z
+    .array(
+      z.object({
+        matchId: z.string().uuid(),
+        predictedHome: z.number().int().min(0).max(99),
+        predictedAway: z.number().int().min(0).max(99),
+      }),
+    )
+    .min(1)
+    .max(64),
+})
+
 export async function predictionRoutes(app: FastifyInstance): Promise<void> {
+  app.post(
+    '/api/v1/predictions/batch',
+    { preHandler: [requireAuth, validateBody(batchPredictionSchema)] },
+    async (request, reply) => {
+      const body = request.body as z.infer<typeof batchPredictionSchema>
+      const result = await savePredictionsBatch(request.user.id, body.predictions)
+      return reply.send(result)
+    },
+  )
+
   app.post<{ Params: { matchId: string } }>(
     '/api/v1/matches/:matchId/predictions',
     { preHandler: [requireAuth, validateBody(predictionSchema)] },

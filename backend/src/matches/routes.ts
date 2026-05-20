@@ -4,7 +4,16 @@ import { getMatches, getMatchById } from './service.js'
 export async function matchRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/v1/matches', async (request, reply) => {
     const query = request.query as { stage?: string }
-    const result = await getMatches(query.stage ? { stage: query.stage } : undefined)
+    let userId: string | undefined
+
+    try {
+      await request.jwtVerify()
+      userId = request.user.id
+    } catch {
+      userId = undefined
+    }
+
+    const result = await getMatches(query.stage ? { stage: query.stage } : undefined, userId)
     return reply.send({ matches: result, total: result.length })
   })
 

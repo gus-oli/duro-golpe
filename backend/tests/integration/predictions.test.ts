@@ -7,6 +7,7 @@ const predictionServiceMocks = vi.hoisted(() => ({
   createPrediction: vi.fn(),
   updatePrediction: vi.fn(),
   getPredictionByUser: vi.fn(),
+  savePredictionsBatch: vi.fn(),
 }))
 
 vi.mock('../../src/predictions/service.js', () => predictionServiceMocks)
@@ -65,6 +66,65 @@ describe('Prediction endpoints (integration)', () => {
 
       expect(response.statusCode).toBe(401)
       expect(predictionServiceMocks.createPrediction).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('POST /api/v1/predictions/batch', () => {
+    it('returns per-item results for batch prediction submissions', async () => {
+      predictionServiceMocks.savePredictionsBatch.mockResolvedValue({
+        saved: [
+          {
+            id: 'pred-1',
+            matchId: 'match-1',
+            userId: 'user-1',
+            predictedHome: 2,
+            predictedAway: 1,
+          },
+        ],
+        failed: [{ matchId: 'match-2', message: 'Palpites encerrados para esta partida', statusCode: 403 }],
+      })
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/v1/predictions/batch',
+        headers: { authorization: `Bearer ${token}` },
+        payload: {
+          predictions: [
+            { matchId: '550e8400-e29b-41d4-a716-446655440001', predictedHome: 2, predictedAway: 1 },
+            { matchId: '550e8400-e29b-41d4-a716-446655440002', predictedHome: 0, predictedAway: 0 },
+          ],
+        },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(predictionServiceMocks.savePredictionsBatch).toHaveBeenCalledWith('user-1', [
+        { matchId: '550e8400-e29b-41d4-a716-446655440001', predictedHome: 2, predictedAway: 1 },
+        { matchId: '550e8400-e29b-41d4-a716-446655440002', predictedHome: 0, predictedAway: 0 },
+      ])
+      expect(response.json()).toMatchObject({
+        saved: [
+          {
+            id: 'pred-1',
+            predictedHome: 2,
+            predictedAway: 1,
+          },
+        ],
+        failed: [{ matchId: 'match-2', statusCode: 403 }],
+      })
+    })
+
+    it('rejects invalid batch payloads before calling the service', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/v1/predictions/batch',
+        headers: { authorization: `Bearer ${token}` },
+        payload: {
+          predictions: [{ matchId: 'not-a-uuid', predictedHome: 2, predictedAway: 1 }],
+        },
+      })
+
+      expect(response.statusCode).toBe(400)
+      expect(predictionServiceMocks.savePredictionsBatch).not.toHaveBeenCalled()
     })
   })
 

@@ -164,6 +164,30 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
         </section>
 
         <section className="grid gap-3 md:grid-cols-3">
+          <div className="dg-surface p-4">
+            <p className="dg-eyebrow">Contexto oficial</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Fase e status</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              {match.stage} / {meta.label}
+            </p>
+          </div>
+          <div className="dg-surface p-4">
+            <p className="dg-eyebrow">Venue</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">{match.venue ?? 'A confirmar'}</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Use o detail para contexto, acompanhamento e links sociais.</p>
+          </div>
+          <div className="dg-surface p-4">
+            <p className="dg-eyebrow">Kickoff</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">
+              {kickoff.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              {kickoff.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', weekday: 'long' })}
+            </p>
+          </div>
+        </section>
+
+        <section className="grid gap-3 md:grid-cols-3">
           <Link href="/matches" className="dg-card-interactive block p-4">
             <p className="dg-eyebrow">Proximo passo</p>
             <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Voltar para agenda</h2>
