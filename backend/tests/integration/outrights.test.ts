@@ -6,6 +6,7 @@ import { outrightRoutes } from '../../src/outrights/routes.js'
 const outrightServiceMocks = vi.hoisted(() => ({
   getOutrights: vi.fn(),
   createOutrightPrediction: vi.fn(),
+  getLeagueOutrightPredictions: vi.fn(),
 }))
 
 vi.mock('../../src/outrights/service.js', () => outrightServiceMocks)
@@ -115,6 +116,44 @@ describe('Outright markets (integration)', () => {
           '22222222-2222-2222-2222-222222222222',
         ],
       )
+    })
+  })
+
+  describe('GET /api/v1/leagues/:leagueId/outrights/:marketId/predictions', () => {
+    it('returns league-scoped outright selections for all active members', async () => {
+      outrightServiceMocks.getLeagueOutrightPredictions.mockResolvedValue([
+        {
+          userId: 'user-1',
+          displayName: 'Gus',
+          avatarUrl: null,
+          submittedAt: '2026-05-20T12:00:00.000Z',
+          selections: [{ optionId: 'option-1', label: 'Brasil', teamFlagUrl: 'https://flags/bra.png' }],
+        },
+        {
+          userId: 'user-2',
+          displayName: 'Ana',
+          avatarUrl: null,
+          submittedAt: null,
+          selections: [],
+        },
+      ])
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/v1/leagues/league-1/outrights/market-1/predictions',
+        headers: { authorization: `Bearer ${token}` },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(outrightServiceMocks.getLeagueOutrightPredictions).toHaveBeenCalledWith('user-1', 'league-1', 'market-1')
+      expect(response.json()).toMatchObject({
+        leagueId: 'league-1',
+        marketId: 'market-1',
+        predictions: [
+          expect.objectContaining({ userId: 'user-1' }),
+          expect.objectContaining({ userId: 'user-2', selections: [] }),
+        ],
+      })
     })
   })
 })

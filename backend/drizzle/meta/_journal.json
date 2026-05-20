@@ -36,6 +36,13 @@
       "when": 1779306600000,
       "tag": "0004_expanded_player_outright_options",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779309900000,
+      "tag": "0005_outright_option_media",
+      "breakpoints": true
     }
   ]
 }

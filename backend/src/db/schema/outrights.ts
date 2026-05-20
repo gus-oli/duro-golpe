@@ -34,6 +34,9 @@ export const outrightOptions = pgTable(
     isFeatured: boolean('is_featured').notNull().default(false),
     sortOrder: integer('sort_order').notNull().default(0),
     teamLabel: text('team_label'),
+    playerPhotoUrl: text('player_photo_url'),
+    playerPhotoSource: text('player_photo_source'),
+    playerPhotoUpdatedAt: timestamp('player_photo_updated_at', { withTimezone: true }),
   },
   (t) => [unique().on(t.marketId, t.label)],
 )

@@ -1,7 +1,9 @@
 'use client'
 
 import { useDeferredValue, useState, useTransition } from 'react'
+import { OutrightLeaguePicks } from '@/components/Social/OutrightLeaguePicks'
 import { StatusPill } from '@/components/ui/Primitives'
+import { getOptionMedia } from './option-media'
 import {
   getPlayerSourceTierLabel,
   getVisiblePlayerOptions,
@@ -11,6 +13,8 @@ import {
 interface OutrightOption {
   id: string
   label: string
+  teamFlagUrl?: string | null
+  playerPhotoUrl?: string | null
   teamLabel?: string | null
   sourceTier?: PlayerSourceTier | null
   isActive?: boolean
@@ -30,6 +34,7 @@ interface OutrightCardProps {
   options: OutrightOption[]
   userPrediction: { optionId: string } | null
   userSelections: string[]
+  leagueId?: string | null
 }
 
 function statusTone(status: OutrightCardProps['status']) {
@@ -50,6 +55,7 @@ export function OutrightCard({
   optionType,
   options,
   userSelections,
+  leagueId,
 }: OutrightCardProps) {
   const [isPending, startTransition] = useTransition()
   const [selected, setSelected] = useState<string[]>(userSelections)
@@ -186,6 +192,7 @@ export function OutrightCard({
           const isSelected = selected.includes(option.id)
           const isInactive = option.isActive === false
           const selectionLimitReached = !isSelected && selected.length >= selectionMax
+          const media = getOptionMedia(option)
 
           return (
             <li key={option.id} role="option" aria-selected={isSelected}>
@@ -203,7 +210,18 @@ export function OutrightCard({
                       : 'border-[var(--line)] bg-white/70 text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[rgba(22,129,255,0.08)]'
                 }`}
               >
-                <span className="block">{option.label}</span>
+                <span className="flex items-center gap-3">
+                  {media.kind === 'player-photo' ? (
+                    <img src={media.src ?? undefined} alt={option.label} className="h-10 w-10 rounded-full object-cover" />
+                  ) : media.kind === 'team-flag' ? (
+                    <img src={media.src ?? undefined} alt={option.label} className="h-7 w-10 rounded-sm object-cover shadow-sm" />
+                  ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(12,143,79,0.1)] text-xs font-black text-[var(--pitch-dark)]">
+                      {media.fallbackText}
+                    </span>
+                  )}
+                  <span className="block">{option.label}</span>
+                </span>
                 {(option.teamLabel || option.sourceTier || isInactive) && (
                   <span className={`mt-2 flex flex-wrap gap-2 text-xs font-bold ${isSelected ? 'text-white/88' : 'text-[var(--muted)]'}`}>
                     {option.teamLabel && <span>{option.teamLabel}</span>}
@@ -236,6 +254,8 @@ export function OutrightCard({
             {isPending ? 'Salvando...' : hasPersistedSelection ? 'Atualizar Aposta' : 'Salvar Aposta'}
           </button>
         )}
+
+        {leagueId && <OutrightLeaguePicks leagueId={leagueId} marketId={id} marketName={name} />}
       </div>
     </article>
   )

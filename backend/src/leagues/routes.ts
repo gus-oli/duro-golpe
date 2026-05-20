@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { requireAuth } from '../auth/middleware.js'
 import { validateBody } from '../middleware/validate.js'
 import { createLeague, joinLeague, getMyLeagues, getLeagueRanking } from './service.js'
+import { getLeagueUserMatchPredictions } from '../predictions/service.js'
+import { getLeagueUserOutrightSelections } from '../outrights/service.js'
 
 export async function leagueRoutes(app: FastifyInstance): Promise<void> {
   app.post(
@@ -36,6 +38,24 @@ export async function leagueRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const ranking = await getLeagueRanking(request.params.leagueId, request.user.id)
       return reply.send({ ranking })
+    },
+  )
+
+  app.get<{ Params: { leagueId: string; userId: string } }>(
+    '/api/v1/leagues/:leagueId/users/:userId/picks',
+    { preHandler: requireAuth },
+    async (request, reply) => {
+      const [matchPredictions, outrightSelections] = await Promise.all([
+        getLeagueUserMatchPredictions(request.user.id, request.params.leagueId, request.params.userId),
+        getLeagueUserOutrightSelections(request.user.id, request.params.leagueId, request.params.userId),
+      ])
+
+      return reply.send({
+        leagueId: request.params.leagueId,
+        userId: request.params.userId,
+        matchPredictions,
+        outrightSelections,
+      })
     },
   )
 }

@@ -205,6 +205,20 @@ Optional follow-up modes after the seed:
    - keep `FOOTBALL_DATA_POLL_ENABLED=false`
    - use `npm run match:override -- <MATCH_ID_OR_PROVIDER_ID> <SCHEDULED|LIVE|FINISHED> [HOME] [AWAY]`
 
+### Optional player-photo enrichment for outrights
+
+If you want player faces in the individual outright cards:
+
+1. configure `API_FOOTBALL_KEY` in `backend/.env`
+2. run `npm --workspace=backend run outrights:enrich-player-media`
+3. use `npm --workspace=backend run outrights:enrich-player-media -- --refresh-all` when you want to recrawl players that already have cached photos
+
+Operational notes:
+
+- the script runs backend-side only and does not expose provider credentials to the frontend
+- matching is done by player name, with team label used as a tie-breaker when the provider returns multiple candidates
+- if the provider does not return a usable photo, the UI falls back to flag or initial-based avatars automatically
+
 If you want the full local showcase dataset after that, run `npm run seed:demo`.
 
 ### In-Place Hosted Beta Cutover

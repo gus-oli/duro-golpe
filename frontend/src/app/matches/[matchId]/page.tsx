@@ -1,5 +1,6 @@
 import { MatchDetailClient } from '@/components/MatchCard/MatchDetailClient'
 import { ScoreBreakdown } from '@/components/Scoring/ScoreBreakdown'
+import { MatchLeaguePicks } from '@/components/Social/MatchLeaguePicks'
 import { PageShell, StatusPill } from '@/components/ui/Primitives'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
@@ -213,6 +214,8 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
             </p>
           </Link>
         </section>
+
+        {token && leagues.length > 0 && <MatchLeaguePicks matchId={match.id} leagues={leagues} />}
 
         {token && userId && match.status === 'FINISHED' && (
           <section aria-label="Sua pontuação">

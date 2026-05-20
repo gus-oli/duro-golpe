@@ -8,6 +8,7 @@ const predictionServiceMocks = vi.hoisted(() => ({
   updatePrediction: vi.fn(),
   getPredictionByUser: vi.fn(),
   savePredictionsBatch: vi.fn(),
+  getLeagueMatchPredictions: vi.fn(),
 }))
 
 vi.mock('../../src/predictions/service.js', () => predictionServiceMocks)
@@ -189,6 +190,59 @@ describe('Prediction endpoints (integration)', () => {
         predictedHome: 2,
         predictedAway: 1,
       })
+    })
+  })
+
+  describe('GET /api/v1/leagues/:leagueId/matches/:matchId/predictions', () => {
+    it('returns league-scoped predictions for all active members', async () => {
+      predictionServiceMocks.getLeagueMatchPredictions.mockResolvedValue([
+        {
+          userId: 'user-1',
+          displayName: 'Gus',
+          avatarUrl: null,
+          prediction: { predictedHome: 2, predictedAway: 1 },
+          submittedAt: '2026-05-20T12:00:00.000Z',
+        },
+        {
+          userId: 'user-2',
+          displayName: 'Ana',
+          avatarUrl: null,
+          prediction: null,
+          submittedAt: null,
+        },
+      ])
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/v1/leagues/league-1/matches/match-1/predictions',
+        headers: { authorization: `Bearer ${token}` },
+      })
+
+      expect(response.statusCode).toBe(200)
+      expect(predictionServiceMocks.getLeagueMatchPredictions).toHaveBeenCalledWith('user-1', 'league-1', 'match-1')
+      expect(response.json()).toMatchObject({
+        leagueId: 'league-1',
+        matchId: 'match-1',
+        predictions: [
+          expect.objectContaining({ userId: 'user-1' }),
+          expect.objectContaining({ userId: 'user-2', prediction: null }),
+        ],
+      })
+    })
+
+    it('propagates league access denial from the service', async () => {
+      predictionServiceMocks.getLeagueMatchPredictions.mockRejectedValue(
+        Object.assign(new Error('Acesso negado'), { statusCode: 403 }),
+      )
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/v1/leagues/league-9/matches/match-1/predictions',
+        headers: { authorization: `Bearer ${token}` },
+      })
+
+      expect(response.statusCode).toBe(403)
+      expect(response.json()).toMatchObject({ message: 'Acesso negado' })
     })
   })
 })

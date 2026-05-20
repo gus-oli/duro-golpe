@@ -3,6 +3,8 @@ export type PlayerSourceTier = 'OFFICIAL' | 'PRELIMINARY' | 'LIKELY'
 export interface PlayerOptionView {
   id: string
   label: string
+  teamFlagUrl?: string | null
+  playerPhotoUrl?: string | null
   teamLabel?: string | null
   sourceTier?: PlayerSourceTier | null
   isActive?: boolean

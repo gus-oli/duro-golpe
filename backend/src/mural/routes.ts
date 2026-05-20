@@ -18,6 +18,7 @@ const leaguePostBodySchema = basePostBodySchema.extend({
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   before: z.string().datetime().optional(),
+  after: z.string().datetime().optional(),
 })
 
 type LeagueParams = { Params: { leagueId: string } }
@@ -31,8 +32,8 @@ export async function muralRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: [requireAuth, validateQuery(querySchema)] },
     async (request, reply) => {
       const { leagueId } = request.params
-      const { limit, before } = request.query as z.infer<typeof querySchema>
-      const result = await getPosts(request.user.id, leagueId, limit, before)
+      const { limit, before, after } = request.query as z.infer<typeof querySchema>
+      const result = await getPosts(request.user.id, leagueId, limit, before, after)
       return reply.send({ leagueId, ...result })
     },
   )
@@ -53,8 +54,8 @@ export async function muralRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: [requireAuth, validateQuery(querySchema)] },
     async (request, reply) => {
       const { leagueId, matchId } = request.params
-      const { limit, before } = request.query as z.infer<typeof querySchema>
-      const result = await getPosts(request.user.id, leagueId, limit, before, matchId)
+      const { limit, before, after } = request.query as z.infer<typeof querySchema>
+      const result = await getPosts(request.user.id, leagueId, limit, before, after, matchId)
       return reply.send({ leagueId, matchId, ...result })
     },
   )

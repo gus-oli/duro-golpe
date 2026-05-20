@@ -131,6 +131,8 @@ export function MatchesWorkbench({
   const [feedback, setFeedback] = useState<Record<string, SaveFeedback>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [summaryMessage, setSummaryMessage] = useState<string | null>(null)
+  const [collapsedAgenda, setCollapsedAgenda] = useState<Record<string, boolean>>({})
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
 
   const openMatches = useMemo(() => matches.filter((match) => match.status === 'SCHEDULED'), [matches])
   const liveCount = useMemo(() => matches.filter((match) => match.status === 'LIVE').length, [matches])
@@ -185,6 +187,20 @@ export function MatchesWorkbench({
     setDrafts({})
     setFeedback({})
     setSummaryMessage(null)
+  }
+
+  function toggleAgendaSection(section: string) {
+    setCollapsedAgenda((current) => ({
+      ...current,
+      [section]: !current[section],
+    }))
+  }
+
+  function toggleGroupSection(section: string) {
+    setCollapsedGroups((current) => ({
+      ...current,
+      [section]: !current[section],
+    }))
   }
 
   async function savePendingPredictions() {
@@ -469,11 +485,20 @@ export function MatchesWorkbench({
                 <SectionHeader
                   eyebrow="Agenda"
                   title={date}
-                  actions={<StatusPill tone="neutral">{dayMatches.length} jogos</StatusPill>}
+                  actions={
+                    <>
+                      <StatusPill tone="neutral">{dayMatches.length} jogos</StatusPill>
+                      <button type="button" className="dg-button-secondary px-4 py-2 text-xs" onClick={() => toggleAgendaSection(date)}>
+                        {collapsedAgenda[date] ? 'Expandir' : 'Colapsar'}
+                      </button>
+                    </>
+                  }
                 />
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {dayMatches.map((match) => renderMatchCard(match, 'editable'))}
-                </div>
+                {!collapsedAgenda[date] && (
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {dayMatches.map((match) => renderMatchCard(match, 'editable'))}
+                  </div>
+                )}
               </section>
             ))}
           </div>
@@ -490,11 +515,20 @@ export function MatchesWorkbench({
                 <SectionHeader
                   eyebrow="Grupos"
                   title={stage}
-                  actions={<StatusPill tone="neutral">{stageMatches.length} jogos</StatusPill>}
+                  actions={
+                    <>
+                      <StatusPill tone="neutral">{stageMatches.length} jogos</StatusPill>
+                      <button type="button" className="dg-button-secondary px-4 py-2 text-xs" onClick={() => toggleGroupSection(stage)}>
+                        {collapsedGroups[stage] ? 'Expandir' : 'Colapsar'}
+                      </button>
+                    </>
+                  }
                 />
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {stageMatches.map((match) => renderMatchCard(match, 'editable'))}
-                </div>
+                {!collapsedGroups[stage] && (
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {stageMatches.map((match) => renderMatchCard(match, 'editable'))}
+                  </div>
+                )}
               </section>
             ))}
           </div>

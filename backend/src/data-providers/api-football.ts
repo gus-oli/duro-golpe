@@ -56,6 +56,21 @@ export interface ApiFootballFixture {
   league: { round: string }
 }
 
+export interface ApiFootballPlayerSearchResult {
+  player: {
+    id: number
+    name: string
+    photo: string
+  }
+  statistics?: Array<{
+    team?: {
+      id?: number
+      name?: string
+      logo?: string
+    }
+  }>
+}
+
 export async function getTeams(leagueId = 1, season = 2026): Promise<ApiFootballTeam[]> {
   const response = await rateLimitedFetch(
     `${BASE_URL}/teams?league=${leagueId}&season=${season}`,
@@ -80,6 +95,18 @@ export async function getFixtures(leagueId = 1, season = 2026): Promise<ApiFootb
   }
   if (Array.isArray(data.errors) ? data.errors.length > 0 : data.errors && Object.keys(data.errors).length > 0) {
     throw new Error(`API-Football fixtures error: ${JSON.stringify(data.errors)}`)
+  }
+  return data.response
+}
+
+export async function searchPlayers(name: string): Promise<ApiFootballPlayerSearchResult[]> {
+  const response = await rateLimitedFetch(`${BASE_URL}/players?search=${encodeURIComponent(name)}`)
+  const data = (await response.json()) as {
+    errors?: string[] | Record<string, string>
+    response: ApiFootballPlayerSearchResult[]
+  }
+  if (Array.isArray(data.errors) ? data.errors.length > 0 : data.errors && Object.keys(data.errors).length > 0) {
+    throw new Error(`API-Football players error: ${JSON.stringify(data.errors)}`)
   }
   return data.response
 }

@@ -4,12 +4,12 @@
 
 :root {
   --ink: #132033;
-  --muted: #66758b;
-  --surface: #f6f8fb;
-  --surface-strong: #ffffff;
-  --surface-muted: #eef3f8;
-  --line: rgba(19, 32, 51, 0.1);
-  --line-strong: rgba(19, 32, 51, 0.18);
+  --muted: #6b7788;
+  --surface: #f7f4ed;
+  --surface-strong: #fffdf8;
+  --surface-muted: #f1ece1;
+  --line: rgba(19, 32, 51, 0.08);
+  --line-strong: rgba(19, 32, 51, 0.14);
   --accent: #1681ff;
   --accent-strong: #0d5db8;
   --pitch: #18a558;
@@ -18,10 +18,10 @@
   --sky: #78b6ff;
   --coral: #ff5d63;
   --night: #132033;
-  --background: #edf2f8;
+  --background: #f2efe7;
   --focus: #1681ff;
-  --shadow-soft: 0 14px 36px rgba(19, 32, 51, 0.08);
-  --shadow-card: 0 10px 24px rgba(19, 32, 51, 0.06);
+  --shadow-soft: 0 16px 38px rgba(19, 32, 51, 0.08);
+  --shadow-card: 0 10px 24px rgba(19, 32, 51, 0.05);
   --font-display: "Bahnschrift", "Aptos Display", "Segoe UI", sans-serif;
   --font-sans: "Aptos", "Segoe UI", sans-serif;
 }
@@ -39,8 +39,9 @@ body {
   min-height: 100vh;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(120, 182, 255, 0.12), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.75), transparent 220px),
+    radial-gradient(circle at top left, rgba(120, 182, 255, 0.08), transparent 34%),
+    radial-gradient(circle at top right, rgba(24, 165, 88, 0.06), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62), transparent 240px),
     var(--background);
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
@@ -167,8 +168,8 @@ img {
 
   .dg-card-interactive:hover {
     transform: translateY(-1px);
-    border-color: rgba(22, 129, 255, 0.3);
-    box-shadow: 0 16px 30px rgba(19, 32, 51, 0.1);
+    border-color: rgba(22, 129, 255, 0.22);
+    box-shadow: 0 16px 30px rgba(19, 32, 51, 0.08);
   }
 
   .dg-button {
@@ -194,8 +195,8 @@ img {
   }
 
   .dg-button-secondary:hover {
-    background: #ffffff;
-    border-color: rgba(22, 129, 255, 0.24);
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(22, 129, 255, 0.18);
   }
 
   .dg-input {
@@ -288,7 +289,7 @@ img {
 
   .dg-panel {
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 248, 251, 0.98)),
+      linear-gradient(180deg, rgba(255, 253, 248, 0.98), rgba(247, 244, 237, 0.98)),
       var(--surface-strong);
     border: 1px solid var(--line);
     border-radius: 20px;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { BadgeGrid } from '@/components/Badges/BadgeGrid'
+import { FriendPicksModal } from '@/components/Social/FriendPicksModal'
 import { EmptyState } from '@/components/ui/Primitives'
 import { useWebSocket } from '@/hooks/useWebSocket'
 
@@ -120,64 +121,87 @@ export function RankingClient({ leagueId, initialRanking, realtimeEnabled }: Ran
   }
 
   return (
-    <ol className="grid gap-3">
-      {ranking.map((entry) => (
-        <li
-          key={entry.userId}
-          className="dg-card p-4 md:p-5"
-          data-smoke="ranking-entry"
-          data-user-id={entry.userId}
-          data-user-name={entry.displayName}
-          data-total-points={entry.totalPoints}
-        >
-          <div className="flex items-center gap-4">
-            <span
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md font-[var(--font-display)] text-xl font-black ${podiumClass(entry.position)}`}
-              aria-label={`${entry.position} lugar`}
-            >
-              {entry.position}
-            </span>
+    <section className="dg-surface overflow-hidden">
+      <div className="grid grid-cols-[64px_minmax(0,1fr)_96px] gap-3 border-b border-[var(--line)] bg-[rgba(255,255,255,0.7)] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted)] sm:grid-cols-[72px_minmax(0,1.2fr)_160px_140px]">
+        <span>Pos.</span>
+        <span>Jogador</span>
+        <span className="text-right">Pontos</span>
+        <span className="hidden text-right sm:block">Acoes</span>
+      </div>
 
-            {entry.avatarUrl ? (
-              <img
-                src={entry.avatarUrl}
-                alt={entry.displayName}
-                className="h-12 w-12 shrink-0 rounded-md object-cover"
-              />
-            ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-[rgba(12,143,79,0.13)] font-black text-[var(--pitch-dark)]">
-                {entry.displayName[0]?.toUpperCase()}
+      <ol className="divide-y divide-[var(--line)]">
+        {ranking.map((entry) => (
+          <li
+            key={entry.userId}
+            className="px-4 py-4"
+            data-smoke="ranking-entry"
+            data-user-id={entry.userId}
+            data-user-name={entry.displayName}
+            data-total-points={entry.totalPoints}
+          >
+            <div className="grid gap-3 sm:grid-cols-[72px_minmax(0,1.2fr)_160px_140px] sm:items-center">
+              <div className="flex items-center gap-3">
+                <span
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl font-[var(--font-display)] text-xl font-black ${podiumClass(entry.position)}`}
+                  aria-label={`${entry.position} lugar`}
+                >
+                  {entry.position}
+                </span>
               </div>
-            )}
 
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-base font-black text-[var(--ink)]" data-smoke="ranking-name">
-                {entry.displayName}
-              </p>
-              <p className="mt-1 text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
-                Exatos {entry.exactScoreCount} / Saldo {entry.winnerGoalDiffCount}
-              </p>
+              <div className="flex min-w-0 items-center gap-3">
+                {entry.avatarUrl ? (
+                  <img
+                    src={entry.avatarUrl}
+                    alt={entry.displayName}
+                    className="h-12 w-12 shrink-0 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[rgba(12,143,79,0.13)] font-black text-[var(--pitch-dark)]">
+                    {entry.displayName[0]?.toUpperCase()}
+                  </div>
+                )}
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-black text-[var(--ink)]" data-smoke="ranking-name">
+                    {entry.displayName}
+                  </p>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
+                    Exatos {entry.exactScoreCount} / Saldo {entry.winnerGoalDiffCount}
+                  </p>
+                  <div className="mt-2">
+                    <BadgeGrid badges={entry.badges ?? []} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-end justify-between gap-3 sm:block sm:text-right">
+                <p
+                  className="font-[var(--font-display)] text-2xl font-black text-[var(--accent-strong)]"
+                  data-smoke="ranking-points"
+                >
+                  {entry.totalPoints}
+                  <span className="ml-1 text-xs text-[var(--muted)]">pts</span>
+                </p>
+                <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">
+                  {entry.position <= 3 ? 'Podio' : `Top ${entry.position}`}
+                </p>
+              </div>
+
+              <div className="sm:text-right">
+                <FriendPicksModal
+                  leagueId={leagueId}
+                  user={{
+                    userId: entry.userId,
+                    displayName: entry.displayName,
+                    avatarUrl: entry.avatarUrl,
+                  }}
+                />
+              </div>
             </div>
-
-            <div className="shrink-0 text-right">
-              <p
-                className="font-[var(--font-display)] text-2xl font-black text-[var(--accent-strong)]"
-                data-smoke="ranking-points"
-              >
-                {entry.totalPoints}
-                <span className="ml-1 text-xs text-[var(--muted)]">pts</span>
-              </p>
-              <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">
-                {entry.position <= 3 ? 'Podio' : `Top ${entry.position}`}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-3 border-t border-[var(--line)] pt-3">
-            <BadgeGrid badges={entry.badges ?? []} />
-          </div>
-        </li>
-      ))}
-    </ol>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }

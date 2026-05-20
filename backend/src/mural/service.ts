@@ -1,4 +1,4 @@
-import { and, desc, eq, lt } from 'drizzle-orm'
+import { and, desc, eq, gt, lt } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { createClient } from 'redis'
 import { config } from '../config.js'
@@ -156,6 +156,7 @@ export async function getPosts(
   leagueId: string,
   limit = 50,
   before?: string,
+  after?: string,
   matchId?: string,
 ): Promise<{ posts: MuralPostResponse[]; hasMore: boolean }> {
   await assertMembership(userId, leagueId)
@@ -165,6 +166,10 @@ export async function getPosts(
 
   if (before) {
     conditions.push(lt(muralPosts.createdAt, new Date(before)))
+  }
+
+  if (after) {
+    conditions.push(gt(muralPosts.createdAt, new Date(after)))
   }
 
   if (matchId) {

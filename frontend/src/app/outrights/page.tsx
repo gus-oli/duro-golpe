@@ -7,6 +7,8 @@ interface OutrightOption {
   id: string
   label: string
   teamId?: string | null
+  teamFlagUrl?: string | null
+  playerPhotoUrl?: string | null
   teamLabel?: string | null
   sourceTier?: 'OFFICIAL' | 'PRELIMINARY' | 'LIKELY' | null
   isActive?: boolean
@@ -29,6 +31,11 @@ interface OutrightMarket {
   userSelections: string[]
 }
 
+interface League {
+  id: string
+  name: string
+}
+
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 
 async function getOutrights(token: string): Promise<OutrightMarket[]> {
@@ -45,13 +52,28 @@ async function getOutrights(token: string): Promise<OutrightMarket[]> {
   }
 }
 
+async function getMyLeagues(token: string): Promise<League[]> {
+  try {
+    const res = await fetch(`${API}/api/v1/leagues`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) return []
+    const data = (await res.json()) as { leagues: League[] }
+    return data.leagues
+  } catch {
+    return []
+  }
+}
+
 export default async function OutrightsPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value ?? ''
-  const markets = await getOutrights(token)
+  const [markets, leagues] = await Promise.all([getOutrights(token), token ? getMyLeagues(token) : Promise.resolve([])])
 
   const hasOpenMarkets = markets.some((market) => market.status === 'OPEN')
   const totalPoints = markets.reduce((sum, market) => sum + market.pointValue, 0)
+  const primaryLeagueId = leagues[0]?.id ?? null
 
   return (
     <PageShell>
@@ -110,7 +132,7 @@ export default async function OutrightsPage() {
         ) : (
           <div className="grid gap-5 lg:grid-cols-2">
             {markets.map((market) => (
-              <OutrightCard key={market.id} {...market} />
+              <OutrightCard key={market.id} {...market} leagueId={primaryLeagueId} />
             ))}
           </div>
         )}

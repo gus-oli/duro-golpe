@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { requireAuth } from '../auth/middleware.js'
 import { validateBody } from '../middleware/validate.js'
-import { getOutrights, createOutrightPrediction } from './service.js'
+import { getOutrights, createOutrightPrediction, getLeagueOutrightPredictions } from './service.js'
 
 const outrightPredictionBody = z
   .union([
@@ -27,6 +27,19 @@ export async function outrightRoutes(app: FastifyInstance): Promise<void> {
       const { optionIds } = request.body as { optionIds: string[] }
       const prediction = await createOutrightPrediction(request.user.id, marketId, optionIds)
       return reply.status(201).send({ marketId, ...prediction })
+    },
+  )
+
+  app.get<{ Params: { leagueId: string; marketId: string } }>(
+    '/api/v1/leagues/:leagueId/outrights/:marketId/predictions',
+    { preHandler: requireAuth },
+    async (request, reply) => {
+      const predictions = await getLeagueOutrightPredictions(request.user.id, request.params.leagueId, request.params.marketId)
+      return reply.send({
+        leagueId: request.params.leagueId,
+        marketId: request.params.marketId,
+        predictions,
+      })
     },
   )
 }

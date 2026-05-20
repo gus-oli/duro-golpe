@@ -28,4 +28,12 @@ describe('player outright catalog', () => {
       expect(options.some((option) => option.sourceTier === 'LIKELY')).toBe(true)
     }
   })
+
+  it('keeps Lionel Messi searchable in the major individual markets', () => {
+    const topScorerOptions = PLAYER_MARKET_OPTIONS[OUTRIGHT_MARKET_CODES.TOP_SCORER] ?? []
+    const goldenBallOptions = PLAYER_MARKET_OPTIONS[OUTRIGHT_MARKET_CODES.GOLDEN_BALL] ?? []
+
+    expect(topScorerOptions.some((option) => option.label.startsWith('Lionel Messi - Argentina'))).toBe(true)
+    expect(goldenBallOptions.some((option) => option.label.startsWith('Lionel Messi - Argentina'))).toBe(true)
+  })
 })

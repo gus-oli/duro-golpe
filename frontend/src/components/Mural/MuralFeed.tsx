@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MuralInput } from './MuralInput'
 import { MuralPost } from './MuralPost'
 import type { MuralPostItem } from './types'
+import { mergeIncomingPosts, mergeSinglePost, sortChronologically } from './feed-state'
 
 interface MuralFeedProps {
   leagueId: string
@@ -12,61 +13,55 @@ interface MuralFeedProps {
   realtimeEnabled: boolean
 }
 
-function mergePost(posts: MuralPostItem[], post: MuralPostItem) {
-  return [post, ...posts.filter((existing) => existing.id !== post.id)]
-}
-
-function mergePosts(posts: MuralPostItem[], incoming: MuralPostItem[]) {
-  const merged = [...posts]
-  const freshIds: string[] = []
-
-  for (const post of incoming) {
-    const existing = merged.findIndex((candidate) => candidate.id === post.id)
-    if (existing >= 0) {
-      merged[existing] = post
-      continue
-    }
-
-    merged.unshift(post)
-    freshIds.push(post.id)
-  }
-
-  merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  return { posts: merged, freshIds }
+function isNearBottom(element: HTMLElement | null) {
+  if (!element) return true
+  return element.scrollHeight - element.scrollTop - element.clientHeight < 48
 }
 
 export function MuralFeed({ leagueId, initialPosts, currentUserId, realtimeEnabled }: MuralFeedProps) {
-  const [posts, setPosts] = useState<MuralPostItem[]>(initialPosts)
+  const [posts, setPosts] = useState<MuralPostItem[]>(sortChronologically(initialPosts))
   const [freshIds, setFreshIds] = useState<string[]>([])
   const [newPostsCount, setNewPostsCount] = useState(0)
   const listRef = useRef<HTMLUListElement | null>(null)
   const boostPollingUntil = useRef(0)
-  const lastKnownId = useMemo(() => posts[0]?.id ?? null, [posts])
+  const newestTimestampRef = useRef(posts.at(-1)?.createdAt ?? null)
+  const shouldStickToBottomRef = useRef(true)
+  const justAppendedRef = useRef(false)
+  const fastPollingUntilRef = useRef(0)
 
   useEffect(() => {
     let cancelled = false
     let timeoutId: number | null = null
+    let idleSince = Date.now()
 
     async function refreshFeed() {
       try {
-        const res = await fetch(`/api/leagues/${leagueId}/mural?limit=50`, { cache: 'no-store' })
+        const params = new URLSearchParams({ limit: '50' })
+        if (newestTimestampRef.current) {
+          params.set('after', newestTimestampRef.current)
+        }
+
+        const res = await fetch(`/api/leagues/${leagueId}/mural?${params.toString()}`, { cache: 'no-store' })
         if (!res.ok || cancelled) return
 
         const result = (await res.json()) as { posts: MuralPostItem[] }
         if (cancelled) return
 
         setPosts((prev) => {
-          const previousTopId = prev[0]?.id ?? null
-          const nearTop = listRef.current ? listRef.current.scrollTop < 24 : true
-          const merged = mergePosts(prev, result.posts)
+          const nearBottom = isNearBottom(listRef.current)
+          const merged = mergeIncomingPosts(prev, result.posts)
 
           if (merged.freshIds.length > 0) {
             setFreshIds((existing) => Array.from(new Set([...existing, ...merged.freshIds])))
 
-            const containsBrandNewTop = previousTopId && merged.freshIds.some((id) => id !== previousTopId)
-            if (!nearTop && containsBrandNewTop) {
+            if (!nearBottom) {
               setNewPostsCount((count) => count + merged.freshIds.length)
+            } else {
+              shouldStickToBottomRef.current = true
             }
+
+            justAppendedRef.current = true
+            idleSince = Date.now()
           }
 
           return merged.posts
@@ -77,11 +72,15 @@ export function MuralFeed({ leagueId, initialPosts, currentUserId, realtimeEnabl
     }
 
     function currentDelay() {
-      return Date.now() < boostPollingUntil.current ? 5000 : realtimeEnabled ? 10000 : 15000
+      if (document.visibilityState !== 'visible') return 30000
+      if (Date.now() < boostPollingUntil.current) return 2000
+      if (Date.now() < fastPollingUntilRef.current) return 3000
+      if (Date.now() - idleSince > 45000) return realtimeEnabled ? 10000 : 12000
+      return realtimeEnabled ? 5000 : 8000
     }
 
     function scheduleNext() {
-      if (cancelled || document.visibilityState !== 'visible') return
+      if (cancelled) return
       timeoutId = window.setTimeout(async () => {
         timeoutId = null
         await refreshFeed()
@@ -91,6 +90,7 @@ export function MuralFeed({ leagueId, initialPosts, currentUserId, realtimeEnabl
 
     function handleFocus() {
       if (document.visibilityState !== 'visible') return
+       fastPollingUntilRef.current = Date.now() + 20_000
       void refreshFeed()
       if (timeoutId == null) {
         scheduleNext()
@@ -118,31 +118,59 @@ export function MuralFeed({ leagueId, initialPosts, currentUserId, realtimeEnabl
     return () => window.clearTimeout(timer)
   }, [freshIds])
 
+  useEffect(() => {
+    newestTimestampRef.current = posts.at(-1)?.createdAt ?? null
+
+    if (!justAppendedRef.current) return
+
+    if (shouldStickToBottomRef.current) {
+      listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
+      setNewPostsCount(0)
+    }
+
+    justAppendedRef.current = false
+  }, [posts])
+
   function handleOwnPost(post: MuralPostItem) {
-    setPosts((prev) => mergePost(prev, post))
+    setPosts((prev) => mergeSinglePost(prev, post))
     setFreshIds((existing) => Array.from(new Set([...existing, post.id])))
     boostPollingUntil.current = Date.now() + 30_000
+    shouldStickToBottomRef.current = true
+    justAppendedRef.current = true
   }
 
   function handleJumpToLatest() {
-    listRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    shouldStickToBottomRef.current = true
+    listRef.current?.scrollTo({ top: listRef.current?.scrollHeight ?? 0, behavior: 'smooth' })
     setNewPostsCount(0)
+  }
+
+  function handleScroll() {
+    shouldStickToBottomRef.current = isNearBottom(listRef.current)
+    if (shouldStickToBottomRef.current) {
+      setNewPostsCount(0)
+    }
   }
 
   return (
     <section aria-label="Mural da liga" className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-[var(--line)] px-4 py-3 text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
-        <span>{lastKnownId ? 'Atualizando resenha da liga' : 'Mural da liga'}</span>
+        <span>Mural da liga</span>
         {newPostsCount > 0 ? (
           <button type="button" onClick={handleJumpToLatest} className="text-[var(--accent-strong)]">
             {newPostsCount} nova{newPostsCount > 1 ? 's' : ''} mensagem{newPostsCount > 1 ? 'ens' : ''}
           </button>
         ) : (
-          <span>{realtimeEnabled ? 'polling a cada 10s' : 'polling a cada 15s'}</span>
+          <span>Resenha rolando</span>
         )}
       </div>
 
-      <ul ref={listRef} className="flex max-h-[60vh] flex-1 flex-col gap-3 overflow-y-auto p-4" aria-live="polite">
+      <ul
+        ref={listRef}
+        onScroll={handleScroll}
+        className="flex max-h-[60vh] flex-1 flex-col gap-3 overflow-y-auto p-4"
+        aria-live="polite"
+      >
         {posts.length === 0 && (
           <li className="py-8 text-center text-sm text-[var(--muted)]">
             Nenhuma mensagem ainda. A primeira resenha da liga pode ser sua.

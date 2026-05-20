@@ -80,6 +80,6 @@ describe('League social feed security (integration)', () => {
 
     expect(response.statusCode).toBe(403)
     expect(response.json()).toMatchObject({ message: 'Acesso negado' })
-    expect(muralServiceMocks.getPosts).toHaveBeenCalledWith('user-1', 'league-2', 50, undefined)
+    expect(muralServiceMocks.getPosts).toHaveBeenCalledWith('user-1', 'league-2', 50, undefined, undefined)
   })
 })

@@ -2,7 +2,13 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { requireAuth } from '../auth/middleware.js'
 import { validateBody } from '../middleware/validate.js'
-import { createPrediction, updatePrediction, getPredictionByUser, savePredictionsBatch } from './service.js'
+import {
+  createPrediction,
+  updatePrediction,
+  getPredictionByUser,
+  savePredictionsBatch,
+  getLeagueMatchPredictions,
+} from './service.js'
 
 const predictionSchema = z.object({
   predictedHome: z.number().int().min(0).max(99),
@@ -64,6 +70,19 @@ export async function predictionRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(404).send({ statusCode: 404, message: 'Nenhum palpite enviado' })
       }
       return reply.send(prediction)
+    },
+  )
+
+  app.get<{ Params: { leagueId: string; matchId: string } }>(
+    '/api/v1/leagues/:leagueId/matches/:matchId/predictions',
+    { preHandler: requireAuth },
+    async (request, reply) => {
+      const predictions = await getLeagueMatchPredictions(request.user.id, request.params.leagueId, request.params.matchId)
+      return reply.send({
+        leagueId: request.params.leagueId,
+        matchId: request.params.matchId,
+        predictions,
+      })
     },
   )
 }
