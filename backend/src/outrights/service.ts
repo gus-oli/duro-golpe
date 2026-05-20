@@ -1,6 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import {
+  type OutrightOption,
   outrightMarketResults,
   outrightMarkets,
   outrightOptions,
@@ -11,6 +12,24 @@ import { normalizeOutrightOptionIds, validateSelectionCardinality } from './outr
 
 export { validateFinalistsPrediction } from './outright-utils.js'
 
+function sortMarketOptions(options: OutrightOption[]): OutrightOption[] {
+  return [...options].sort((left, right) => {
+    if (left.isActive !== right.isActive) {
+      return left.isActive ? -1 : 1
+    }
+
+    if (left.isFeatured !== right.isFeatured) {
+      return left.isFeatured ? -1 : 1
+    }
+
+    if (left.sortOrder !== right.sortOrder) {
+      return left.sortOrder - right.sortOrder
+    }
+
+    return left.label.localeCompare(right.label)
+  })
+}
+
 export async function getOutrights(userId: string): Promise<unknown[]> {
   const [markets, options, userPredictions] = await Promise.all([
     db.select().from(outrightMarkets).orderBy(outrightMarkets.sortOrder),
@@ -19,7 +38,7 @@ export async function getOutrights(userId: string): Promise<unknown[]> {
   ])
 
   return markets.map((market) => {
-    const marketOptions = options.filter((option) => option.marketId === market.id)
+    const marketOptions = sortMarketOptions(options.filter((option) => option.marketId === market.id))
     const selectedOptionIds = userPredictions
       .filter((prediction) => prediction.marketId === market.id)
       .map((prediction) => prediction.optionId)

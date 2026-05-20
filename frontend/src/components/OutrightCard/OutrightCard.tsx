@@ -1,11 +1,20 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useDeferredValue, useState, useTransition } from 'react'
 import { StatusPill } from '@/components/ui/Primitives'
+import {
+  getPlayerSourceTierLabel,
+  getVisiblePlayerOptions,
+  type PlayerSourceTier,
+} from './player-option-state'
 
 interface OutrightOption {
   id: string
   label: string
+  teamLabel?: string | null
+  sourceTier?: PlayerSourceTier | null
+  isActive?: boolean
+  isFeatured?: boolean
 }
 
 interface OutrightCardProps {
@@ -47,9 +56,13 @@ export function OutrightCard({
   const [hasPersistedSelection, setHasPersistedSelection] = useState(userSelections.length > 0)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [playerQuery, setPlayerQuery] = useState('')
   const isLocked = status !== 'OPEN'
   const canSubmit = !isLocked && selected.length >= selectionMin && selected.length <= selectionMax && !isPending
   const meta = statusTone(status)
+  const deferredPlayerQuery = useDeferredValue(playerQuery)
+  const playerView =
+    optionType === 'PLAYER' ? getVisiblePlayerOptions(options, selected, deferredPlayerQuery) : null
 
   function toggleOption(optionId: string) {
     if (isLocked || isPending) return
@@ -59,6 +72,15 @@ export function OutrightCard({
     setSelected((current) => {
       if (selectionMax === 1) {
         return current[0] === optionId ? [] : [optionId]
+      }
+
+      const targetOption = options.find((option) => option.id === optionId)
+      if (!targetOption) {
+        return current
+      }
+
+      if (targetOption.isActive === false) {
+        return current.filter((selectedOptionId) => selectedOptionId !== optionId)
       }
 
       if (current.includes(optionId)) {
@@ -130,9 +152,39 @@ export function OutrightCard({
         {selectionMax === 1 ? 'Selecione 1 opcao.' : `Selecione exatamente ${selectionMax} opcoes.`}
       </div>
 
-      <ul className="grid gap-2 p-4 sm:grid-cols-2 sm:p-5" role="listbox" aria-label={`Opcoes para ${name}`}>
-        {options.map((option) => {
+      {optionType === 'PLAYER' && (
+        <div className="px-4 pt-4 sm:px-5">
+          <label className="block text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]" htmlFor={`player-search-${id}`}>
+            Buscar jogador
+          </label>
+          <input
+            id={`player-search-${id}`}
+            type="search"
+            value={playerQuery}
+            onChange={(event) => setPlayerQuery(event.target.value)}
+            placeholder="Digite nome ou selecao"
+            className="mt-2 min-h-touch w-full rounded-md border border-[var(--line)] bg-white/80 px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(22,129,255,0.12)]"
+          />
+          {!playerQuery && (
+            <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
+              Mostrando 5 destaques. Use a busca para abrir o catalogo completo.
+            </p>
+          )}
+          {playerView?.capped && (
+            <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
+              Mostrando {playerView.options.filter((option) => option.isActive !== false).length} de {playerView.totalMatches} resultados. Refine a busca para afunilar.
+            </p>
+          )}
+        </div>
+      )}
+
+      {optionType === 'PLAYER' && playerView && playerView.options.length === 0 ? (
+        <div className="px-4 py-5 text-sm text-[var(--muted)] sm:px-5">Nenhum jogador encontrado para essa busca.</div>
+      ) : (
+        <ul className="grid gap-2 p-4 sm:grid-cols-2 sm:p-5" role="listbox" aria-label={`Opcoes para ${name}`}>
+          {(playerView?.options ?? options).map((option) => {
           const isSelected = selected.includes(option.id)
+          const isInactive = option.isActive === false
           const selectionLimitReached = !isSelected && selected.length >= selectionMax
 
           return (
@@ -140,23 +192,31 @@ export function OutrightCard({
               <button
                 type="button"
                 onClick={() => toggleOption(option.id)}
-                disabled={isLocked || isPending || selectionLimitReached}
+                disabled={isLocked || isPending || selectionLimitReached || (isInactive && !isSelected)}
                 data-option-id={option.id}
                 aria-pressed={isSelected}
                 className={`min-h-touch w-full rounded-md border px-4 py-3 text-left text-sm font-bold transition ${
                   isSelected
                     ? 'border-[var(--accent-strong)] bg-[var(--accent-strong)] text-white shadow-md'
-                    : isLocked || selectionLimitReached
+                    : isLocked || selectionLimitReached || isInactive
                       ? 'border-[var(--line)] bg-[rgba(18,33,58,0.04)] text-[var(--muted)]'
                       : 'border-[var(--line)] bg-white/70 text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[rgba(22,129,255,0.08)]'
                 }`}
               >
-                {option.label}
+                <span className="block">{option.label}</span>
+                {(option.teamLabel || option.sourceTier || isInactive) && (
+                  <span className={`mt-2 flex flex-wrap gap-2 text-xs font-bold ${isSelected ? 'text-white/88' : 'text-[var(--muted)]'}`}>
+                    {option.teamLabel && <span>{option.teamLabel}</span>}
+                    {option.sourceTier && <span>{getPlayerSourceTierLabel(option.sourceTier)}</span>}
+                    {isInactive && <span>Fora da lista ativa</span>}
+                  </span>
+                )}
               </button>
             </li>
           )
-        })}
-      </ul>
+          })}
+        </ul>
+      )}
 
       <div className="px-4 pb-5 sm:px-5">
         {error && (

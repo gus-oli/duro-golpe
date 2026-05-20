@@ -7,6 +7,11 @@ interface OutrightOption {
   id: string
   label: string
   teamId?: string | null
+  teamLabel?: string | null
+  sourceTier?: 'OFFICIAL' | 'PRELIMINARY' | 'LIKELY' | null
+  isActive?: boolean
+  isFeatured?: boolean
+  sortOrder?: number
 }
 
 interface OutrightMarket {
