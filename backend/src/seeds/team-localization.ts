@@ -8,6 +8,8 @@ const TEAM_NAME_BY_FIFA_CODE: Record<string, string> = {
   COL: 'Colombia',
   CRC: 'Costa Rica',
   CRO: 'Croacia',
+  CUR: 'Curacao',
+  CUW: 'Curacao',
   DEN: 'Dinamarca',
   ECU: 'Equador',
   EGY: 'Egito',

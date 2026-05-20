@@ -48,6 +48,47 @@ export async function upsertTeams(teamInputs: SeedTeamInput[]): Promise<Record<s
       apiFootballId: team.apiFootballId ?? null,
     }
 
+    if (team.apiFootballId) {
+      const [existingByApi] = await db
+        .select({
+          id: teams.id,
+          fifaCode: teams.fifaCode,
+        })
+        .from(teams)
+        .where(eq(teams.apiFootballId, team.apiFootballId))
+        .limit(1)
+
+      if (existingByApi) {
+        const [existingByCode] = await db
+          .select({ id: teams.id })
+          .from(teams)
+          .where(eq(teams.fifaCode, team.fifaCode))
+          .limit(1)
+
+        const nextFifaCode =
+          existingByCode && existingByCode.id !== existingByApi.id ? existingByApi.fifaCode : team.fifaCode
+
+        const [row] = await db
+          .update(teams)
+          .set({
+            name: team.name,
+            fifaCode: nextFifaCode,
+            flagUrl: team.flagUrl,
+            groupLetter: team.groupLetter ?? null,
+            apiFootballId: team.apiFootballId,
+          })
+          .where(eq(teams.id, existingByApi.id))
+          .returning({ id: teams.id })
+
+        if (!row?.id) {
+          throw new Error(`Unable to update team ${team.apiFootballId}`)
+        }
+
+        idsByKey[team.key] = row.id
+        continue
+      }
+    }
+
     const [row] = await db
       .insert(teams)
       .values(values)

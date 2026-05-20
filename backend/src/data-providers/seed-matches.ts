@@ -4,6 +4,7 @@ import { validateTournamentCounts } from '../tournament/constants.js'
 import type { SeedTeamInput } from '../seeds/support.js'
 import { seedCatalogs, upsertMatches, upsertTeams } from '../seeds/support.js'
 import { localizeTeamName } from '../seeds/team-localization.js'
+import { syncOutrightLockState } from '../outrights/lock-scheduler.js'
 
 async function seedTeams(): Promise<Map<number, string>> {
   const providerTeams = await getWorldCupTeams()
@@ -130,4 +131,5 @@ async function seedMatches(teamIdMap: Map<number, string>): Promise<void> {
 const teamIdMap = await seedTeams()
 await seedMatches(teamIdMap)
 await seedCatalogs()
+await syncOutrightLockState()
 process.exit(0)
