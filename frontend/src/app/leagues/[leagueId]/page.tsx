@@ -146,7 +146,7 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
               </div>
               <h1 className="mt-4 text-4xl font-black text-[var(--ink)] sm:text-5xl">{league.name}</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-                Ranking vivo, pontuacao total e conquistas da rodada no mesmo painel.
+                Ranking vivo, pontuação total e conquistas da rodada no mesmo painel.
               </p>
             </div>
             <div className="dg-subtle-card p-4">
@@ -193,7 +193,7 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
         )}
 
         {myTotal && token && (
-          <section aria-label="Minha pontuacao" className="space-y-4">
+          <section aria-label="Minha pontuação" className="space-y-4">
             <SectionHeader eyebrow="Meu desempenho" title="Minha Pontuacao" />
             <TotalScore
               initialTotalPoints={myTotal.totalPoints}

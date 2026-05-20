@@ -130,12 +130,12 @@ export async function createPost(
     .returning({ id: muralPosts.id })
 
   if (!post?.id) {
-    throw new Error('Nao foi possivel criar o post do mural.')
+    throw new Error('Não foi possível criar o post do mural.')
   }
 
   const serializedPost = await getSerializedPostById(post.id)
   if (!serializedPost) {
-    throw new Error('Nao foi possivel carregar o post do mural recem-criado.')
+    throw new Error('Não foi possível carregar o post do mural recém-criado.')
   }
 
   const publisher = await getPublisher()

@@ -3,6 +3,7 @@ import { outrightMarkets, outrightOptions, teams } from '../db/schema/index.js'
 import { and, eq, notInArray } from 'drizzle-orm'
 import { OUTRIGHT_MARKET_CATALOG } from './catalog.js'
 import { PLAYER_MARKET_OPTIONS } from './options-catalog.js'
+import { filterSelectableOutrightTeams } from './team-options.js'
 
 export async function seedOutrightMarkets(): Promise<void> {
   for (const [index, market] of OUTRIGHT_MARKET_CATALOG.entries()) {
@@ -41,11 +42,12 @@ export async function seedOutrightOptions(): Promise<void> {
     db.select().from(outrightMarkets),
     db.select().from(teams).orderBy(teams.name),
   ])
+  const selectableTeams = filterSelectableOutrightTeams(teamRows)
 
   for (const market of marketRows) {
     const expectedOptions =
       market.optionType === 'TEAM'
-        ? teamRows.map((team) => ({
+        ? selectableTeams.map((team) => ({
             label: team.name,
             teamId: team.id,
           }))

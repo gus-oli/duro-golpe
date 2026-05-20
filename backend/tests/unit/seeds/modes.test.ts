@@ -7,6 +7,7 @@ describe('seed mode datasets', () => {
     const smokeMatches = buildSmokeMatches(new Date('2026-05-01T12:00:00.000Z'))
 
     expect(SMOKE_TEAMS).toHaveLength(2)
+    expect(SMOKE_TEAMS.map((team) => team.fifaCode)).toEqual(['XBR', 'XFR'])
     expect(smokeMatches).toHaveLength(1)
     expect(smokeMatches[0]?.stage).toBe('Smoke Test')
   })

@@ -41,8 +41,8 @@ export default async function MatchesPage() {
     <PageShell>
       {matches.length === 0 ? (
         <EmptyState
-          title="Nenhuma partida disponivel"
-          description="Quando o calendario estiver carregado, os jogos aparecem aqui com status, contexto e area de trabalho."
+          title="Nenhuma partida disponível"
+          description="Quando o calendário estiver carregado, os jogos aparecem aqui com status, contexto e área de trabalho."
           action={
             <Link href="/" className="dg-button-secondary">
               Voltar para home

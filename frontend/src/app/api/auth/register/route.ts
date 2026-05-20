@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
   const data = (await res.json()) as { token?: string; message?: string }
   if (!res.ok) {
-    return NextResponse.json({ error: data.message ?? 'Nao foi possivel criar a conta' }, { status: res.status })
+    return NextResponse.json({ error: data.message ?? 'Não foi possível criar a conta' }, { status: res.status })
   }
 
   const response = NextResponse.json({ ok: true })

@@ -39,7 +39,7 @@ export default function ResetPasswordPage() {
       const data = (await res.json()) as { message?: string }
 
       if (!res.ok) {
-        setError(data.message ?? 'Nao foi possivel redefinir a senha.')
+        setError(data.message ?? 'Não foi possível redefinir a senha.')
         return
       }
 
@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
       setPassword('')
       setConfirmPassword('')
     } catch {
-      setError('Erro de conexao')
+      setError('Erro de conexão')
     } finally {
       setIsSubmitting(false)
     }
@@ -94,7 +94,7 @@ export default function ResetPasswordPage() {
           {error && <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700">{error}</p>}
           {success && (
             <p role="status" className="rounded-md border border-[rgba(12,143,79,0.22)] bg-[rgba(12,143,79,0.1)] px-3 py-2 text-sm font-bold text-[var(--pitch-dark)]">
-              Senha redefinida. Agora voce ja pode entrar.
+              Senha redefinida. Agora você já pode entrar.
             </p>
           )}
 

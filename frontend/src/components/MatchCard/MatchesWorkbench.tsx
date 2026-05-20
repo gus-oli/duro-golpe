@@ -228,11 +228,10 @@ export function MatchesWorkbench({
 
       const data = (await res.json()) as BatchResponse | { message?: string }
       if (!res.ok) {
-        throw new Error((data as { message?: string }).message ?? 'Nao foi possivel salvar os palpites.')
+        throw new Error((data as { message?: string }).message ?? 'Não foi possível salvar os palpites.')
       }
 
       const result = data as BatchResponse
-      const failedIds = new Set(result.failed.map((item) => item.matchId))
       const savedIds = new Set(result.saved.map((item) => item.matchId))
 
       if (result.saved.length > 0) {
@@ -276,7 +275,7 @@ export function MatchesWorkbench({
           : `${result.saved.length} palpites salvos com sucesso.`,
       )
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Nao foi possivel salvar os palpites.'
+      const message = error instanceof Error ? error.message : 'Não foi possível salvar os palpites.'
       setSummaryMessage(message)
       setFeedback((current) => {
         const next = { ...current }
@@ -462,7 +461,7 @@ export function MatchesWorkbench({
 
       {tab === 'agenda' && (
         agendaSections.length === 0 ? (
-          <EmptyState title="Nenhuma partida disponivel" description="Quando o calendario estiver carregado, os jogos aparecem aqui." />
+          <EmptyState title="Nenhuma partida disponível" description="Quando o calendário estiver carregado, os jogos aparecem aqui." />
         ) : (
           <div className="space-y-7">
             {agendaSections.map(([date, dayMatches]) => (
@@ -483,7 +482,7 @@ export function MatchesWorkbench({
 
       {tab === 'groups' && (
         groupSections.length === 0 ? (
-          <EmptyState title="Fase de grupos indisponivel" description="Os jogos de grupo aparecem aqui quando o calendario tiver fixtures de grupos." />
+          <EmptyState title="Fase de grupos indisponível" description="Os jogos de grupo aparecem aqui quando o calendário tiver fixtures de grupos." />
         ) : (
           <div className="space-y-7">
             {groupSections.map(([stage, stageMatches]) => (

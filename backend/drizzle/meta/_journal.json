@@ -22,6 +22,13 @@
       "when": 1778861400000,
       "tag": "0002_league_social_feed_beta_readiness",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779206400000,
+      "tag": "0003_free_beta_hosting_and_recovery",
+      "breakpoints": true
     }
   ]
 }

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
   if (!token) {
-    return NextResponse.json({ message: 'Nao autenticado' }, { status: 401 })
+    return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
   }
 
   const { userId } = await params

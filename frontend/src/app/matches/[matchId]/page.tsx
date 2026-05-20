@@ -215,7 +215,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
         </section>
 
         {token && userId && match.status === 'FINISHED' && (
-          <section aria-label="Sua pontuacao">
+          <section aria-label="Sua pontuação">
             <ScoreBreakdown userId={userId} matchId={match.id} />
           </section>
         )}

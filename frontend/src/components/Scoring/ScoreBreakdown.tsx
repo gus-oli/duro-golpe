@@ -47,11 +47,11 @@ export function ScoreBreakdown({ userId, matchId }: ScoreBreakdownProps) {
   }, [userId, matchId])
 
   if (loading) {
-    return <p className="py-3 text-center text-sm font-medium text-[var(--muted)]">Carregando pontuacao...</p>
+    return <p className="py-3 text-center text-sm font-medium text-[var(--muted)]">Carregando pontuação...</p>
   }
 
   if (!score) {
-    return <p className="py-3 text-center text-sm font-medium text-[var(--muted)]">Pontuacao indisponivel</p>
+    return <p className="py-3 text-center text-sm font-medium text-[var(--muted)]">Pontuação indisponível</p>
   }
 
   const colorClass = TIER_COLORS[score.tier] ?? 'bg-white text-[var(--muted)] border-[var(--line)]'

@@ -31,13 +31,13 @@ export async function sendPasswordResetEmail(input: PasswordResetEmailInput): Pr
       to: [{ email: input.to, name: input.displayName }],
       subject: 'Recuperar senha do Duro Golpe',
       htmlContent: `
-        <p>Ola, ${escapeHtml(input.displayName)}.</p>
+        <p>Olá, ${escapeHtml(input.displayName)}.</p>
         <p>Recebemos um pedido para redefinir sua senha no Duro Golpe.</p>
         <p><a href="${escapeAttribute(input.resetUrl)}">Clique aqui para criar uma nova senha</a></p>
         <p>Esse link expira em ${config.PASSWORD_RESET_TOKEN_TTL_MINUTES} minutos.</p>
-        <p>Se voce nao pediu essa alteracao, pode ignorar este email.</p>
+        <p>Se você não pediu essa alteração, pode ignorar este e-mail.</p>
       `,
-      textContent: `Ola, ${input.displayName}.\n\nRecebemos um pedido para redefinir sua senha no Duro Golpe.\n\nAbra este link para criar uma nova senha:\n${input.resetUrl}\n\nEsse link expira em ${config.PASSWORD_RESET_TOKEN_TTL_MINUTES} minutos.\n\nSe voce nao pediu essa alteracao, pode ignorar este email.`,
+      textContent: `Olá, ${input.displayName}.\n\nRecebemos um pedido para redefinir sua senha no Duro Golpe.\n\nAbra este link para criar uma nova senha:\n${input.resetUrl}\n\nEsse link expira em ${config.PASSWORD_RESET_TOKEN_TTL_MINUTES} minutos.\n\nSe você não pediu essa alteração, pode ignorar este e-mail.`,
     }),
   })
 

@@ -27,7 +27,7 @@ export function PredictionInput({
     e.preventDefault()
     if (locked || home === '' || away === '') return
     if (!onSubmit) {
-      setError('Envio indisponivel no momento')
+      setError('Envio indisponível no momento')
       return
     }
 

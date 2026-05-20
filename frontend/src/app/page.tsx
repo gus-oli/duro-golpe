@@ -178,7 +178,7 @@ async function AuthenticatedHome({ token }: { token: string }) {
           </div>
 
           <div className="dg-surface p-5 sm:p-6">
-            <SectionHeader eyebrow="Atalhos" title="Nao deixe o produto morrer na agenda" />
+            <SectionHeader eyebrow="Atalhos" title="Não deixe o produto morrer na agenda" />
             <div className="mt-4 grid gap-3">
               <Link href="/leagues" className="dg-subtle-card block p-4 text-sm font-bold text-[var(--ink)]">
                 {leagues[0] ? `Voltar para ${leagues[0].name}` : 'Criar ou entrar em uma liga'}
@@ -187,7 +187,7 @@ async function AuthenticatedHome({ token }: { token: string }) {
                 Revisar especiais antes do lock
               </Link>
               <Link href="/profile" className="dg-subtle-card block p-4 text-sm font-bold text-[var(--ink)]">
-                Abrir conta e resumo de pontuacao
+                Abrir conta e resumo de pontuação
               </Link>
             </div>
           </div>
@@ -242,7 +242,7 @@ function PublicHome() {
           {[
             ['Partidas e placares', 'Agenda rapida para abrir jogo, bater o olho e mandar o placar.'],
             ['Ligas com ranking vivo', 'Disputa privada com pontos, badges e a tabela sempre a vista.'],
-            ['Especiais que pesam', 'Campeao, finalistas e mercados longos para mexer na classificacao.'],
+            ['Especiais que pesam', 'Campeão, finalistas e mercados longos para mexer na classificação.'],
           ].map(([title, description]) => (
             <div key={title} className="dg-card p-5">
               <p className="dg-eyebrow">Duro Golpe</p>

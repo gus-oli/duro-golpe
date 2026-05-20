@@ -8,7 +8,7 @@ type Params = { params: Promise<{ leagueId: string; matchId: string }> }
 export async function POST(req: NextRequest, { params }: Params) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
-  if (!token) return NextResponse.json({ message: 'Nao autenticado' }, { status: 401 })
+  if (!token) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
 
   const { leagueId, matchId } = await params
   const body = (await req.json()) as { content?: string }

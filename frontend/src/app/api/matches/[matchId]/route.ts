@@ -10,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mat
   })
 
   if (!res.ok) {
-    return NextResponse.json({ message: 'Nao foi possivel carregar a partida.' }, { status: res.status })
+    return NextResponse.json({ message: 'Não foi possível carregar a partida.' }, { status: res.status })
   }
 
   const data = (await res.json()) as unknown

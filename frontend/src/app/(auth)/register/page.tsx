@@ -30,7 +30,7 @@ export default function RegisterPage() {
 
       window.location.assign('/matches')
     } catch {
-      setError('Erro de conexao')
+      setError('Erro de conexão')
     } finally {
       setIsSubmitting(false)
     }
@@ -95,7 +95,7 @@ export default function RegisterPage() {
           </button>
 
           <p className="text-center text-sm font-medium text-[var(--muted)]">
-            Ja tem conta?{' '}
+            Já tem conta?{' '}
             <Link href="/login" className="font-black text-[var(--pitch-dark)] hover:underline">
               Entrar
             </Link>

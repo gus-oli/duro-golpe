@@ -3,6 +3,13 @@ import { db } from '../db/index.js'
 import { outrightMarkets, outrightOptions } from '../db/schema/index.js'
 import { recordOutrightMarketResult } from './service.js'
 
+function normalizeForComparison(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+}
+
 function normalizeCliValues(values: string[]): string[] {
   return values
     .map((value) => value.trim())
@@ -40,7 +47,8 @@ const matchingOptionIds = optionValues.map((value) => {
     return byId.id
   }
 
-  const byLabel = options.find((option) => option.label.toLowerCase() === value.toLowerCase())
+  const normalizedValue = normalizeForComparison(value)
+  const byLabel = options.find((option) => normalizeForComparison(option.label) === normalizedValue)
   return byLabel?.id
 })
 

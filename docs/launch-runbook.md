@@ -143,6 +143,18 @@ Hosted free-beta notes:
 - Ping `https://<render-backend-host>/health` every 5 minutes from an external uptime service to reduce Render sleep events.
 - Keep the league mural on polling-first freshness; do not depend on authenticated split-origin WebSockets for the beta experience.
 - Expect cold starts if the keepalive service fails or Render restarts the free service.
+- If Brevo API IP allowlisting is enabled, expect reset-email delivery to break whenever Render free changes egress IP; the recommended beta setup is leaving Brevo API IP allowlisting disabled for this key.
+
+### Hosted password reset verification
+
+Before trusting `/forgot-password` in the hosted beta:
+
+1. Run `npm run db:migrate` against the Neon target used by Render.
+2. Confirm the local Drizzle journal includes `0003_free_beta_hosting_and_recovery`.
+3. In Neon, verify `password_reset_tokens` exists with the expected indexes.
+4. Confirm `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, and `FRONTEND_URL` are set on Render.
+5. Trigger a reset request and confirm the backend no longer logs `relation "password_reset_tokens" does not exist`.
+6. If Brevo returns `unrecognised IP address`, disable API IP allowlisting for the beta key or update the allowlist to the current Render egress IP.
 
 ## Local Demo Bootstrap
 
@@ -205,6 +217,7 @@ Use this cutover flow instead:
 2. Ensure `FOOTBALL_DATA_TOKEN` is configured in `backend/.env`.
 3. Run migrations for the current app version:
    - `npm run db:migrate`
+   - if migration metadata drift exists, confirm `backend/drizzle/meta/_journal.json` includes `0003_free_beta_hosting_and_recovery`
 4. Clear the existing resettable beta application state in place:
    - `npm run beta:reset -- --confirm`
 5. Load real tournament fixtures and catalogs:
@@ -399,8 +412,12 @@ Official outright results can be recorded with:
 
 Examples:
 
-1. `npm --workspace=backend run outrights:resolve -- CHAMPION Brazil`
-2. `npm --workspace=backend run outrights:resolve -- FINALISTS Brazil France`
+1. `npm --workspace=backend run outrights:resolve -- CHAMPION Brasil`
+2. `npm --workspace=backend run outrights:resolve -- FINALISTS Brasil Franca`
+
+Notes:
+
+- The resolver now matches by id or label and ignores accents for comparison, so `Brasil`, `Franca`, `França`, `Brazil`, or an option UUID can all be used depending on the seeded dataset.
 
 Smoke helpers:
 

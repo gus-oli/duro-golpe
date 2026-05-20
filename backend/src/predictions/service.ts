@@ -112,7 +112,7 @@ export async function savePredictionsBatch(userId: string, inputs: BatchPredicti
       const typedError = error as { message?: string; statusCode?: number }
       failed.push({
         matchId: input.matchId,
-        message: typedError.message ?? 'Nao foi possivel salvar o palpite.',
+        message: typedError.message ?? 'Não foi possível salvar o palpite.',
         statusCode: typedError.statusCode ?? 500,
       })
     }

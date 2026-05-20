@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
   if (!token) {
-    return NextResponse.json({ message: 'Nao autenticado' }, { status: 401 })
+    return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
   }
 
   const body = (await request.json()) as unknown

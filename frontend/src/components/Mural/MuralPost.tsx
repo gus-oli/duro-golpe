@@ -48,7 +48,7 @@ export function MuralPost({
       )}
 
       <div className={`flex max-w-[78%] flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'}`}>
-        <p className="text-xs font-medium text-[var(--muted)]">{isOwn ? 'Voce' : safeDisplayName}</p>
+        <p className="text-xs font-medium text-[var(--muted)]">{isOwn ? 'Você' : safeDisplayName}</p>
 
         {matchContext && (
           <span className="dg-chip text-[10px] uppercase tracking-[0.08em]">

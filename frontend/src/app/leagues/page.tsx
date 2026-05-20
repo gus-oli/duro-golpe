@@ -71,8 +71,8 @@ export default async function LeaguesPage() {
 
         {leagues.length === 0 ? (
           <EmptyState
-            title="Voce ainda nao esta em uma liga"
-            description="Crie uma liga ou entre com um codigo para transformar seus palpites em disputa."
+            title="Você ainda não está em uma liga"
+            description="Crie uma liga ou entre com um código para transformar seus palpites em disputa."
             action={
               <Link href="/leagues/new" className="dg-button-primary">
                 Criar Liga

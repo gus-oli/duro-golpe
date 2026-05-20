@@ -108,13 +108,13 @@ export default async function ProfilePage() {
           <Link href="/outrights" className="dg-card-interactive block p-5">
             <p className="dg-eyebrow">Especiais</p>
             <h2 className="mt-2 text-xl font-black text-[var(--ink)]">Abrir mercados</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Campeao, finalistas e outros mercados de longo prazo.</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Campeão, finalistas e outros mercados de longo prazo.</p>
           </Link>
         </section>
 
         {myTotal && (
           <section className="dg-surface p-5 sm:p-6">
-            <SectionHeader eyebrow="Desempenho" title="Resumo de pontuacao" />
+            <SectionHeader eyebrow="Desempenho" title="Resumo de pontuação" />
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <div className="dg-subtle-card p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted)]">Total</p>

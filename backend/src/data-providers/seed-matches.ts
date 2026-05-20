@@ -3,6 +3,7 @@ import { mapFootballDataStatus } from '../realtime/events.js'
 import { validateTournamentCounts } from '../tournament/constants.js'
 import type { SeedTeamInput } from '../seeds/support.js'
 import { seedCatalogs, upsertMatches, upsertTeams } from '../seeds/support.js'
+import { localizeTeamName } from '../seeds/team-localization.js'
 
 async function seedTeams(): Promise<Map<number, string>> {
   const providerTeams = await getWorldCupTeams()
@@ -16,7 +17,7 @@ async function seedTeams(): Promise<Map<number, string>> {
       return {
         key: String(team.id),
         apiFootballId: String(team.id),
-        name: team.name,
+        name: localizeTeamName(team.tla, team.name),
         fifaCode: team.tla,
         flagUrl: team.crest,
       }

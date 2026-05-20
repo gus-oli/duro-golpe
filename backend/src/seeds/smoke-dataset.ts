@@ -6,14 +6,14 @@ export const SMOKE_TEAMS: SeedTeamInput[] = [
     key: 'BRA',
     apiFootballId: 'smoke-team-bra',
     name: 'Brazil',
-    fifaCode: 'BRA',
+    fifaCode: 'XBR',
     flagUrl: createSeedFlagDataUri('BRA', '#0b6a3b', '#f4d64e', '#1b4fd6'),
   },
   {
     key: 'FRA',
     apiFootballId: 'smoke-team-fra',
     name: 'France',
-    fifaCode: 'FRA',
+    fifaCode: 'XFR',
     flagUrl: createSeedFlagDataUri('FRA', '#1a47b8', '#ffffff', '#d62839'),
   },
 ] as const

@@ -31,7 +31,7 @@ export default function LoginPage() {
 
       window.location.assign(searchParams.get('from') ?? '/matches')
     } catch {
-      setError('Erro de conexao')
+      setError('Erro de conexão')
     } finally {
       setIsSubmitting(false)
     }
@@ -88,7 +88,7 @@ export default function LoginPage() {
           </p>
 
           <p className="mt-6 text-center text-sm font-medium text-[var(--muted)]">
-            Nao tem conta?{' '}
+            Não tem conta?{' '}
             <Link href="/register" className="font-black text-[var(--pitch-dark)] hover:underline">
               Criar conta
             </Link>

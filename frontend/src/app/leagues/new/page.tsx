@@ -29,7 +29,7 @@ export default function NewLeaguePage() {
       const league = (await res.json()) as { id: string }
       window.location.assign(`/leagues/${league.id}`)
     } catch {
-      setError('Nao foi possivel conectar ao servidor.')
+      setError('Não foi possível conectar ao servidor.')
     } finally {
       setIsSubmitting(false)
     }

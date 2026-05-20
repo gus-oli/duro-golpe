@@ -96,7 +96,7 @@ export function OutrightCard({
         setSuccess(true)
         setHasPersistedSelection(true)
       } catch {
-        setError('Nao foi possivel conectar ao servidor.')
+        setError('Não foi possível conectar ao servidor.')
       }
     })
   }

@@ -11,7 +11,7 @@ function cx(...classes: Array<string | false | null | undefined>) {
 const PUBLIC_ONLY = new Set(['/login', '/register'])
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Inicio' },
+  { href: '/', label: 'Início' },
   { href: '/matches', label: 'Partidas' },
   { href: '/leagues', label: 'Ligas' },
   { href: '/outrights', label: 'Especiais' },
@@ -27,7 +27,7 @@ export function AppShell({ isAuthenticated, children }: { isAuthenticated: boole
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:font-bold focus:text-[var(--accent-strong)] focus:shadow-lg"
       >
-        Ir para conteudo principal
+        Ir para o conteúdo principal
       </a>
 
       {showAuthenticatedShell && (
@@ -35,8 +35,18 @@ export function AppShell({ isAuthenticated, children }: { isAuthenticated: boole
           <div className="dg-container flex min-h-[72px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
             <div className="flex min-w-0 items-center gap-3">
               <Link href="/" className="shrink-0">
-                <span className="inline-flex h-11 items-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-muted)] px-4 text-sm font-black uppercase tracking-[0.18em] text-[var(--accent-strong)]">
-                  Duro Golpe
+                <span className="inline-flex items-center gap-3 rounded-2xl border border-[var(--line-strong)] bg-[linear-gradient(135deg,rgba(10,31,24,0.96),rgba(11,92,55,0.96))] px-3 py-2 text-white shadow-[0_12px_30px_rgba(8,20,17,0.18)]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[linear-gradient(135deg,var(--gold),#f1b921)] text-[0.7rem] font-black uppercase tracking-[0.18em] text-[var(--night)]">
+                    DG
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[0.58rem] font-bold uppercase tracking-[0.22em] text-white/70">
+                      bolao da copa
+                    </span>
+                    <span className="block font-[var(--font-display)] text-base font-black uppercase tracking-[0.16em] text-white sm:text-lg">
+                      Duro Golpe
+                    </span>
+                  </span>
                 </span>
               </Link>
               <p className="hidden text-sm font-medium text-[var(--muted)] lg:block">

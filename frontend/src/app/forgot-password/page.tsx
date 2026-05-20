@@ -25,13 +25,13 @@ export default function ForgotPasswordPage() {
       const data = (await res.json()) as { message?: string }
 
       if (!res.ok) {
-        setError(data.message ?? 'Nao foi possivel enviar o link.')
+        setError(data.message ?? 'Não foi possível enviar o link.')
         return
       }
 
       setSuccess(data.message ?? 'Se o e-mail existir, enviaremos um link de recuperação.')
     } catch {
-      setError('Erro de conexao')
+      setError('Erro de conexão')
     } finally {
       setIsSubmitting(false)
     }
@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
         <div className="bg-[linear-gradient(135deg,var(--night),var(--pitch-dark))] px-6 py-7 text-white">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--gold)]">Duro Golpe</p>
           <h1 className="mt-2 text-3xl font-black">Recuperar senha</h1>
-          <p className="mt-2 text-sm leading-6 text-white/72">Enviamos um link para voce voltar para o jogo.</p>
+          <p className="mt-2 text-sm leading-6 text-white/72">Enviamos um link para você voltar para o jogo.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">

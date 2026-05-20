@@ -41,7 +41,7 @@ export async function buildServer(): Promise<ReturnType<typeof Fastify>> {
     return reply.status(statusCode).send({
       statusCode,
       error: typedError.name ?? 'Error',
-      message: statusCode >= 500 ? 'Erro interno do servidor' : (typedError.message ?? 'Erro na requisiÃ§Ã£o'),
+      message: statusCode >= 500 ? 'Erro interno do servidor' : (typedError.message ?? 'Erro na requisição'),
     })
   })
 

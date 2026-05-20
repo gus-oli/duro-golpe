@@ -25,7 +25,7 @@ export default function JoinLeaguePage() {
         if (res.status === 404) {
           setError('Codigo de convite invalido.')
         } else if (res.status === 409) {
-          setError('Voce ja faz parte desta liga.')
+          setError('Você já faz parte desta liga.')
         } else {
           setError(body.message ?? 'Erro ao entrar na liga.')
         }
@@ -35,7 +35,7 @@ export default function JoinLeaguePage() {
       const data = (await res.json()) as { leagueId: string }
       window.location.assign(`/leagues/${data.leagueId}`)
     } catch {
-      setError('Nao foi possivel conectar ao servidor.')
+      setError('Não foi possível conectar ao servidor.')
     } finally {
       setIsSubmitting(false)
     }

@@ -6,6 +6,7 @@ import { getWorldCupMatches, type FootballDataMatch } from './football-data.js'
 import { applyProviderMatchSnapshot } from './match-reconciliation.js'
 import { mapFootballDataStatus } from '../realtime/events.js'
 import { upsertTeams } from '../seeds/support.js'
+import { localizeTeamName } from '../seeds/team-localization.js'
 
 const ACTIVE_POLL_DELAY_MS = 10_000
 const IDLE_POLL_DELAY_MS = 60_000
@@ -44,7 +45,7 @@ async function reconcileMatchParticipants(providerMatch: FootballDataMatch): Pro
       ? {
           key: String(providerMatch.homeTeam.id),
           apiFootballId: String(providerMatch.homeTeam.id),
-          name: providerMatch.homeTeam.name,
+          name: localizeTeamName(providerMatch.homeTeam.tla, providerMatch.homeTeam.name),
           fifaCode: providerMatch.homeTeam.tla,
           flagUrl: providerMatch.homeTeam.crest,
         }
@@ -55,7 +56,7 @@ async function reconcileMatchParticipants(providerMatch: FootballDataMatch): Pro
       ? {
           key: String(providerMatch.awayTeam.id),
           apiFootballId: String(providerMatch.awayTeam.id),
-          name: providerMatch.awayTeam.name,
+          name: localizeTeamName(providerMatch.awayTeam.tla, providerMatch.awayTeam.name),
           fifaCode: providerMatch.awayTeam.tla,
           flagUrl: providerMatch.awayTeam.crest,
         }

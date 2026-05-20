@@ -1,0 +1,55 @@
+const TEAM_NAME_BY_FIFA_CODE: Record<string, string> = {
+  ARG: 'Argentina',
+  AUS: 'Australia',
+  AUT: 'Austria',
+  BEL: 'Belgica',
+  BRA: 'Brasil',
+  CAN: 'Canada',
+  COL: 'Colombia',
+  CRC: 'Costa Rica',
+  CRO: 'Croacia',
+  DEN: 'Dinamarca',
+  ECU: 'Equador',
+  EGY: 'Egito',
+  ENG: 'Inglaterra',
+  ESP: 'Espanha',
+  FRA: 'Franca',
+  GER: 'Alemanha',
+  GHA: 'Gana',
+  IRN: 'Ira',
+  ITA: 'Italia',
+  JPN: 'Japao',
+  KOR: 'Coreia do Sul',
+  MAR: 'Marrocos',
+  MEX: 'Mexico',
+  NED: 'Holanda',
+  NGA: 'Nigeria',
+  NOR: 'Noruega',
+  NZL: 'Nova Zelandia',
+  PAN: 'Panama',
+  PAR: 'Paraguai',
+  PER: 'Peru',
+  POL: 'Polonia',
+  POR: 'Portugal',
+  QAT: 'Catar',
+  RSA: 'Africa do Sul',
+  SEN: 'Senegal',
+  SRB: 'Servia',
+  SUI: 'Suica',
+  SWE: 'Suecia',
+  TUN: 'Tunisia',
+  TUR: 'Turquia',
+  UKR: 'Ucrania',
+  URU: 'Uruguai',
+  USA: 'Estados Unidos',
+  VEN: 'Venezuela',
+  WAL: 'Pais de Gales',
+}
+
+export function localizeTeamName(fifaCode: string | null | undefined, fallbackName: string): string {
+  if (!fifaCode) {
+    return fallbackName
+  }
+
+  return TEAM_NAME_BY_FIFA_CODE[fifaCode] ?? fallbackName
+}

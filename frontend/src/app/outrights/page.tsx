@@ -62,7 +62,7 @@ export default async function OutrightsPage() {
               </div>
               <h1 className="mt-4 text-4xl font-black text-[var(--ink)] sm:text-5xl">Apostas Especiais</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-                Campeao, finalistas, artilharia e mercados que podem virar uma liga inteira.
+                Campeão, finalistas, artilharia e mercados que podem virar uma liga inteira.
               </p>
             </div>
             <div className="dg-subtle-card p-4">
@@ -95,13 +95,13 @@ export default async function OutrightsPage() {
           title="Mercados da Copa"
           description={
             hasOpenMarkets
-              ? 'Disponiveis ate 1 hora antes da partida de abertura.'
-              : 'Todas as apostas especiais estao encerradas.'
+              ? 'Disponíveis até 1 hora antes da partida de abertura.'
+              : 'Todas as apostas especiais estão encerradas.'
           }
         />
 
         {markets.length === 0 ? (
-          <EmptyState title="Nenhum mercado disponivel" description="Quando os especiais forem carregados, eles aparecem aqui." />
+          <EmptyState title="Nenhum mercado disponível" description="Quando os especiais forem carregados, eles aparecem aqui." />
         ) : (
           <div className="grid gap-5 lg:grid-cols-2">
             {markets.map((market) => (

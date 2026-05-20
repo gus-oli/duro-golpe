@@ -215,12 +215,37 @@ describe('syncFootballDataOnce', () => {
 
     expect(state.upsertedTeams).toHaveLength(1)
     expect(state.upsertedTeams[0]).toEqual([
-      expect.objectContaining({ key: '11', fifaCode: 'BRA' }),
-      expect.objectContaining({ key: '19', fifaCode: 'MEX' }),
+      expect.objectContaining({ key: '11', fifaCode: 'BRA', name: 'Brasil' }),
+      expect.objectContaining({ key: '19', fifaCode: 'MEX', name: 'Mexico' }),
     ])
     expect(state.updatedMatches).toContainEqual({
       homeTeamId: 'team-1',
       awayTeamId: 'team-2',
     })
+  })
+
+  it('localizes provider names before upserting team participants', async () => {
+    state.providerMatches = [
+      {
+        id: 501,
+        status: 'TIMED',
+        utcDate: '2026-06-12T13:00:00.000Z',
+        venue: null,
+        stage: 'GROUP_STAGE',
+        group: 'GROUP_A',
+        lastUpdated: '2026-06-12T13:00:00.000Z',
+        homeTeam: { id: 1, name: 'Brazil', tla: 'BRA', crest: null },
+        awayTeam: { id: 2, name: 'France', tla: 'FRA', crest: null },
+        score: { fullTime: { home: null, away: null } },
+      },
+    ]
+    state.applyResults = ['updated']
+
+    await syncFootballDataOnce(new Date('2026-06-12T09:00:00.000Z'))
+
+    expect(state.upsertedTeams[0]).toEqual([
+      expect.objectContaining({ name: 'Brasil', fifaCode: 'BRA' }),
+      expect.objectContaining({ name: 'Franca', fifaCode: 'FRA' }),
+    ])
   })
 })

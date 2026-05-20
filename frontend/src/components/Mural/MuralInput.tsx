@@ -47,7 +47,7 @@ export function MuralInput({ leagueId, onPost }: MuralInputProps) {
         setContent('')
         textareaRef.current?.focus()
       } catch {
-        setError('Nao foi possivel conectar ao servidor.')
+        setError('Não foi possível conectar ao servidor.')
       }
     })
   }

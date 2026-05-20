@@ -8,7 +8,7 @@ type Params = { params: Promise<{ leagueId: string }> }
 export async function GET(request: NextRequest, { params }: Params) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
-  if (!token) return NextResponse.json({ message: 'Nao autenticado' }, { status: 401 })
+  if (!token) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
 
   const { leagueId } = await params
   const search = request.nextUrl.search
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 export async function POST(req: NextRequest, { params }: Params) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
-  if (!token) return NextResponse.json({ message: 'Nao autenticado' }, { status: 401 })
+  if (!token) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })
 
   const { leagueId } = await params
   const body = (await req.json()) as unknown

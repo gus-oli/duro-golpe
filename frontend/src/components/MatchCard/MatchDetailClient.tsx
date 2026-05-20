@@ -140,7 +140,7 @@ export function MatchDetailClient({
     }
 
     if (!res.ok) {
-      throw new Error(data.message ?? 'Nao foi possivel salvar o palpite.')
+      throw new Error(data.message ?? 'Não foi possível salvar o palpite.')
     }
 
     setPrediction({

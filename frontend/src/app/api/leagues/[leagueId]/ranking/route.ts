@@ -14,7 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ lea
   })
 
   if (!res.ok) {
-    return NextResponse.json({ message: 'Nao foi possivel carregar o ranking.' }, { status: res.status })
+    return NextResponse.json({ message: 'Não foi possível carregar o ranking.' }, { status: res.status })
   }
 
   const data = (await res.json()) as unknown
