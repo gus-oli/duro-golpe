@@ -1,11 +1,14 @@
-import { db } from '../db/index.js'
-import { muralPosts, leagueMemberships, users } from '../db/schema/index.js'
-import { and, asc, desc, eq, lt } from 'drizzle-orm'
+import { and, desc, eq, lt } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import { createClient } from 'redis'
 import { config } from '../config.js'
-import type { MuralPost } from '../db/schema/mural-posts.js'
+import { db } from '../db/index.js'
+import { leagueMemberships, matches, muralPosts, teams, users } from '../db/schema/index.js'
 
 let redisPublisher: ReturnType<typeof createClient> | null = null
+
+const homeTeams = alias(teams, 'mural_home_teams')
+const awayTeams = alias(teams, 'mural_away_teams')
 
 async function getPublisher(): Promise<ReturnType<typeof createClient>> {
   if (!redisPublisher) {
@@ -34,6 +37,18 @@ async function assertMembership(userId: string, leagueId: string): Promise<void>
   }
 }
 
+interface SerializedPostRow {
+  id: string
+  userId: string
+  displayName: string
+  avatarUrl: string | null
+  content: string
+  createdAt: Date
+  matchId: string | null
+  homeFifaCode: string | null
+  awayFifaCode: string | null
+}
+
 export interface MuralPostResponse {
   id: string
   userId: string
@@ -41,67 +56,119 @@ export interface MuralPostResponse {
   avatarUrl: string | null
   content: string
   createdAt: string
+  matchContext: {
+    matchId: string
+    label: string
+  } | null
+}
+
+function serializePost(row: SerializedPostRow): MuralPostResponse {
+  const matchContext =
+    row.matchId && row.homeFifaCode && row.awayFifaCode
+      ? {
+          matchId: row.matchId,
+          label: `${row.homeFifaCode} x ${row.awayFifaCode}`,
+        }
+      : null
+
+  return {
+    id: row.id,
+    userId: row.userId,
+    displayName: row.displayName,
+    avatarUrl: row.avatarUrl ?? null,
+    content: row.content,
+    createdAt: row.createdAt.toISOString(),
+    matchContext,
+  }
+}
+
+async function getSerializedPostById(postId: string): Promise<MuralPostResponse | null> {
+  const [row] = await db
+    .select({
+      id: muralPosts.id,
+      userId: muralPosts.userId,
+      displayName: users.displayName,
+      avatarUrl: users.avatarUrl,
+      content: muralPosts.content,
+      createdAt: muralPosts.createdAt,
+      matchId: muralPosts.matchId,
+      homeFifaCode: homeTeams.fifaCode,
+      awayFifaCode: awayTeams.fifaCode,
+    })
+    .from(muralPosts)
+    .innerJoin(users, eq(muralPosts.userId, users.id))
+    .leftJoin(matches, eq(muralPosts.matchId, matches.id))
+    .leftJoin(homeTeams, eq(matches.homeTeamId, homeTeams.id))
+    .leftJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id))
+    .where(eq(muralPosts.id, postId))
+    .limit(1)
+
+  return row ? serializePost(row) : null
 }
 
 export async function createPost(
   userId: string,
   leagueId: string,
-  matchId: string,
   content: string,
-): Promise<MuralPost> {
+  matchId?: string,
+): Promise<MuralPostResponse> {
   await assertMembership(userId, leagueId)
 
-  if (!content || content.length === 0) {
-    const err = Object.assign(new Error('Conteúdo não pode ser vazio'), { statusCode: 400 })
+  const trimmedContent = content.trim()
+  if (trimmedContent.length === 0) {
+    const err = Object.assign(new Error('Conteudo nao pode ser vazio'), { statusCode: 400 })
     throw err
   }
-  if (content.length > 500) {
-    const err = Object.assign(new Error('Conteúdo não pode exceder 500 caracteres'), { statusCode: 400 })
+  if (trimmedContent.length > 500) {
+    const err = Object.assign(new Error('Conteudo nao pode exceder 500 caracteres'), { statusCode: 400 })
     throw err
   }
 
-  const [post] = await db.insert(muralPosts).values({ leagueId, matchId, userId, content }).returning()
+  const [post] = await db
+    .insert(muralPosts)
+    .values({ leagueId, matchId: matchId ?? null, userId, content: trimmedContent })
+    .returning({ id: muralPosts.id })
 
-  const [author] = await db.select({ displayName: users.displayName, avatarUrl: users.avatarUrl }).from(users).where(eq(users.id, userId)).limit(1)
+  if (!post?.id) {
+    throw new Error('Nao foi possivel criar o post do mural.')
+  }
+
+  const serializedPost = await getSerializedPostById(post.id)
+  if (!serializedPost) {
+    throw new Error('Nao foi possivel carregar o post do mural recem-criado.')
+  }
 
   const publisher = await getPublisher()
-  const channelPayload = {
-    type: 'mural:post:new',
-    leagueId,
-    matchId,
-    post: {
-      id: post!.id,
-      userId,
-      displayName: author?.displayName ?? '',
-      avatarUrl: author?.avatarUrl ?? null,
-      content: post!.content,
-      createdAt: post!.createdAt.toISOString(),
-    },
-  }
-  await publisher.publish(`mural:${leagueId}:${matchId}`, JSON.stringify(channelPayload))
+  await publisher.publish(
+    `mural:${leagueId}`,
+    JSON.stringify({
+      type: 'mural:post:new',
+      leagueId,
+      post: serializedPost,
+    }),
+  )
 
-  return post!
+  return serializedPost
 }
 
 export async function getPosts(
   userId: string,
   leagueId: string,
-  matchId: string,
   limit = 50,
   before?: string,
+  matchId?: string,
 ): Promise<{ posts: MuralPostResponse[]; hasMore: boolean }> {
   await assertMembership(userId, leagueId)
 
   const safeLimitNum = Math.min(limit, 100)
-
-  const conditions = [
-    eq(muralPosts.leagueId, leagueId),
-    eq(muralPosts.matchId, matchId),
-    eq(muralPosts.isHidden, false),
-  ]
+  const conditions = [eq(muralPosts.leagueId, leagueId), eq(muralPosts.isHidden, false)]
 
   if (before) {
     conditions.push(lt(muralPosts.createdAt, new Date(before)))
+  }
+
+  if (matchId) {
+    conditions.push(eq(muralPosts.matchId, matchId))
   }
 
   const rows = await db
@@ -112,19 +179,57 @@ export async function getPosts(
       avatarUrl: users.avatarUrl,
       content: muralPosts.content,
       createdAt: muralPosts.createdAt,
+      matchId: muralPosts.matchId,
+      homeFifaCode: homeTeams.fifaCode,
+      awayFifaCode: awayTeams.fifaCode,
     })
     .from(muralPosts)
     .innerJoin(users, eq(muralPosts.userId, users.id))
+    .leftJoin(matches, eq(muralPosts.matchId, matches.id))
+    .leftJoin(homeTeams, eq(matches.homeTeamId, homeTeams.id))
+    .leftJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id))
     .where(and(...conditions))
     .orderBy(desc(muralPosts.createdAt))
     .limit(safeLimitNum + 1)
 
   const hasMore = rows.length > safeLimitNum
-  const posts = rows.slice(0, safeLimitNum).map((r) => ({
-    ...r,
-    avatarUrl: r.avatarUrl ?? null,
-    createdAt: r.createdAt.toISOString(),
-  }))
+  const posts = rows.slice(0, safeLimitNum).map(serializePost)
 
   return { posts, hasMore }
+}
+
+export async function hidePostForActor(
+  userId: string,
+  leagueId: string,
+  postId: string,
+): Promise<{ hidden: boolean }> {
+  await assertMembership(userId, leagueId)
+
+  const [post] = await db
+    .select({
+      id: muralPosts.id,
+      leagueId: muralPosts.leagueId,
+      userId: muralPosts.userId,
+      isHidden: muralPosts.isHidden,
+    })
+    .from(muralPosts)
+    .where(eq(muralPosts.id, postId))
+    .limit(1)
+
+  if (!post || post.leagueId !== leagueId) {
+    const err = Object.assign(new Error('Post do mural nao encontrado'), { statusCode: 404 })
+    throw err
+  }
+
+  if (post.userId !== userId) {
+    const err = Object.assign(new Error('Acesso negado'), { statusCode: 403 })
+    throw err
+  }
+
+  if (post.isHidden) {
+    return { hidden: true }
+  }
+
+  await db.update(muralPosts).set({ isHidden: true }).where(eq(muralPosts.id, postId))
+  return { hidden: true }
 }

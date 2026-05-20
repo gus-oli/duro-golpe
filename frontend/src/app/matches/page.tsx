@@ -51,27 +51,45 @@ export default async function MatchesPage() {
 
   return (
     <PageShell>
-      <div className="space-y-8">
-        <section className="dg-surface-dark overflow-hidden p-5 sm:p-7">
+      <div className="space-y-6">
+        <section className="dg-panel overflow-hidden p-5 sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--gold)]">Agenda da Copa</p>
-              <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">Partidas</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78">
-                Escolha o jogo, mande seu placar e acompanhe a virada da tabela.
+              <p className="dg-eyebrow">Agenda da Copa</p>
+              <h1 className="mt-2 text-4xl font-black text-[var(--ink)] sm:text-5xl">Partidas</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+                Escolha o jogo, mande seu placar e use a agenda como centro do resto do produto.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:min-w-[280px]">
-              <div className="rounded-md bg-white/10 p-4 text-white">
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/65">Abertas</p>
-                <p className="mt-1 font-[var(--font-display)] text-3xl font-black">{openCount}</p>
+              <div className="dg-subtle-card p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Abertas</p>
+                <p className="mt-1 font-[var(--font-display)] text-3xl font-black text-[var(--ink)]">{openCount}</p>
               </div>
-              <div className="rounded-md bg-white/10 p-4 text-white">
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/65">Ao vivo</p>
-                <p className="mt-1 font-[var(--font-display)] text-3xl font-black">{liveCount}</p>
+              <div className="dg-subtle-card p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Ao vivo</p>
+                <p className="mt-1 font-[var(--font-display)] text-3xl font-black text-[var(--ink)]">{liveCount}</p>
               </div>
             </div>
           </div>
+        </section>
+
+        <section className="grid gap-3 md:grid-cols-3">
+          <Link href="/leagues" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Ligas</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Voltar para a classificacao</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Saia da agenda direto para sua disputa privada.</p>
+          </Link>
+          <Link href="/outrights" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Especiais</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Revisar mercados longos</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Nao deixe especiais abertos escondidos fora da rodada.</p>
+          </Link>
+          <Link href="/profile" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Conta</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Abrir meu resumo</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Pontuacao total, ligas e proximos atalhos do dia.</p>
+          </Link>
         </section>
 
         {matches.length === 0 ? (
@@ -85,7 +103,7 @@ export default async function MatchesPage() {
             }
           />
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-7">
             {Array.from(grouped.entries()).map(([date, dayMatches]) => (
               <section key={date} className="space-y-4">
                 <SectionHeader

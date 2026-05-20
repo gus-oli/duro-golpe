@@ -1,19 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { useWebSocket } from '@/hooks/useWebSocket'
+import { useEffect, useState } from 'react'
 import { BadgeGrid } from '@/components/Badges/BadgeGrid'
 import { EmptyState } from '@/components/ui/Primitives'
-
-interface RankingEntry {
-  userId: string
-  displayName: string
-  avatarUrl: string | null
-  totalPoints: number
-  exactScoreCount: number
-  winnerGoalDiffCount: number
-  position: number
-}
+import { useWebSocket } from '@/hooks/useWebSocket'
 
 interface Badge {
   type: string
@@ -23,11 +13,21 @@ interface Badge {
   zebraCount: number | null
 }
 
+interface RankingEntry {
+  userId: string
+  displayName: string
+  avatarUrl: string | null
+  totalPoints: number
+  exactScoreCount: number
+  winnerGoalDiffCount: number
+  position: number
+  badges: Badge[]
+}
+
 interface RankingClientProps {
   leagueId: string
   initialRanking: RankingEntry[]
-  badgesMap: Record<string, Badge[]>
-  token: string | null
+  realtimeEnabled: boolean
 }
 
 interface RankingUpdatedEvent {
@@ -35,34 +35,85 @@ interface RankingUpdatedEvent {
   leagueId: string
 }
 
-const API = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001'
-
 function podiumClass(position: number) {
   if (position === 1) return 'bg-[var(--gold)] text-[#4a3100]'
-  if (position === 2) return 'bg-[var(--sky)] text-[#0c344b]'
-  if (position === 3) return 'bg-[var(--coral)] text-white'
-  return 'bg-[rgba(18,33,58,0.08)] text-[var(--muted)]'
+  if (position === 2) return 'bg-[rgba(120,182,255,0.22)] text-[var(--accent-strong)]'
+  if (position === 3) return 'bg-[rgba(255,93,99,0.16)] text-[#9e2430]'
+  return 'bg-[var(--surface-muted)] text-[var(--muted)]'
 }
 
-export function RankingClient({ leagueId, initialRanking, badgesMap, token }: RankingClientProps) {
+export function RankingClient({ leagueId, initialRanking, realtimeEnabled }: RankingClientProps) {
   const [ranking, setRanking] = useState(initialRanking)
 
-  useWebSocket(token, {
-    'ranking:updated': async (data) => {
-      const event = data as RankingUpdatedEvent
-      if (event.leagueId !== leagueId) return
+  useEffect(() => {
+    let cancelled = false
+    let timeoutId: number | null = null
+    let attempts = 0
+    const maxAttempts = 8
+    const refreshDelayMs = 15000
+
+    async function refreshRanking() {
       try {
-        const res = await fetch(`${API}/api/v1/leagues/${leagueId}/ranking`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        })
-        if (!res.ok) return
+        const res = await fetch(`/api/leagues/${leagueId}/ranking`, { cache: 'no-store' })
+        if (!res.ok || cancelled) return
         const result = (await res.json()) as { ranking: RankingEntry[] }
-        setRanking(result.ranking)
+        if (!cancelled) {
+          setRanking(result.ranking)
+        }
       } catch {
-        // Ranking updates are opportunistic; the next page load will refresh.
+        // Realtime remains primary; fallback stays intentionally lightweight.
       }
+    }
+
+    function scheduleRefresh() {
+      if (cancelled || document.visibilityState !== 'visible' || attempts >= maxAttempts) return
+      timeoutId = window.setTimeout(async () => {
+        timeoutId = null
+        attempts += 1
+        await refreshRanking()
+        scheduleRefresh()
+      }, refreshDelayMs)
+    }
+
+    function handleVisibilityOrFocus() {
+      if (document.visibilityState !== 'visible') return
+      void refreshRanking()
+      if (timeoutId == null) {
+        scheduleRefresh()
+      }
+    }
+
+    scheduleRefresh()
+    window.addEventListener('focus', handleVisibilityOrFocus)
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus)
+
+    return () => {
+      cancelled = true
+      if (timeoutId != null) {
+        window.clearTimeout(timeoutId)
+      }
+      window.removeEventListener('focus', handleVisibilityOrFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus)
+    }
+  }, [leagueId])
+
+  useWebSocket(
+    realtimeEnabled,
+    {
+      'ranking:updated': async (data) => {
+        const event = data as RankingUpdatedEvent
+        if (event.leagueId !== leagueId) return
+        try {
+          const res = await fetch(`/api/leagues/${leagueId}/ranking`, { cache: 'no-store' })
+          if (!res.ok) return
+          const result = (await res.json()) as { ranking: RankingEntry[] }
+          setRanking(result.ranking)
+        } catch {
+          // Ranking updates are opportunistic; the next refresh will reconcile.
+        }
+      },
     },
-  })
+  )
 
   if (ranking.length === 0) {
     return <EmptyState title="A liga ainda esta vazia" description="Convide a galera e deixe a tabela pegar fogo." />
@@ -73,7 +124,7 @@ export function RankingClient({ leagueId, initialRanking, badgesMap, token }: Ra
       {ranking.map((entry) => (
         <li
           key={entry.userId}
-          className="dg-card p-4"
+          className="dg-card p-4 md:p-5"
           data-smoke="ranking-entry"
           data-user-id={entry.userId}
           data-user-name={entry.displayName}
@@ -108,17 +159,22 @@ export function RankingClient({ leagueId, initialRanking, badgesMap, token }: Ra
               </p>
             </div>
 
-            <p
-              className="shrink-0 text-right font-[var(--font-display)] text-2xl font-black text-[var(--pitch-dark)]"
-              data-smoke="ranking-points"
-            >
-              {entry.totalPoints}
-              <span className="ml-1 text-xs text-[var(--muted)]">pts</span>
-            </p>
+            <div className="shrink-0 text-right">
+              <p
+                className="font-[var(--font-display)] text-2xl font-black text-[var(--accent-strong)]"
+                data-smoke="ranking-points"
+              >
+                {entry.totalPoints}
+                <span className="ml-1 text-xs text-[var(--muted)]">pts</span>
+              </p>
+              <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--muted)]">
+                {entry.position <= 3 ? 'Podio' : `Top ${entry.position}`}
+              </p>
+            </div>
           </div>
 
           <div className="mt-3 border-t border-[var(--line)] pt-3">
-            <BadgeGrid badges={badgesMap[entry.userId] ?? []} />
+            <BadgeGrid badges={entry.badges ?? []} />
           </div>
         </li>
       ))}

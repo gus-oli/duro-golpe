@@ -1,42 +1,54 @@
-import { describe, it, expect } from 'vitest'
+import Fastify, { type FastifyInstance } from 'fastify'
+import jwt from '@fastify/jwt'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { scoringRoutes } from '../../src/scoring/routes.js'
 
-// Integration tests for scoring REST endpoints.
-// Testcontainers wiring deferred — stubs demonstrate expected behaviour.
+describe('Score routes security (integration)', () => {
+  let app: FastifyInstance
+  let token: string
 
-describe('Score routes (integration)', () => {
-  describe('GET /api/v1/users/:userId/score', () => {
-    it('returns UserTotal fields for authenticated user', async () => {
-      // Seed user_totals → GET /users/:id/score
-      // Expect: totalPoints, matchPoints, outrightPoints, exactScoreCount, winnerGoalDiffCount
-      expect(true).toBe(true)
+  beforeEach(async () => {
+    app = Fastify()
+    await app.register(jwt, {
+      secret: 'x'.repeat(32),
+      formatUser: (payload) => ({ id: payload.sub }),
     })
-
-    it('returns 404 when user not found', async () => {
-      expect(true).toBe(true)
+    app.setErrorHandler((error, _request, reply) => {
+      const typedError = error as { statusCode?: number; name?: string; message?: string }
+      const statusCode = typedError.statusCode ?? 500
+      return reply.status(statusCode).send({
+        statusCode,
+        error: typedError.name ?? 'Error',
+        message: typedError.message ?? 'Erro na requisicao',
+      })
     })
-
-    it('requires authentication (401 without token)', async () => {
-      expect(true).toBe(true)
-    })
+    await app.register(scoringRoutes)
+    token = app.jwt.sign({ sub: 'user-1' })
   })
 
-  describe('GET /api/v1/users/:userId/scores/matches', () => {
-    it('returns paginated match scores with tier + predicted vs actual', async () => {
-      // Seed match_scores → GET /users/:id/scores/matches
-      // Expect: items[].tier, items[].points, items[].prediction, items[].result
-      expect(true).toBe(true)
-    })
-
-    it('requires authentication', async () => {
-      expect(true).toBe(true)
-    })
+  afterEach(async () => {
+    await app.close()
   })
 
-  describe('GET /api/v1/matches/:matchId/score-summary', () => {
-    it('returns tier distribution for a concluded match', async () => {
-      // Seed multiple match_scores for same match → GET score-summary
-      // Expect: tierBreakdown with count + percent per tier
-      expect(true).toBe(true)
+  it('denies cross-user score reads for authenticated users outside the declared visibility policy', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/users/user-2/score',
+      headers: { authorization: `Bearer ${token}` },
     })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.json()).toMatchObject({ message: 'Acesso negado' })
+  })
+
+  it('denies cross-user match score breakdown reads for authenticated users outside the declared visibility policy', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/users/user-2/scores/matches',
+      headers: { authorization: `Bearer ${token}` },
+    })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.json()).toMatchObject({ message: 'Acesso negado' })
   })
 })

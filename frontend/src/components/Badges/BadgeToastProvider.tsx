@@ -19,11 +19,11 @@ interface BadgeAwardedEvent {
 }
 
 interface BadgeToastProviderProps {
-  token: string | null
+  realtimeEnabled: boolean
   children: React.ReactNode
 }
 
-export function BadgeToastProvider({ token, children }: BadgeToastProviderProps) {
+export function BadgeToastProvider({ realtimeEnabled, children }: BadgeToastProviderProps) {
   const [queue, setQueue] = useState<BadgePayload[]>([])
   const [isMounted, setIsMounted] = useState(false)
 
@@ -35,7 +35,7 @@ export function BadgeToastProvider({ token, children }: BadgeToastProviderProps)
     setQueue((prev) => prev.filter((_, i) => i !== idx))
   }, [])
 
-  useWebSocket(token, {
+  useWebSocket(realtimeEnabled, {
     'badge:awarded': (data) => {
       const event = data as BadgeAwardedEvent
       setQueue((prev) => [...prev, event.badge])

@@ -3,21 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --ink: #10221a;
-  --muted: #65746b;
-  --surface: #fffdf4;
+  --ink: #132033;
+  --muted: #66758b;
+  --surface: #f6f8fb;
   --surface-strong: #ffffff;
-  --line: rgba(16, 34, 26, 0.14);
-  --pitch: #0c8f4f;
-  --pitch-dark: #04592f;
-  --gold: #f6c445;
-  --sky: #5db7de;
-  --coral: #e95f4f;
-  --night: #12213a;
-  --background: #f6f2df;
-  --focus: #0a7f48;
-  --shadow-soft: 0 18px 60px rgba(18, 33, 58, 0.14);
-  --shadow-card: 0 14px 34px rgba(18, 33, 58, 0.1);
+  --surface-muted: #eef3f8;
+  --line: rgba(19, 32, 51, 0.1);
+  --line-strong: rgba(19, 32, 51, 0.18);
+  --accent: #1681ff;
+  --accent-strong: #0d5db8;
+  --pitch: #18a558;
+  --pitch-dark: #0b7a3a;
+  --gold: #f4c144;
+  --sky: #78b6ff;
+  --coral: #ff5d63;
+  --night: #132033;
+  --background: #edf2f8;
+  --focus: #1681ff;
+  --shadow-soft: 0 14px 36px rgba(19, 32, 51, 0.08);
+  --shadow-card: 0 10px 24px rgba(19, 32, 51, 0.06);
   --font-display: "Bahnschrift", "Aptos Display", "Segoe UI", sans-serif;
   --font-sans: "Aptos", "Segoe UI", sans-serif;
 }
@@ -35,9 +39,8 @@ body {
   min-height: 100vh;
   color: var(--ink);
   background:
-    linear-gradient(115deg, rgba(12, 143, 79, 0.12) 0 16%, transparent 16% 100%),
-    linear-gradient(245deg, rgba(93, 183, 222, 0.18) 0 18%, transparent 18% 100%),
-    repeating-linear-gradient(90deg, rgba(12, 143, 79, 0.05) 0 1px, transparent 1px 92px),
+    radial-gradient(circle at top left, rgba(120, 182, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.75), transparent 220px),
     var(--background);
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
@@ -50,9 +53,7 @@ body::before {
   z-index: -1;
   pointer-events: none;
   content: "";
-  background:
-    linear-gradient(180deg, rgba(255, 253, 244, 0.9), rgba(246, 242, 223, 0.88)),
-    repeating-linear-gradient(135deg, rgba(18, 33, 58, 0.035) 0 2px, transparent 2px 22px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
 }
 
 ::selection {
@@ -114,7 +115,7 @@ img {
 
 @layer components {
   .dg-page {
-    @apply min-h-screen px-4 py-6 sm:px-6 lg:px-8;
+    @apply min-h-screen px-4 py-5 sm:px-6 lg:px-8;
   }
 
   .dg-container {
@@ -126,30 +127,26 @@ img {
   }
 
   .dg-surface {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 253, 244, 0.94)),
-      var(--surface-strong);
+    background: var(--surface-strong);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 18px;
     box-shadow: var(--shadow-card);
   }
 
   .dg-surface-dark {
-    color: #fffdf4;
+    color: #f8fbff;
     background:
-      linear-gradient(145deg, rgba(18, 33, 58, 0.96), rgba(4, 89, 47, 0.92)),
+      linear-gradient(145deg, rgba(19, 32, 51, 0.96), rgba(13, 93, 184, 0.94)),
       var(--night);
-    border: 1px solid rgba(255, 253, 244, 0.16);
-    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
     box-shadow: var(--shadow-soft);
   }
 
   .dg-card {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 253, 244, 0.94)),
-      var(--surface-strong);
+    background: var(--surface-strong);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 18px;
     box-shadow: var(--shadow-card);
     transition:
       transform 180ms ease,
@@ -158,11 +155,9 @@ img {
   }
 
   .dg-card-interactive {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 253, 244, 0.94)),
-      var(--surface-strong);
+    background: var(--surface-strong);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 18px;
     box-shadow: var(--shadow-card);
     transition:
       transform 180ms ease,
@@ -171,9 +166,9 @@ img {
   }
 
   .dg-card-interactive:hover {
-    transform: translateY(-2px);
-    border-color: rgba(10, 127, 72, 0.38);
-    box-shadow: 0 18px 46px rgba(18, 33, 58, 0.16);
+    transform: translateY(-1px);
+    border-color: rgba(22, 129, 255, 0.3);
+    box-shadow: 0 16px 30px rgba(19, 32, 51, 0.1);
   }
 
   .dg-button {
@@ -182,31 +177,31 @@ img {
 
   .dg-button-primary {
     @apply inline-flex min-h-touch items-center justify-center rounded-md px-5 py-3 text-sm font-bold text-white transition duration-200 disabled:cursor-not-allowed disabled:opacity-50;
-    background: linear-gradient(135deg, var(--pitch-dark), var(--pitch));
-    box-shadow: 0 12px 24px rgba(4, 89, 47, 0.24);
+    background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+    box-shadow: 0 10px 20px rgba(22, 129, 255, 0.22);
   }
 
   .dg-button-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 16px 28px rgba(4, 89, 47, 0.3);
+    box-shadow: 0 14px 24px rgba(22, 129, 255, 0.28);
   }
 
   .dg-button-secondary {
     @apply inline-flex min-h-touch items-center justify-center rounded-md px-5 py-3 text-sm font-bold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50;
     color: var(--night);
-    background: rgba(255, 253, 244, 0.82);
-    border: 1px solid rgba(16, 34, 26, 0.18);
+    background: var(--surface-strong);
+    border: 1px solid var(--line-strong);
   }
 
   .dg-button-secondary:hover {
     background: #ffffff;
-    border-color: rgba(10, 127, 72, 0.35);
+    border-color: rgba(22, 129, 255, 0.24);
   }
 
   .dg-input {
     @apply min-h-touch w-full rounded-md border px-4 py-3 transition;
     color: var(--ink);
-    background: rgba(255, 255, 255, 0.86);
+    background: rgba(255, 255, 255, 0.96);
     border-color: var(--line);
   }
 
@@ -224,7 +219,9 @@ img {
   .dg-chip {
     @apply inline-flex min-h-[32px] items-center rounded-md px-3 py-1 text-xs font-bold uppercase;
     letter-spacing: 0.08em;
-    border: 1px solid transparent;
+    border: 1px solid var(--line);
+    background: var(--surface-muted);
+    color: var(--muted);
   }
 
   .dg-chip-live {
@@ -259,15 +256,53 @@ img {
 
   .dg-score-tile {
     @apply inline-flex min-h-[64px] min-w-[84px] items-center justify-center rounded-md px-4 text-center font-bold;
-    color: #fffdf4;
+    color: #f8fbff;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
       var(--night);
-    border: 1px solid rgba(255, 253, 244, 0.18);
-    box-shadow: inset 0 -3px 0 rgba(246, 196, 69, 0.52);
+    border: 1px solid rgba(19, 32, 51, 0.18);
+    box-shadow: inset 0 -2px 0 rgba(22, 129, 255, 0.55);
   }
 
   .dg-reveal {
     animation: reveal-up 0.5s ease both;
+  }
+
+  .dg-shell-link {
+    @apply inline-flex min-h-[40px] items-center rounded-full px-4 text-sm font-bold transition;
+    color: var(--muted);
+    border: 1px solid transparent;
+  }
+
+  .dg-shell-link:hover {
+    color: var(--ink);
+    background: var(--surface-muted);
+    border-color: var(--line);
+  }
+
+  .dg-shell-link-active {
+    color: var(--accent-strong);
+    background: rgba(22, 129, 255, 0.1);
+    border-color: rgba(22, 129, 255, 0.16);
+  }
+
+  .dg-panel {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 248, 251, 0.98)),
+      var(--surface-strong);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+  }
+
+  .dg-subtle-card {
+    background: var(--surface-muted);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+  }
+
+  .dg-eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.16em];
+    color: var(--accent-strong);
   }
 }

@@ -9,11 +9,12 @@ import { startScoringProcessor } from './scoring/processor.js'
 import { startAggregator } from './scoring/aggregator.js'
 import { startScoreBroadcaster } from './scoring/broadcaster.js'
 import { createClient } from 'redis'
+import { startFootballDataSync } from './data-providers/sync-football-data.js'
 
 const app = await buildServer()
 
-await app.listen({ port: config.PORT, host: '0.0.0.0' })
-app.log.info(`Server running on port ${config.PORT}`)
+await app.listen({ port: config.PORT, host: config.BIND_HOST })
+app.log.info(`Server running on ${config.BIND_HOST}:${config.PORT}`)
 
 // Shared Redis publisher for aggregator and scorer broadcaster
 const redisPublisher = createClient({ url: config.REDIS_URL })
@@ -21,6 +22,7 @@ await redisPublisher.connect()
 
 startLockScheduler()
 startOutrightLockScheduler()
+startFootballDataSync()
 await startRedisSubscriber()
 await startMuralSubscriber()
 await startBadgeSubscriber()

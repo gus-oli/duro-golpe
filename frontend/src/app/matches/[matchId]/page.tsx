@@ -3,6 +3,8 @@ import { ScoreBreakdown } from '@/components/Scoring/ScoreBreakdown'
 import { PageShell, StatusPill } from '@/components/ui/Primitives'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import { isRealtimeEnabled } from '@/lib/realtime'
 
 interface Match {
   id: string
@@ -19,6 +21,11 @@ interface Match {
 interface Prediction {
   predictedHome: number
   predictedAway: number
+}
+
+interface League {
+  id: string
+  name: string
 }
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
@@ -43,6 +50,20 @@ async function getUserPrediction(matchId: string, token: string): Promise<Predic
     return res.json() as Promise<Prediction>
   } catch {
     return null
+  }
+}
+
+async function getMyLeagues(token: string): Promise<League[]> {
+  try {
+    const res = await fetch(`${API}/api/v1/leagues`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) return []
+    const data = (await res.json()) as { leagues: League[] }
+    return data.leagues
+  } catch {
+    return []
   }
 }
 
@@ -80,11 +101,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value ?? null
   const userId = token ? getUserIdFromToken(token) : null
+  const realtimeEnabled = Boolean(token) && isRealtimeEnabled()
   const { matchId } = await params
 
-  const [match, prediction] = await Promise.all([
+  const [match, prediction, leagues] = await Promise.all([
     getMatch(matchId),
     token ? getUserPrediction(matchId, token) : Promise.resolve(null),
+    token ? getMyLeagues(token) : Promise.resolve([]),
   ])
 
   if (!match) notFound()
@@ -95,17 +118,17 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
   return (
     <PageShell>
       <div className="space-y-6">
-        <section className="dg-surface-dark overflow-hidden p-5 sm:p-7">
+        <section className="dg-panel overflow-hidden p-5 sm:p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill tone={meta.tone}>{meta.label}</StatusPill>
-                <span className="dg-chip bg-white/10 text-white/75">{match.stage}</span>
+                <span className="dg-chip">{match.stage}</span>
               </div>
-              <h1 className="mt-4 text-3xl font-black text-white sm:text-5xl">
+              <h1 className="mt-4 text-3xl font-black text-[var(--ink)] sm:text-5xl">
                 {match.homeTeam.name} x {match.awayTeam.name}
               </h1>
-              <p className="mt-3 text-sm font-medium leading-6 text-white/75">
+              <p className="mt-3 text-sm font-medium leading-6 text-[var(--muted)]">
                 {kickoff.toLocaleString('pt-BR', {
                   weekday: 'long',
                   day: '2-digit',
@@ -124,7 +147,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
 
           <div className="dg-surface overflow-hidden">
             <div className="border-b border-[var(--line)] bg-[rgba(255,253,244,0.78)] px-4 py-5 text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted)]">Central do palpite</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent-strong)]">Central do palpite</p>
             </div>
             <MatchDetailClient
               matchId={match.id}
@@ -132,16 +155,44 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
               initialHome={match.homeScore}
               initialAway={match.awayScore}
               existingPrediction={prediction}
-              token={token}
+              isAuthenticated={Boolean(token)}
+              realtimeEnabled={realtimeEnabled}
             />
           </div>
 
           <TeamPanel team={match.awayTeam} />
         </section>
 
+        <section className="grid gap-3 md:grid-cols-3">
+          <Link href="/matches" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Proximo passo</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Voltar para agenda</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Continue a rodada sem morrer na tela do palpite.</p>
+          </Link>
+          <Link href={leagues[0] ? `/leagues/${leagues[0].id}` : '/leagues'} className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Liga</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">
+              {leagues[0] ? `Ver ${leagues[0].name}` : 'Abrir minhas ligas'}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Veja a disputa competitiva por tras do placar.</p>
+          </Link>
+          <Link
+            href={leagues[0] ? `/leagues/${leagues[0].id}?matchId=${match.id}#social-feed` : '/outrights'}
+            className="dg-card-interactive block p-4"
+          >
+            <p className="dg-eyebrow">{leagues[0] ? 'Mural' : 'Especiais'}</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">
+              {leagues[0] ? 'Conversar na liga' : 'Ir para mercados longos'}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              {leagues[0] ? 'Leve o jogo para o feed da liga sem cair numa rota escondida.' : 'Continue o fluxo fora do jogo do dia.'}
+            </p>
+          </Link>
+        </section>
+
         {token && userId && match.status === 'FINISHED' && (
           <section aria-label="Sua pontuacao">
-            <ScoreBreakdown userId={userId} matchId={match.id} token={token} />
+            <ScoreBreakdown userId={userId} matchId={match.id} />
           </section>
         )}
 

@@ -2,11 +2,10 @@ import type { WebSocket } from 'ws'
 import { createClient } from 'redis'
 import { config } from '../config.js'
 
-type MuralKey = `${string}:${string}`
-const muralSubscribers = new Map<MuralKey, Set<WebSocket>>()
+const muralSubscribers = new Map<string, Set<WebSocket>>()
 
-export function subscribeToMural(leagueId: string, matchId: string, ws: WebSocket): void {
-  const key: MuralKey = `${leagueId}:${matchId}`
+export function subscribeToMural(leagueId: string, ws: WebSocket): void {
+  const key = leagueId
   if (!muralSubscribers.has(key)) muralSubscribers.set(key, new Set())
   muralSubscribers.get(key)!.add(ws)
 
@@ -15,9 +14,8 @@ export function subscribeToMural(leagueId: string, matchId: string, ws: WebSocke
   })
 }
 
-function broadcastToMural(leagueId: string, matchId: string, payload: unknown): void {
-  const key: MuralKey = `${leagueId}:${matchId}`
-  const subscribers = muralSubscribers.get(key)
+function broadcastToMural(leagueId: string, payload: unknown): void {
+  const subscribers = muralSubscribers.get(leagueId)
   if (!subscribers) return
 
   const message = JSON.stringify(payload)
@@ -30,18 +28,17 @@ export async function startMuralSubscriber(): Promise<void> {
   const subscriber = createClient({ url: config.REDIS_URL })
   await subscriber.connect()
 
-  await subscriber.pSubscribe('mural:*:*', (message, channel) => {
+  await subscriber.pSubscribe('mural:*', (message, channel) => {
     try {
       const parts = channel.split(':')
       const leagueId = parts[1]
-      const matchId = parts[2]
-      if (!leagueId || !matchId) return
+      if (!leagueId) return
       const payload = JSON.parse(message) as unknown
-      broadcastToMural(leagueId, matchId, payload)
+      broadcastToMural(leagueId, payload)
     } catch {
       // ignore malformed
     }
   })
 
-  console.info('[MuralBroadcaster] Subscribed to Redis mural:*:* channels')
+  console.info('[MuralBroadcaster] Subscribed to Redis mural:* channels')
 }

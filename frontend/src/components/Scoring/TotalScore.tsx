@@ -9,7 +9,7 @@ interface TotalScoreProps {
   initialTotalPoints: number
   initialExactScoreCount: number
   initialWinnerGoalDiffCount: number
-  token: string | null
+  realtimeEnabled: boolean
 }
 
 interface ScoreTotalUpdatedEvent {
@@ -24,13 +24,13 @@ export function TotalScore({
   initialTotalPoints,
   initialExactScoreCount,
   initialWinnerGoalDiffCount,
-  token,
+  realtimeEnabled,
 }: TotalScoreProps) {
   const [totalPoints, setTotalPoints] = useState(initialTotalPoints)
   const [exactScoreCount, setExactScoreCount] = useState(initialExactScoreCount)
   const [winnerGoalDiffCount, setWinnerGoalDiffCount] = useState(initialWinnerGoalDiffCount)
 
-  useWebSocket(token, {
+  useWebSocket(realtimeEnabled, {
     'score:total:updated': (data) => {
       const event = data as ScoreTotalUpdatedEvent
       setTotalPoints(event.totalPoints)

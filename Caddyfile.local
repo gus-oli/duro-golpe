@@ -1,0 +1,32 @@
+:8080 {
+  encode gzip zstd
+
+  @backend_api path /api/v1/*
+  handle @backend_api {
+    reverse_proxy 127.0.0.1:3001 {
+      header_up Host {host}
+      header_up X-Forwarded-Host {host}
+      header_up X-Forwarded-Proto {scheme}
+      header_up X-Forwarded-For {remote_host}
+    }
+  }
+
+  @backend_ws path /ws
+  handle @backend_ws {
+    reverse_proxy 127.0.0.1:3001 {
+      header_up Host {host}
+      header_up X-Forwarded-Host {host}
+      header_up X-Forwarded-Proto {scheme}
+      header_up X-Forwarded-For {remote_host}
+    }
+  }
+
+  handle {
+    reverse_proxy 127.0.0.1:3000 {
+      header_up Host {host}
+      header_up X-Forwarded-Host {host}
+      header_up X-Forwarded-Proto {scheme}
+      header_up X-Forwarded-For {remote_host}
+    }
+  }
+}

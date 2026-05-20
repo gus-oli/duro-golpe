@@ -1,6 +1,6 @@
 import { db } from '../db/index.js'
-import { leagues, leagueMemberships, users, userTotals } from '../db/schema/index.js'
-import { and, eq, desc, asc, sql } from 'drizzle-orm'
+import { badges, leagues, leagueMemberships, userBadges, users, userTotals } from '../db/schema/index.js'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { generateInviteCode } from './invite-code.js'
 import type { League, LeagueMembership } from '../db/schema/leagues.js'
 
@@ -65,6 +65,13 @@ export interface RankingEntry {
   exactScoreCount: number
   winnerGoalDiffCount: number
   position: number
+  badges: Array<{
+    type: string
+    labelPt: string
+    descriptionPt: string
+    iconKey: string
+    zebraCount: number | null
+  }>
 }
 
 export async function getLeagueRanking(leagueId: string, requestingUserId: string): Promise<RankingEntry[]> {
@@ -105,11 +112,43 @@ export async function getLeagueRanking(leagueId: string, requestingUserId: strin
       asc(users.displayName),
     )
 
+  const memberIds = members.map((member) => member.userId)
+  const badgeRows =
+    memberIds.length === 0
+      ? []
+      : await db
+          .select({
+            userId: userBadges.userId,
+            type: badges.type,
+            labelPt: badges.labelPt,
+            descriptionPt: badges.descriptionPt,
+            iconKey: badges.iconKey,
+            zebraCount: userBadges.zebraCount,
+          })
+          .from(userBadges)
+          .innerJoin(badges, eq(userBadges.badgeType, badges.type))
+          .where(inArray(userBadges.userId, memberIds))
+          .orderBy(userBadges.awardedAt)
+
+  const badgesByUser = new Map<string, RankingEntry['badges']>()
+  for (const badgeRow of badgeRows) {
+    const current = badgesByUser.get(badgeRow.userId) ?? []
+    current.push({
+      type: badgeRow.type,
+      labelPt: badgeRow.labelPt,
+      descriptionPt: badgeRow.descriptionPt,
+      iconKey: badgeRow.iconKey,
+      zebraCount: badgeRow.type === 'ZEBRA_HUNTER' ? badgeRow.zebraCount : null,
+    })
+    badgesByUser.set(badgeRow.userId, current)
+  }
+
   return members.map((m, idx) => ({
     ...m,
     totalPoints: Number(m.totalPoints),
     exactScoreCount: Number(m.exactScoreCount),
     winnerGoalDiffCount: Number(m.winnerGoalDiffCount),
     position: idx + 1,
+    badges: badgesByUser.get(m.userId) ?? [],
   }))
 }

@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { PageShell } from '@/components/ui/Primitives'
 
 export default function LoginPage() {
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -27,7 +29,7 @@ export default function LoginPage() {
         return
       }
 
-      window.location.assign('/matches')
+      window.location.assign(searchParams.get('from') ?? '/matches')
     } catch {
       setError('Erro de conexao')
     } finally {
@@ -79,14 +81,11 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-4">
-            <a
-              href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/v1/auth/google`}
-              className="dg-button-secondary w-full"
-            >
-              Entrar com Google
-            </a>
-          </div>
+          <p className="mt-4 text-center text-sm font-medium text-[var(--muted)]">
+            <Link href="/forgot-password" className="font-black text-[var(--pitch-dark)] hover:underline">
+              Esqueci minha senha
+            </Link>
+          </p>
 
           <p className="mt-6 text-center text-sm font-medium text-[var(--muted)]">
             Nao tem conta?{' '}

@@ -45,16 +45,40 @@ const optionalNonEmptyString = z.preprocess(
   z.string().min(1).optional(),
 )
 
+const optionalBoolean = z.preprocess((value) => {
+  if (typeof value === 'boolean') {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === 'true') return true
+    if (normalized === 'false') return false
+    if (normalized.length === 0) return undefined
+  }
+
+  return value
+}, z.boolean().optional())
+
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
   JWT_SECRET: z.string().min(32),
   API_FOOTBALL_KEY: optionalNonEmptyString,
+  FOOTBALL_DATA_TOKEN: optionalNonEmptyString,
+  FOOTBALL_DATA_POLL_ENABLED: optionalBoolean.default(false),
+  FOOTBALL_DATA_COMPETITION_CODE: z.string().min(1).default('WC'),
+  FOOTBALL_DATA_SEASON: z.coerce.number().int().default(2026),
   WEBHOOK_SECRET: z.string().min(16),
   BASE_URL: z.string().url().default('http://localhost:3001'),
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
+  BREVO_API_KEY: optionalNonEmptyString,
+  BREVO_SENDER_EMAIL: optionalNonEmptyString,
+  BREVO_SENDER_NAME: optionalNonEmptyString,
+  PASSWORD_RESET_TOKEN_TTL_MINUTES: z.coerce.number().int().positive().default(30),
   GOOGLE_CLIENT_ID: optionalNonEmptyString,
   GOOGLE_CLIENT_SECRET: optionalNonEmptyString,
+  BIND_HOST: z.string().min(1).default('127.0.0.1'),
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 })

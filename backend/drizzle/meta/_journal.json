@@ -15,6 +15,13 @@
       "when": 1777543200000,
       "tag": "0001_outright_scores",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778861400000,
+      "tag": "0002_league_social_feed_beta_readiness",
+      "breakpoints": true
     }
   ]
 }

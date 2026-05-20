@@ -45,6 +45,8 @@ export async function buildServer(): Promise<ReturnType<typeof Fastify>> {
     })
   })
 
+  app.get('/health', async () => ({ ok: true }))
+
   await app.register(authRoutes)
   await app.register(oauthRoutes)
   await app.register(muralRoutes)

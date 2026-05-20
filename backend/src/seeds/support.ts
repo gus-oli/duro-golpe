@@ -10,7 +10,7 @@ export interface SeedTeamInput {
   key: string
   name: string
   fifaCode: string
-  flagUrl: string
+  flagUrl?: string | null
   groupLetter?: string | null
   apiFootballId?: string | null
 }
@@ -57,6 +57,7 @@ export async function upsertTeams(teamInputs: SeedTeamInput[]): Promise<Record<s
           name: team.name,
           flagUrl: team.flagUrl,
           groupLetter: team.groupLetter ?? null,
+          apiFootballId: team.apiFootballId ?? null,
         },
       })
       .returning({ id: teams.id })

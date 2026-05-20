@@ -1,11 +1,8 @@
-interface MuralPostProps {
-  id: string
-  userId: string
-  displayName: string
-  avatarUrl: string | null
-  content: string
-  createdAt: string
+import type { MuralPostItem } from './types'
+
+interface MuralPostProps extends MuralPostItem {
   currentUserId?: string
+  isFresh?: boolean
 }
 
 function relativeTime(isoDate: string): string {
@@ -19,33 +16,57 @@ function relativeTime(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
 
-export function MuralPost({ userId, displayName, avatarUrl, content, createdAt, currentUserId }: MuralPostProps) {
+export function MuralPost({
+  userId,
+  displayName,
+  avatarUrl,
+  content,
+  createdAt,
+  matchContext,
+  currentUserId,
+  isFresh = false,
+}: MuralPostProps) {
   const isOwn = userId === currentUserId
+  const safeDisplayName = displayName?.trim() || 'Jogador'
 
   return (
-    <li className={`flex gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+    <li
+      className={`flex gap-3 rounded-2xl px-2 py-1 transition-colors duration-700 ${
+        isOwn ? 'flex-row-reverse' : 'flex-row'
+      } ${isFresh ? 'bg-[rgba(48,119,255,0.08)]' : 'bg-transparent'}`}
+    >
       {avatarUrl ? (
         <img
           src={avatarUrl}
-          alt={displayName}
-          className="w-8 h-8 rounded-full object-cover shrink-0 mt-1"
+          alt={safeDisplayName}
+          className="mt-1 h-9 w-9 shrink-0 rounded-full object-cover"
         />
       ) : (
-        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-sm font-bold shrink-0 mt-1">
-          {displayName[0]?.toUpperCase()}
+        <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(12,143,79,0.13)] text-sm font-bold text-[var(--pitch-dark)]">
+          {safeDisplayName[0]?.toUpperCase()}
         </div>
       )}
 
-      <div className={`max-w-[75%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-        <p className="text-xs text-gray-500">{isOwn ? 'Você' : displayName}</p>
+      <div className={`flex max-w-[78%] flex-col gap-1 ${isOwn ? 'items-end' : 'items-start'}`}>
+        <p className="text-xs font-medium text-[var(--muted)]">{isOwn ? 'Voce' : safeDisplayName}</p>
+
+        {matchContext && (
+          <span className="dg-chip text-[10px] uppercase tracking-[0.08em]">
+            Sobre {matchContext.label}
+          </span>
+        )}
+
         <div
-          className={`px-3 py-2 rounded-2xl text-sm break-words ${
-            isOwn ? 'bg-green-600 text-white rounded-tr-sm' : 'bg-gray-100 text-gray-900 rounded-tl-sm'
+          className={`rounded-2xl px-3 py-2 text-sm break-words ${
+            isOwn
+              ? 'rounded-tr-sm bg-[var(--accent)] text-white'
+              : 'rounded-tl-sm bg-[var(--surface-muted)] text-[var(--ink)]'
           }`}
         >
           {content}
         </div>
-        <p className="text-xs text-gray-400">{relativeTime(createdAt)}</p>
+
+        <p className="text-xs text-[var(--muted)]">{relativeTime(createdAt)}</p>
       </div>
     </li>
   )

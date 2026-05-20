@@ -1,70 +1,85 @@
-import { describe, it, expect } from 'vitest'
+import Fastify, { type FastifyInstance } from 'fastify'
+import jwt from '@fastify/jwt'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { muralRoutes } from '../../src/mural/routes.js'
 
-// Integration tests for Mural de Resenha.
-// Tests run against real PostgreSQL + Redis via testcontainers.
-// Testcontainers wiring deferred — stubs demonstrate expected behaviour.
+const muralServiceMocks = vi.hoisted(() => ({
+  createPost: vi.fn(),
+  getPosts: vi.fn(),
+  hidePostForActor: vi.fn(),
+}))
 
-describe('Mural de Resenha (integration)', () => {
-  describe('POST /api/v1/leagues/:leagueId/matches/:matchId/mural', () => {
-    it('returns 201 with post data when league member posts a comment', async () => {
-      // TODO: wire testcontainers + buildServer()
-      // 1. Register user, create league, get leagueId
-      // 2. Seed a match
-      // 3. POST { content: 'Vai Brasil!' }
-      // 4. Expect 201, { id, content, createdAt }
-      expect(true).toBe(true)
+vi.mock('../../src/mural/service.js', () => muralServiceMocks)
+
+describe('League social feed security (integration)', () => {
+  let app: FastifyInstance
+  let token: string
+
+  beforeEach(async () => {
+    app = Fastify()
+    await app.register(jwt, {
+      secret: 'x'.repeat(32),
+      formatUser: (payload) => ({ id: payload.sub }),
     })
-
-    it('returns 403 when user is not a league member', async () => {
-      // User not in league attempts POST
-      // Expect 403
-      expect(true).toBe(true)
+    app.setErrorHandler((error, _request, reply) => {
+      const typedError = error as { statusCode?: number; name?: string; message?: string }
+      const statusCode = typedError.statusCode ?? 500
+      return reply.status(statusCode).send({
+        statusCode,
+        error: typedError.name ?? 'Error',
+        message: typedError.message ?? 'Erro na requisicao',
+      })
     })
-
-    it('returns 400 when content is empty', async () => {
-      // POST { content: '' }
-      // Expect 400
-      expect(true).toBe(true)
-    })
-
-    it('returns 400 when content exceeds 500 characters', async () => {
-      // POST { content: 'x'.repeat(501) }
-      // Expect 400
-      expect(true).toBe(true)
-    })
-
-    it('returns 401 when no auth token provided', async () => {
-      expect(true).toBe(true)
-    })
+    await app.register(muralRoutes)
+    token = app.jwt.sign({ sub: 'user-1' })
   })
 
-  describe('GET /api/v1/leagues/:leagueId/matches/:matchId/mural', () => {
-    it('returns 200 with posts visible to league member', async () => {
-      // User A in league1 posts
-      // User A GET league1 mural for that match
-      // Expect post visible in posts array
-      expect(true).toBe(true)
-    })
-
-    it('returns empty array for different league with same match', async () => {
-      // User A posts in league1/match1
-      // User A GETs league2/match1 mural (User A also member of league2)
-      // Expect posts: []
-      expect(true).toBe(true)
-    })
-
-    it('returns 403 when user is not a league member', async () => {
-      // Non-member GET
-      // Expect 403
-      expect(true).toBe(true)
-    })
+  afterEach(async () => {
+    vi.clearAllMocks()
+    await app.close()
   })
 
-  describe('Mural Redis fanout', () => {
-    it('Redis channel receives message when post is created', async () => {
-      // POST comment → assert Redis channel mural:{leagueId}:{matchId} received message
-      // Testcontainers: both PG + Redis needed
-      expect(true).toBe(true)
+  it('denies hide requests when the actor is not allowed to hide the target post', async () => {
+    muralServiceMocks.hidePostForActor.mockRejectedValue(Object.assign(new Error('Acesso negado'), { statusCode: 403 }))
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/leagues/league-1/mural/post-1/hide',
+      headers: { authorization: `Bearer ${token}` },
     })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.json()).toMatchObject({ message: 'Acesso negado' })
+    expect(muralServiceMocks.hidePostForActor).toHaveBeenCalledWith('user-1', 'league-1', 'post-1')
+  })
+
+  it('denies hide requests when the post does not belong to the claimed league context', async () => {
+    muralServiceMocks.hidePostForActor.mockRejectedValue(
+      Object.assign(new Error('Post do mural nao encontrado'), { statusCode: 404 }),
+    )
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/leagues/league-1/matches/match-1/mural/post-9/hide',
+      headers: { authorization: `Bearer ${token}` },
+    })
+
+    expect(response.statusCode).toBe(404)
+    expect(response.json()).toMatchObject({ message: 'Post do mural nao encontrado' })
+    expect(muralServiceMocks.hidePostForActor).toHaveBeenCalledWith('user-1', 'league-1', 'post-9')
+  })
+
+  it('denies league feed reads when the user is not an active member of the league', async () => {
+    muralServiceMocks.getPosts.mockRejectedValue(Object.assign(new Error('Acesso negado'), { statusCode: 403 }))
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/leagues/league-2/mural',
+      headers: { authorization: `Bearer ${token}` },
+    })
+
+    expect(response.statusCode).toBe(403)
+    expect(response.json()).toMatchObject({ message: 'Acesso negado' })
+    expect(muralServiceMocks.getPosts).toHaveBeenCalledWith('user-1', 'league-2', 50, undefined)
   })
 })

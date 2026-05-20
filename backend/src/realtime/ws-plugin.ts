@@ -1,24 +1,24 @@
 import type { FastifyInstance } from 'fastify'
+import { assertActiveLeagueMember, matchExists } from '../auth/access-control.js'
+import { getAuthTokenFromCookieHeader } from '../auth/cookies.js'
+import { subscribeToMural } from '../mural/broadcaster.js'
 import { subscribeToMatch } from './broadcaster.js'
 import { registerUserSession } from './user-sessions.js'
-import { subscribeToMural } from '../mural/broadcaster.js'
 
 export async function wsPlugin(app: FastifyInstance): Promise<void> {
-  // General authenticated WebSocket connection — receives all personal events
-  // (badge:awarded, score:total:updated, score:match:updated, mural:post:new, ranking:updated)
   app.get(
     '/ws',
     { websocket: true },
     async (socket, request) => {
-      const queryToken = (request.query as Record<string, string | undefined>)['token']
-      if (!queryToken) {
+      const cookieToken = getAuthTokenFromCookieHeader(request.headers.cookie)
+      if (!cookieToken) {
         socket.close(1008, 'Token required')
         return
       }
 
       let userId: string
       try {
-        const payload = app.jwt.verify<{ sub: string }>(queryToken)
+        const payload = app.jwt.verify<{ sub: string }>(cookieToken)
         userId = payload.sub
       } catch {
         socket.close(1008, 'Unauthorized')
@@ -27,30 +27,28 @@ export async function wsPlugin(app: FastifyInstance): Promise<void> {
 
       registerUserSession(userId, socket)
 
-      // Handle incoming subscription messages from the client
       socket.on('message', (data: Buffer) => {
-        try {
-          const msg = JSON.parse(data.toString()) as { type: string; leagueId?: string; matchId?: string }
-          if (msg.type === 'subscribe:mural' && msg.leagueId && msg.matchId) {
-            subscribeToMural(msg.leagueId, msg.matchId, socket)
-          }
-          if (msg.type === 'subscribe:match' && msg.matchId) {
-            subscribeToMatch(msg.matchId, socket)
-          }
-        } catch {
-          // ignore malformed messages
-        }
-      })
-    },
-  )
+        void (async () => {
+          try {
+            const msg = JSON.parse(data.toString()) as { type: string; leagueId?: string; matchId?: string }
 
-  // Match-specific WebSocket (legacy — kept for backward compatibility)
-  app.get<{ Params: { matchId: string } }>(
-    '/api/v1/ws/matches/:matchId',
-    { websocket: true },
-    (socket, request) => {
-      const { matchId } = request.params
-      subscribeToMatch(matchId, socket)
+            if (msg.type === 'subscribe:mural' && msg.leagueId) {
+              await assertActiveLeagueMember(userId, msg.leagueId)
+              subscribeToMural(msg.leagueId, socket)
+            }
+
+            if (msg.type === 'subscribe:match' && msg.matchId) {
+              if (!(await matchExists(msg.matchId))) {
+                throw new Error('Match not found')
+              }
+
+              subscribeToMatch(msg.matchId, socket)
+            }
+          } catch {
+            // Ignore malformed or unauthorized messages.
+          }
+        })()
+      })
     },
   )
 }

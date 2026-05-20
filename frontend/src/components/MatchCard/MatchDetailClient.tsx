@@ -17,7 +17,8 @@ interface MatchDetailClientProps {
   initialHome?: number | null
   initialAway?: number | null
   existingPrediction: Prediction | null
-  token: string | null
+  isAuthenticated: boolean
+  realtimeEnabled: boolean
 }
 
 interface StatusChangedEvent {
@@ -33,13 +34,20 @@ interface ScoreLiveEvent {
   awayScore: number
 }
 
+interface MatchSnapshot {
+  status: 'SCHEDULED' | 'LOCKED' | 'LIVE' | 'FINISHED'
+  homeScore?: number | null
+  awayScore?: number | null
+}
+
 export function MatchDetailClient({
   matchId,
   initialStatus,
   initialHome,
   initialAway,
   existingPrediction,
-  token,
+  isAuthenticated,
+  realtimeEnabled,
 }: MatchDetailClientProps) {
   const [status, setStatus] = useState(initialStatus)
   const [prediction, setPrediction] = useState(existingPrediction)
@@ -52,6 +60,67 @@ export function MatchDetailClient({
   useEffect(() => {
     window.__TEST_MATCH_ID__ = matchId
   }, [matchId])
+
+  useEffect(() => {
+    let cancelled = false
+    let timeoutId: number | null = null
+    let attempts = 0
+    const maxAttempts = status === 'LIVE' ? 12 : 6
+    const refreshDelayMs = status === 'LIVE' ? 10000 : status === 'LOCKED' ? 15000 : 5000
+
+    async function refreshMatchState() {
+      try {
+        const res = await fetch(`/api/matches/${matchId}`, { cache: 'no-store' })
+        if (!res.ok || cancelled) return
+
+        const snapshot = (await res.json()) as MatchSnapshot
+        if (cancelled) return
+
+        setStatus(snapshot.status)
+        setLiveScore({
+          home: snapshot.homeScore ?? null,
+          away: snapshot.awayScore ?? null,
+        })
+      } catch {
+        // The WebSocket remains the primary transport; polling is a resilience fallback.
+      }
+    }
+
+    function scheduleRefresh() {
+      if (cancelled || document.visibilityState !== 'visible' || status === 'FINISHED' || attempts >= maxAttempts) {
+        return
+      }
+
+      timeoutId = window.setTimeout(async () => {
+        timeoutId = null
+        attempts += 1
+        await refreshMatchState()
+        scheduleRefresh()
+      }, refreshDelayMs)
+    }
+
+    function handleVisibilityOrFocus() {
+      if (document.visibilityState !== 'visible' || status === 'FINISHED') return
+      void refreshMatchState()
+      if (timeoutId == null) {
+        scheduleRefresh()
+      }
+    }
+
+    void refreshMatchState()
+    scheduleRefresh()
+    window.addEventListener('focus', handleVisibilityOrFocus)
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus)
+
+    return () => {
+      cancelled = true
+      if (timeoutId != null) {
+        window.clearTimeout(timeoutId)
+      }
+      window.removeEventListener('focus', handleVisibilityOrFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus)
+    }
+  }, [matchId, status])
 
   async function handlePredictionSubmit(home: number, away: number): Promise<void> {
     const method = prediction ? 'PUT' : 'POST'
@@ -80,7 +149,7 @@ export function MatchDetailClient({
     })
   }
 
-  useWebSocket(token, {
+  useWebSocket(realtimeEnabled, {
     'match:status:changed': (data) => {
       const event = data as StatusChangedEvent
       if (event.matchId === matchId) {
@@ -108,7 +177,7 @@ export function MatchDetailClient({
 
       <LockOverlay isLocked={isLocked} />
 
-      {token ? (
+      {isAuthenticated ? (
         <PredictionInput
           matchId={matchId}
           existingPrediction={prediction}

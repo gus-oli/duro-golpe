@@ -15,7 +15,6 @@ interface MatchScoreItem {
 interface ScoreBreakdownProps {
   userId: string
   matchId: string
-  token: string
 }
 
 const TIER_COLORS: Record<string, string> = {
@@ -26,18 +25,14 @@ const TIER_COLORS: Record<string, string> = {
   TOTAL_MISS: 'bg-[rgba(18,33,58,0.08)] text-[var(--muted)] border-[rgba(18,33,58,0.12)]',
 }
 
-const API = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001'
-
-export function ScoreBreakdown({ userId, matchId, token }: ScoreBreakdownProps) {
+export function ScoreBreakdown({ userId, matchId }: ScoreBreakdownProps) {
   const [score, setScore] = useState<MatchScoreItem | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchScore() {
       try {
-        const res = await fetch(`${API}/api/v1/users/${userId}/scores/matches?limit=50`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        const res = await fetch(`/api/users/${userId}/scores/matches?limit=50`, { cache: 'no-store' })
         if (!res.ok) return
         const data = (await res.json()) as { items: MatchScoreItem[] }
         const item = data.items.find((s) => s.matchId === matchId)
@@ -49,7 +44,7 @@ export function ScoreBreakdown({ userId, matchId, token }: ScoreBreakdownProps) 
       }
     }
     void fetchScore()
-  }, [userId, matchId, token])
+  }, [userId, matchId])
 
   if (loading) {
     return <p className="py-3 text-center text-sm font-medium text-[var(--muted)]">Carregando pontuacao...</p>

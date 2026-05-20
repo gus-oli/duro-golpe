@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { cookies } from 'next/headers'
 import { BadgeToastProvider } from '@/components/Badges/BadgeToastProvider'
+import { AppShell } from '@/components/ui/AppShell'
+import { isRealtimeEnabled } from '@/lib/realtime'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -13,24 +15,19 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#12213a',
+  themeColor: '#f6f8fb',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value ?? null
+  const realtimeEnabled = Boolean(token) && isRealtimeEnabled()
 
   return (
     <html lang="pt-BR">
       <body>
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:font-bold focus:text-[var(--pitch-dark)] focus:shadow-lg"
-        >
-          Ir para conteudo principal
-        </a>
-        <BadgeToastProvider token={token}>
-          <div id="main-content">{children}</div>
+        <BadgeToastProvider realtimeEnabled={realtimeEnabled}>
+          <AppShell isAuthenticated={Boolean(token)}>{children}</AppShell>
         </BadgeToastProvider>
       </body>
     </html>

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { assertSelfAccess } from '../auth/access-control.js'
 import { requireAuth } from '../auth/middleware.js'
 import { validateQuery } from '../middleware/validate.js'
 import { db } from '../db/index.js'
@@ -20,6 +21,7 @@ export async function scoringRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: requireAuth },
     async (request, reply) => {
       const { userId } = request.params
+      assertSelfAccess(request.user.id, userId)
 
       const [userTotal] = await db
         .select()
@@ -67,6 +69,7 @@ export async function scoringRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: [requireAuth, validateQuery(matchScoresQuerySchema)] },
     async (request, reply) => {
       const { userId } = request.params
+      assertSelfAccess(request.user.id, userId)
       const { page, limit } = request.query as z.infer<typeof matchScoresQuerySchema>
       const offset = (page - 1) * limit
 

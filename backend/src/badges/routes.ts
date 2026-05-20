@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import { assertSelfAccess } from '../auth/access-control.js'
 import { requireAuth } from '../auth/middleware.js'
 import { db } from '../db/index.js'
 import { badges, userBadges, users } from '../db/schema/index.js'
@@ -10,6 +11,7 @@ export async function badgeRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: requireAuth },
     async (request, reply) => {
       const { userId } = request.params
+      assertSelfAccess(request.user.id, userId)
 
       const [user] = await db.select({ displayName: users.displayName }).from(users).where(eq(users.id, userId)).limit(1)
       if (!user) {

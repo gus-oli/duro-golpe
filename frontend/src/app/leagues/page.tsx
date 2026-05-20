@@ -32,13 +32,12 @@ export default async function LeaguesPage() {
 
   return (
     <PageShell>
-      <div className="space-y-8">
-        <section className="dg-surface-dark p-5 sm:p-7">
+      <div className="space-y-6">
+        <section className="dg-panel p-5 sm:p-6">
           <SectionHeader
-            inverse
             eyebrow="Competicao privada"
             title="Minhas Ligas"
-            description="A tabela onde cada placar pesa. Crie uma liga, chame a galera e acompanhe a briga por posicao."
+            description="A tabela onde cada placar pesa. Crie uma liga, chame a galera e use a competicao como eixo do produto."
             actions={
               <>
                 <Link href="/leagues/join" className="dg-button-secondary">
@@ -50,6 +49,24 @@ export default async function LeaguesPage() {
               </>
             }
           />
+        </section>
+
+        <section className="grid gap-3 md:grid-cols-3">
+          <Link href="/matches" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Partidas</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Voltar para agenda</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Entre na rodada e veja onde sua liga pode virar.</p>
+          </Link>
+          <Link href="/outrights" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Especiais</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Abrir mercados</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Especiais tambem mexem na disputa total.</p>
+          </Link>
+          <Link href="/profile" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Conta</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Ver meu resumo</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Pontuacao, ligas e atalhos do seu fluxo.</p>
+          </Link>
         </section>
 
         {leagues.length === 0 ? (

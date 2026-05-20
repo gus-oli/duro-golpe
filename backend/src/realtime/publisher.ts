@@ -36,6 +36,16 @@ interface MatchResultConfirmedPayload {
   source: string
 }
 
+interface MatchResultAmendedPayload {
+  matchId: string
+  previousMatchResultId: string
+  newMatchResultId: string
+  homeGoals: number
+  awayGoals: number
+  confirmedAt: string
+  source: string
+}
+
 interface UserTotalsUpdatedPayload {
   matchId: string | null
   affectedUserIds: string[]
@@ -80,6 +90,17 @@ export async function publishScoringMatchResultConfirmed(payload: MatchResultCon
     'match.result.confirmed',
     JSON.stringify({
       event: 'match.result.confirmed',
+      ...payload,
+    }),
+  )
+}
+
+export async function publishScoringMatchResultAmended(payload: MatchResultAmendedPayload): Promise<void> {
+  const publisher = await getPublisher()
+  await publisher.publish(
+    'match.result.amended',
+    JSON.stringify({
+      event: 'match.result.amended',
       ...payload,
     }),
   )

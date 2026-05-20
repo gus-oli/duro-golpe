@@ -1,4 +1,5 @@
 export * from './users.js'
+export * from './password-reset-tokens.js'
 export * from './teams.js'
 export * from './matches.js'
 export * from './predictions.js'

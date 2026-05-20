@@ -1,3 +1,5 @@
+> Superseded for the primary authenticated frontend by `sports-companion-product-shell`. Keep this change as historical context for the earlier visual direction, not as the active target for the product shell.
+
 ## Context
 
 The current frontend already supports the core launch flows, but its presentation is fragmented, visually flat, and too close to scaffold-level styling. The product needs a stronger identity before deployment, especially across the pages that define first impression and repeat engagement: home, matches, match detail, leagues, and outrights.

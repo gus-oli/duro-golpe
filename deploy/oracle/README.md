@@ -1,5 +1,7 @@
 # Oracle Hosted Beta Assets
 
+These templates remain as reference material for the older Oracle-hosted path. For the current private-beta recommendation, prefer the local machine + Cloudflare Tunnel flow documented in `deploy/local-tunnel/` and `docs/launch-runbook.md`.
+
 These templates document the canonical hosted beta layout for the `oracle-neon-upstash-deploy` change.
 
 ## Expected Layout

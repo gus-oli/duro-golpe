@@ -25,8 +25,7 @@ async function rateLimitedFetch(url: string): Promise<Response> {
 
   const response = await fetch(url, {
     headers: {
-      'x-rapidapi-key': requireApiFootballKey(),
-      'x-rapidapi-host': 'v3.football.api-sports.io',
+      'x-apisports-key': requireApiFootballKey(),
     },
   })
 
@@ -61,7 +60,13 @@ export async function getTeams(leagueId = 1, season = 2026): Promise<ApiFootball
   const response = await rateLimitedFetch(
     `${BASE_URL}/teams?league=${leagueId}&season=${season}`,
   )
-  const data = (await response.json()) as { response: Array<{ team: ApiFootballTeam }> }
+  const data = (await response.json()) as {
+    errors?: string[] | Record<string, string>
+    response: Array<{ team: ApiFootballTeam }>
+  }
+  if (Array.isArray(data.errors) ? data.errors.length > 0 : data.errors && Object.keys(data.errors).length > 0) {
+    throw new Error(`API-Football teams error: ${JSON.stringify(data.errors)}`)
+  }
   return data.response.map((r) => r.team)
 }
 
@@ -69,6 +74,12 @@ export async function getFixtures(leagueId = 1, season = 2026): Promise<ApiFootb
   const response = await rateLimitedFetch(
     `${BASE_URL}/fixtures?league=${leagueId}&season=${season}`,
   )
-  const data = (await response.json()) as { response: ApiFootballFixture[] }
+  const data = (await response.json()) as {
+    errors?: string[] | Record<string, string>
+    response: ApiFootballFixture[]
+  }
+  if (Array.isArray(data.errors) ? data.errors.length > 0 : data.errors && Object.keys(data.errors).length > 0) {
+    throw new Error(`API-Football fixtures error: ${JSON.stringify(data.errors)}`)
+  }
   return data.response
 }

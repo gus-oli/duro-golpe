@@ -5,6 +5,7 @@ import { db } from '../db/index.js'
 import { users } from '../db/schema/index.js'
 import { eq } from 'drizzle-orm'
 import { validateBody } from '../middleware/validate.js'
+import { confirmPasswordReset, requestPasswordReset } from './password-recovery.js'
 
 const registerSchema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -15,6 +16,15 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+})
+
+const passwordResetRequestSchema = z.object({
+  email: z.string().email('E-mail inválido'),
+})
+
+const passwordResetConfirmSchema = z.object({
+  token: z.string().min(32, 'Token inválido'),
+  password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres'),
 })
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
@@ -61,6 +71,26 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         token,
         user: { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl },
       })
+    },
+  )
+
+  app.post(
+    '/api/v1/auth/password-reset/request',
+    { preHandler: validateBody(passwordResetRequestSchema) },
+    async (request, reply) => {
+      const { email } = request.body as z.infer<typeof passwordResetRequestSchema>
+      await requestPasswordReset(email)
+      return reply.send({ ok: true, message: 'Se o e-mail existir, enviaremos um link de recuperação.' })
+    },
+  )
+
+  app.post(
+    '/api/v1/auth/password-reset/confirm',
+    { preHandler: validateBody(passwordResetConfirmSchema) },
+    async (request, reply) => {
+      const { token, password } = request.body as z.infer<typeof passwordResetConfirmSchema>
+      await confirmPasswordReset(token, password)
+      return reply.send({ ok: true })
     },
   )
 }

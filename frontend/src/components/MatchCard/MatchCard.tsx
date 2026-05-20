@@ -30,16 +30,16 @@ function getStatus(match: Pick<MatchCardProps, 'status'>) {
 function TeamBlock({ team, align = 'left' }: { team: TeamInfo; align?: 'left' | 'right' }) {
   return (
     <div className={`min-w-0 ${align === 'right' ? 'text-right' : 'text-left'}`}>
-      <div className={`flex items-center gap-3 ${align === 'right' ? 'justify-end' : ''}`}>
+      <div className={`flex items-center gap-2 ${align === 'right' ? 'justify-end' : ''}`}>
         {align === 'left' && team.flagUrl && (
-          <img src={team.flagUrl} alt={team.name} className="h-8 w-11 rounded-sm object-cover shadow-sm" />
+          <img src={team.flagUrl} alt={team.name} className="h-7 w-10 rounded-sm object-cover shadow-sm" />
         )}
         <div className="min-w-0">
-          <p className="font-[var(--font-display)] text-xl font-black leading-none text-[var(--ink)]">{team.fifaCode}</p>
+          <p className="font-[var(--font-display)] text-lg font-black leading-none text-[var(--ink)] sm:text-xl">{team.fifaCode}</p>
           <p className="mt-1 truncate text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">{team.name}</p>
         </div>
         {align === 'right' && team.flagUrl && (
-          <img src={team.flagUrl} alt={team.name} className="h-8 w-11 rounded-sm object-cover shadow-sm" />
+          <img src={team.flagUrl} alt={team.name} className="h-7 w-10 rounded-sm object-cover shadow-sm" />
         )}
       </div>
     </div>
@@ -63,9 +63,9 @@ export function MatchCard({
 
   return (
     <Link href={`/matches/${id}`} className="dg-card-interactive block overflow-hidden p-4">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--pitch-dark)]">{stage}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--accent-strong)]">{stage}</p>
           <p className="mt-1 text-sm font-medium text-[var(--muted)]">
             {kickoff.toLocaleString('pt-BR', {
               weekday: 'short',
@@ -82,7 +82,7 @@ export function MatchCard({
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
         <TeamBlock team={homeTeam} align="right" />
 
-        <div className="dg-score-tile min-w-[86px] text-2xl">
+        <div className="dg-score-tile min-w-[78px] text-xl sm:min-w-[86px] sm:text-2xl">
           {isFinished ? `${homeScore ?? 0} - ${awayScore ?? 0}` : kickoff.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         </div>
 
@@ -90,7 +90,7 @@ export function MatchCard({
       </div>
 
       {userPrediction && (
-        <div className="mt-4 rounded-md bg-[rgba(12,143,79,0.09)] px-3 py-2 text-center text-sm font-bold text-[var(--pitch-dark)]">
+        <div className="mt-3 rounded-2xl bg-[rgba(22,129,255,0.08)] px-3 py-2 text-center text-sm font-bold text-[var(--accent-strong)]">
           Seu palpite: {userPrediction.predictedHome} - {userPrediction.predictedAway}
         </div>
       )}

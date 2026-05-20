@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { OutrightCard } from '@/components/OutrightCard/OutrightCard'
 import { EmptyState, PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
@@ -49,26 +50,44 @@ export default async function OutrightsPage() {
 
   return (
     <PageShell>
-      <div className="space-y-8">
-        <section className="dg-surface-dark p-5 sm:p-7">
+      <div className="space-y-6">
+        <section className="dg-panel p-5 sm:p-6">
           <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill tone={hasOpenMarkets ? 'open' : 'locked'}>
                   {hasOpenMarkets ? 'Mercados abertos' : 'Mercados encerrados'}
                 </StatusPill>
-                <span className="dg-chip bg-white/10 text-white/72">{markets.length} mercados</span>
+                <span className="dg-chip">{markets.length} mercados</span>
               </div>
-              <h1 className="mt-4 text-4xl font-black text-white sm:text-5xl">Apostas Especiais</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/76">
+              <h1 className="mt-4 text-4xl font-black text-[var(--ink)] sm:text-5xl">Apostas Especiais</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
                 Campeao, finalistas, artilharia e mercados que podem virar uma liga inteira.
               </p>
             </div>
-            <div className="rounded-md bg-white/10 p-4 text-white">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/62">Em disputa</p>
-              <p className="mt-1 font-[var(--font-display)] text-3xl font-black">{totalPoints} pts</p>
+            <div className="dg-subtle-card p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Em disputa</p>
+              <p className="mt-1 font-[var(--font-display)] text-3xl font-black text-[var(--ink)]">{totalPoints} pts</p>
             </div>
           </div>
+        </section>
+
+        <section className="grid gap-3 md:grid-cols-3">
+          <Link href="/matches" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Partidas</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Voltar para a rodada</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Cruze o longo prazo com o placar do dia.</p>
+          </Link>
+          <Link href="/leagues" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Ligas</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Ver disputa</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Especiais valem pesado na tabela da galera.</p>
+          </Link>
+          <Link href="/profile" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Conta</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Abrir meu resumo</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Confira seu fluxo completo sem sair caçando rota.</p>
+          </Link>
         </section>
 
         <SectionHeader

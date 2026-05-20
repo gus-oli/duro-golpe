@@ -1,9 +1,12 @@
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { MuralFeed } from '@/components/Mural/MuralFeed'
 import { TotalScore } from '@/components/Scoring/TotalScore'
 import { RankingClient } from '@/components/Leagues/RankingClient'
 import { PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
+import type { MuralPostItem } from '@/components/Mural/types'
+import { isRealtimeEnabled } from '@/lib/realtime'
 
 interface League {
   id: string
@@ -19,14 +22,13 @@ interface RankingEntry {
   exactScoreCount: number
   winnerGoalDiffCount: number
   position: number
-}
-
-interface Badge {
-  type: string
-  labelPt: string
-  descriptionPt: string
-  iconKey: string
-  zebraCount: number | null
+  badges: Array<{
+    type: string
+    labelPt: string
+    descriptionPt: string
+    iconKey: string
+    zebraCount: number | null
+  }>
 }
 
 interface UserTotal {
@@ -76,20 +78,6 @@ async function getRanking(leagueId: string, token: string): Promise<RankingEntry
   }
 }
 
-async function getUserBadges(userId: string, token: string): Promise<Badge[]> {
-  try {
-    const res = await fetch(`${API}/api/v1/users/${userId}/badges`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    })
-    if (!res.ok) return []
-    const data = (await res.json()) as { badges: Badge[] }
-    return data.badges
-  } catch {
-    return []
-  }
-}
-
 async function getUserTotal(userId: string, token: string): Promise<UserTotal> {
   try {
     const res = await fetch(`${API}/api/v1/users/${userId}/score`, {
@@ -103,38 +91,49 @@ async function getUserTotal(userId: string, token: string): Promise<UserTotal> {
   }
 }
 
+async function getLeagueFeed(leagueId: string, token: string): Promise<MuralPostItem[]> {
+  try {
+    const res = await fetch(`${API}/api/v1/leagues/${leagueId}/mural?limit=50`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) return []
+    const data = (await res.json()) as { posts: MuralPostItem[] }
+    return data.posts
+  } catch {
+    return []
+  }
+}
+
 export default async function LeagueDetailPage({ params }: { params: Promise<{ leagueId: string }> }) {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value ?? ''
   const userId = token ? getUserIdFromToken(token) : null
+  const realtimeEnabled = Boolean(token) && isRealtimeEnabled()
   const { leagueId } = await params
 
-  const [league, ranking, myTotal] = await Promise.all([
+  const [league, ranking, myTotal, posts] = await Promise.all([
     getLeague(leagueId, token),
     getRanking(leagueId, token),
     userId && token ? getUserTotal(userId, token) : Promise.resolve(null),
+    token ? getLeagueFeed(leagueId, token) : Promise.resolve([]),
   ])
 
   if (!league) notFound()
 
-  const badgesByUser = await Promise.all(
-    ranking.map(async (entry) => ({ userId: entry.userId, badges: await getUserBadges(entry.userId, token) })),
-  )
-  const badgesMap = Object.fromEntries(badgesByUser.map(({ userId: uid, badges }) => [uid, badges]))
-
   return (
     <PageShell>
-      <div className="space-y-8">
+      <div className="space-y-6">
         <Link href="/leagues" className="dg-button-secondary">
           Voltar para Minhas Ligas
         </Link>
 
-        <section className="dg-surface-dark p-5 sm:p-7">
+        <section className="dg-panel p-5 sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill tone="open">Liga privada</StatusPill>
-                <span className="dg-chip bg-white/10 text-white/72">
+                <span className="dg-chip">
                   Codigo{' '}
                   <span
                     className="ml-1 font-mono"
@@ -145,17 +144,53 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
                   </span>
                 </span>
               </div>
-              <h1 className="mt-4 text-4xl font-black text-white sm:text-5xl">{league.name}</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/76">
+              <h1 className="mt-4 text-4xl font-black text-[var(--ink)] sm:text-5xl">{league.name}</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
                 Ranking vivo, pontuacao total e conquistas da rodada no mesmo painel.
               </p>
             </div>
-            <div className="rounded-md bg-white/10 p-4 text-white">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/62">Membros</p>
-              <p className="mt-1 font-[var(--font-display)] text-3xl font-black">{ranking.length}</p>
+            <div className="dg-subtle-card p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Membros</p>
+              <p className="mt-1 font-[var(--font-display)] text-3xl font-black text-[var(--ink)]">{ranking.length}</p>
             </div>
           </div>
         </section>
+
+        <section className="grid gap-3 md:grid-cols-3">
+          <Link href="/matches" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Rodada</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Ver partidas relevantes</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Volte para a agenda para continuar marcando pontos.</p>
+          </Link>
+          <Link href="/outrights" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Especiais</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Mercados de longo prazo</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Especiais tambem podem virar a tabela da liga.</p>
+          </Link>
+          <Link href="/profile" className="dg-card-interactive block p-4">
+            <p className="dg-eyebrow">Conta</p>
+            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Resumo do jogador</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Tenha seus atalhos sem perder o fio da disputa.</p>
+          </Link>
+        </section>
+
+        {token && (
+          <section id="social-feed" aria-label="Mural da liga" className="space-y-4">
+            <SectionHeader
+              eyebrow="Mural"
+              title="Resenha da Liga"
+              description="A conversa da liga agora vive num unico feed para segurar a zoeira, a virada e o caos da rodada no mesmo lugar."
+            />
+            <div className="dg-surface overflow-hidden">
+              <MuralFeed
+                leagueId={league.id}
+                initialPosts={posts}
+                currentUserId={userId ?? ''}
+                realtimeEnabled={realtimeEnabled}
+              />
+            </div>
+          </section>
+        )}
 
         {myTotal && token && (
           <section aria-label="Minha pontuacao" className="space-y-4">
@@ -164,7 +199,7 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
               initialTotalPoints={myTotal.totalPoints}
               initialExactScoreCount={myTotal.exactScoreCount}
               initialWinnerGoalDiffCount={myTotal.winnerGoalDiffCount}
-              token={token}
+              realtimeEnabled={realtimeEnabled}
             />
           </section>
         )}
@@ -175,7 +210,7 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
             title="Classificacao"
             description="A disputa atualiza quando os resultados e especiais entram no placar."
           />
-          <RankingClient leagueId={league.id} initialRanking={ranking} badgesMap={badgesMap} token={token || null} />
+          <RankingClient leagueId={league.id} initialRanking={ranking} realtimeEnabled={realtimeEnabled} />
         </section>
       </div>
     </PageShell>

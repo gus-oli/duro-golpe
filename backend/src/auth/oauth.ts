@@ -4,6 +4,7 @@ import { db } from '../db/index.js'
 import { users } from '../db/schema/index.js'
 import { eq } from 'drizzle-orm'
 import { config } from '../config.js'
+import { serializeAuthCookie } from './cookies.js'
 
 interface GoogleUserInfo {
   sub: string
@@ -68,7 +69,7 @@ export async function oauthRoutes(app: FastifyInstance): Promise<void> {
     }
 
     const jwt = app.jwt.sign({ sub: userId }, { expiresIn: '7d' })
-
-    return reply.redirect(`${config.FRONTEND_URL}/api/auth/google/callback?token=${jwt}`)
+    reply.header('Set-Cookie', serializeAuthCookie(jwt))
+    return reply.redirect(`${config.FRONTEND_URL}/matches`)
   })
 }

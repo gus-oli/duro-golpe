@@ -10,24 +10,36 @@ Copy `backend/.env.example` and provide:
 - `DATABASE_MIGRATION_URL`
 - `REDIS_URL`
 - `JWT_SECRET`
-- `API_FOOTBALL_KEY` only when using the provider-backed `npm run seed`
+- `FOOTBALL_DATA_TOKEN` when using the free provider-backed World Cup 2026 seed or polling path
+- `FOOTBALL_DATA_POLL_ENABLED` when the backend should run the adaptive provider sync loop automatically
+- `API_FOOTBALL_KEY` only for the legacy API-Football webhook path
 - `WEBHOOK_SECRET`
 - `BASE_URL`
 - `FRONTEND_URL`
-- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` when Google OAuth is enabled
+- `BREVO_API_KEY`
+- `BREVO_SENDER_EMAIL`
+- `BREVO_SENDER_NAME`
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` only for legacy/local OAuth experiments
+- `BIND_HOST`
 - `PORT`
 - `NODE_ENV`
 
-Hosted beta recommendations:
+Private-beta recommendations with managed Neon and Upstash:
 
 ```dotenv
 DATABASE_URL=postgresql://<neon-pooled-runtime-url>?sslmode=require
 DATABASE_MIGRATION_URL=postgresql://<neon-direct-migration-url>?sslmode=require
 REDIS_URL=rediss://default:<upstash-password>@<upstash-host>:6379
 JWT_SECRET=<32-plus-char-secret>
+FOOTBALL_DATA_TOKEN=<football-data-token>
+FOOTBALL_DATA_POLL_ENABLED=true
 WEBHOOK_SECRET=<16-plus-char-secret>
-BASE_URL=https://duro-golpe.example.com
-FRONTEND_URL=https://duro-golpe.example.com
+BASE_URL=https://<public-tunnel-host>
+FRONTEND_URL=https://<public-tunnel-host>
+BREVO_API_KEY=<brevo-api-key>
+BREVO_SENDER_EMAIL=<verified-sender@example.com>
+BREVO_SENDER_NAME=Duro Golpe
+BIND_HOST=127.0.0.1
 PORT=3001
 NODE_ENV=production
 ```
@@ -37,7 +49,9 @@ Guidance:
 - Use the pooled Neon URL for `DATABASE_URL` when Neon provides one for runtime traffic.
 - Use the direct Neon URL for `DATABASE_MIGRATION_URL` so `drizzle-kit migrate` does not rely on a pooled connection.
 - Use the TLS Upstash URL for `REDIS_URL`.
-- Leave Google OAuth unset until the public domain is stable if email/password auth is enough for the first beta.
+- Leave Google OAuth unset for the hosted free beta path; email/password plus reset-by-email is the supported auth story.
+- Keep `BIND_HOST=127.0.0.1` for the private-beta topology so the backend is not exposed to the local network by accident.
+- Keep `FOOTBALL_DATA_POLL_ENABLED=false` if you only want real fixtures from the seed and plan to drive results manually.
 
 ### Frontend
 
@@ -46,19 +60,89 @@ Copy `frontend/.env.example` and provide:
 - `API_URL`
 - `NEXT_PUBLIC_API_URL`
 - `NEXT_PUBLIC_WS_URL`
+- `NEXT_PUBLIC_REALTIME_ENABLED`
+- `AUTH_COOKIE_SECURE`
 
-Hosted beta recommendations:
+Private-beta recommendations through a public tunnel:
 
 ```dotenv
-API_URL=https://duro-golpe.example.com
-NEXT_PUBLIC_API_URL=https://duro-golpe.example.com
-NEXT_PUBLIC_WS_URL=wss://duro-golpe.example.com
+API_URL=http://127.0.0.1:3001
+NEXT_PUBLIC_API_URL=https://<public-tunnel-host>
+NEXT_PUBLIC_WS_URL=wss://<public-tunnel-host>/ws
+NEXT_PUBLIC_REALTIME_ENABLED=true
 AUTH_COOKIE_SECURE=true
+NODE_ENV=production
 ```
 
-The hosted beta intentionally uses one public origin so page requests, SSR fetches, auth redirects, API calls, and WebSocket traffic all resolve through the same domain.
+Guidance:
 
-If you are temporarily validating the app over raw HTTP on a VM public IP before TLS is ready, set `AUTH_COOKIE_SECURE=false` in the frontend environment so the browser can store the auth cookie. Switch it back to `true` as soon as the public entrypoint is on HTTPS.
+- `API_URL` is for frontend server-side calls on the operator machine, so keep it on loopback.
+- `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` are for browser traffic, so they must use the public tunnel origin.
+- Set `NEXT_PUBLIC_REALTIME_ENABLED=false` for the split-origin zero-cost hosted beta if you want to avoid browser WebSocket noise and rely on polling-first freshness.
+- Only set `AUTH_COOKIE_SECURE=false` for temporary plain-HTTP testing on a raw local address. Keep it `true` for tunnel-based private beta because the public tunnel URL is HTTPS.
+
+## Zero-Cost Hosted Beta
+
+Supported free-hosting topology:
+
+```text
+Vercel
+  -> Next.js frontend
+  -> auth cookie lives on the frontend origin
+
+Render free
+  -> Fastify backend
+  -> football-data poller
+  -> schedulers + Redis subscribers
+
+External keepalive
+  -> GET https://<render-backend>/health every 5 minutes
+
+Managed services
+  -> Neon PostgreSQL
+  -> Upstash Redis
+```
+
+Hosted environment guidance:
+
+### Backend
+
+```dotenv
+DATABASE_URL=postgresql://<neon-pooled-runtime-url>?sslmode=require
+DATABASE_MIGRATION_URL=postgresql://<neon-direct-migration-url>?sslmode=require
+REDIS_URL=rediss://default:<upstash-password>@<upstash-host>:6379
+JWT_SECRET=<32-plus-char-secret>
+FOOTBALL_DATA_TOKEN=<football-data-token>
+FOOTBALL_DATA_POLL_ENABLED=true
+WEBHOOK_SECRET=<16-plus-char-secret>
+BASE_URL=https://<render-backend-host>
+FRONTEND_URL=https://<vercel-frontend-host>
+BREVO_API_KEY=<brevo-api-key>
+BREVO_SENDER_EMAIL=<verified-sender@example.com>
+BREVO_SENDER_NAME=Duro Golpe
+BIND_HOST=0.0.0.0
+PORT=3001
+NODE_ENV=production
+```
+
+### Frontend
+
+```dotenv
+API_URL=https://<render-backend-host>
+NEXT_PUBLIC_API_URL=https://<render-backend-host>
+NEXT_PUBLIC_WS_URL=wss://<render-backend-host>/ws
+NEXT_PUBLIC_REALTIME_ENABLED=false
+AUTH_COOKIE_SECURE=true
+NODE_ENV=production
+```
+
+Hosted free-beta notes:
+
+- Use email/password auth only; do not expose Google login in the Vercel login surface for this phase.
+- Use the password-reset flow backed by Brevo instead of operator-driven manual resets.
+- Ping `https://<render-backend-host>/health` every 5 minutes from an external uptime service to reduce Render sleep events.
+- Keep the league mural on polling-first freshness; do not depend on authenticated split-origin WebSockets for the beta experience.
+- Expect cold starts if the keepalive service fails or Render restarts the free service.
 
 ## Local Demo Bootstrap
 
@@ -83,12 +167,81 @@ All demo accounts share the password `durogolpe123`.
 
 ## Provider-Backed Tournament Seed
 
-Use the provider-backed seed only when you want live tournament ingestion:
+Use the provider-backed seed when you want real World Cup 2026 fixtures without relying on the demo dataset:
 
-1. Set `API_FOOTBALL_KEY` in `backend/.env`
+1. Set `FOOTBALL_DATA_TOKEN` in `backend/.env`
 2. `npm run seed`
 
+What the provider-backed seed loads immediately:
+
+- all `48` tournament teams
+- all `104` tournament fixtures
+- placeholder knockout participants for bracket slots the provider has not resolved yet
+
+What happens automatically after that:
+
+- the adaptive poller keeps status and scores moving when `FOOTBALL_DATA_POLL_ENABLED=true`
+- the adaptive poller also replaces knockout placeholders with the real teams as soon as `football-data.org` starts filling those match participants
+- you do not need to rerun `npm run seed` each time the bracket advances
+
+Optional follow-up modes after the seed:
+
+1. automatic delayed-sync mode
+   - set `FOOTBALL_DATA_POLL_ENABLED=true`
+   - restart the backend so the adaptive provider poller starts
+2. manual contingency mode
+   - keep `FOOTBALL_DATA_POLL_ENABLED=false`
+   - use `npm run match:override -- <MATCH_ID_OR_PROVIDER_ID> <SCHEDULED|LIVE|FINISHED> [HOME] [AWAY]`
+
 If you want the full local showcase dataset after that, run `npm run seed:demo`.
+
+### In-Place Hosted Beta Cutover
+
+If the current hosted beta database already contains demo-oriented users, leagues, mural posts, predictions, or seeded fake competition, do not run the provider-backed seed on top of that state.
+
+Use this cutover flow instead:
+
+1. Capture a backup first.
+2. Ensure `FOOTBALL_DATA_TOKEN` is configured in `backend/.env`.
+3. Run migrations for the current app version:
+   - `npm run db:migrate`
+4. Clear the existing resettable beta application state in place:
+   - `npm run beta:reset -- --confirm`
+5. Load real tournament fixtures and catalogs:
+   - `npm run seed`
+6. Choose the post-seed update mode:
+   - automatic polling: set `FOOTBALL_DATA_POLL_ENABLED=true` and restart the backend
+   - manual contingency only: leave polling disabled and use `npm run match:override -- ...` as needed
+7. Restart the backend if it was running during the reset.
+8. Re-run the private-beta verification checklist before inviting players back.
+
+What the reset intentionally removes:
+
+- demo users
+- demo leagues and invite flows tied to them
+- demo mural posts
+- demo predictions, scores, and totals
+- demo outright predictions and resolutions
+- demo match records and teams
+
+What the provider-backed seed recreates:
+
+- tournament teams
+- tournament fixtures
+- outright and badge catalogs
+
+What only comes back through real player activity:
+
+- leagues
+- mural conversation
+- predictions
+- rankings driven by real play
+
+What updates fixture state after the seed:
+
+- delayed provider polling from `football-data.org` when enabled
+- delayed provider reconciliation of knockout participants as the bracket becomes known
+- manual operator overrides when provider updates lag behind the match experience you want to present
 
 ## Smoke Environment
 
@@ -117,25 +270,26 @@ Recommended local environment values:
 
 - `E2E_BASE_URL=http://localhost:3000`
 - `NEXT_PUBLIC_API_URL=http://127.0.0.1:3001`
-- `NEXT_PUBLIC_WS_URL=ws://127.0.0.1:3001`
+- `NEXT_PUBLIC_WS_URL=ws://127.0.0.1:3001/ws`
 
-## Hosted Beta Topology
+## Private Beta Topology
 
-Canonical hosted beta shape:
+Canonical local-tunnel beta shape:
 
 ```text
 Internet
-  -> 80/443
-  -> Caddy
+  -> HTTPS public tunnel URL
+  -> Cloudflare Tunnel
+  -> local Caddy on 127.0.0.1:8080
      -> "/" and Next.js routes -> 127.0.0.1:3000
      -> "/api/v1/*" -> 127.0.0.1:3001
      -> "/ws" -> 127.0.0.1:3001
 
-Oracle VM
+Operator machine
   -> one frontend process
   -> one backend process
-  -> no local Postgres
-  -> no local Redis
+  -> no local Postgres in the canonical beta path
+  -> no local Redis in the canonical beta path
 
 Managed services
   -> Neon PostgreSQL
@@ -144,101 +298,98 @@ Managed services
 
 Operational rules:
 
-- Run exactly one backend instance in the hosted beta environment.
-- Keep ports `3000` and `3001` bound to localhost only.
-- Expose only `22`, `80`, and `443` publicly.
-- Use the deployment templates in `deploy/oracle/`.
+- Run exactly one backend instance in the private-beta environment.
+- Keep ports `3000`, `3001`, and the local reverse-proxy port bound to loopback only.
+- Expose the app publicly through Cloudflare Tunnel instead of opening raw inbound ports on the machine or router.
+- Use the templates in `deploy/local-tunnel/` as the source of truth for the tunnel-facing reverse proxy.
 
-## Oracle VM Setup
+## Private-Beta Security Checklist
+
+Run this short checklist before inviting friends to the tunnel URL:
+
+1. Confirm `BIND_HOST=127.0.0.1` in `backend/.env`.
+2. Confirm `AUTH_COOKIE_SECURE=true` in `frontend/.env`.
+3. Confirm Cloudflare Tunnel is the only intended public entrypoint; do not open raw inbound ports on the router or Windows firewall for `3000`, `3001`, or `8080`.
+4. Confirm the backend, frontend, and Caddy listeners are reachable only on loopback addresses from the operator machine.
+5. Confirm `JWT_SECRET`, `WEBHOOK_SECRET`, `DATABASE_URL`, and `REDIS_URL` are not reused from the compromised Oracle VM era.
+6. Confirm Google OAuth is either disabled or completing without any JWT appearing in the browser URL.
+7. Confirm browser realtime connects to `wss://<public-tunnel-host>/ws` without `?token=...` in the websocket URL.
+8. Confirm a logged-in user cannot hide another user's mural post and cannot read or subscribe to a league feed they do not belong to.
+9. Confirm the legacy `/api/v1/ws/matches/:matchId` websocket side door is not exposed.
+10. Check frontend, backend, Caddy, and `cloudflared` logs for auth errors, proxy surprises, or accidental localhost leaks before sharing the link.
+
+## Local-Tunnel Private Beta Setup
 
 ### Prerequisites
 
-Before the first hosted deploy:
+Before the first private-beta run:
 
-1. Provision an Oracle VM with enough free-tier headroom for one Next.js process and one Fastify process.
-2. Install Node.js 22 and npm system-wide so `systemd` can start both apps without relying on an interactive shell profile.
-3. Create a `duro-golpe` Linux user and `/srv/duro-golpe` directory structure.
-4. Point your public domain to the VM.
-5. Open inbound ports `22`, `80`, and `443`.
-6. Provision Neon and Upstash in the nearest practical region to the VM.
+1. Install Node.js 22 and npm on the operator machine.
+2. Install and authenticate Cloudflare Tunnel tooling.
+3. Ensure Neon and Upstash are provisioned and reachable from the local machine.
+4. Keep a local reverse proxy available; the repo templates assume Caddy on `127.0.0.1:8080`.
+5. Decide whether the first iteration uses manual process startup or a local process supervisor.
 
-### Release Layout
-
-The canonical release layout is:
-
-```text
-/srv/duro-golpe/
-  current -> /srv/duro-golpe/releases/<release-id>
-  releases/
-    <release-id>/
-  shared/
-    backend.env
-    frontend.env
-```
-
-Notes:
-
-- `current` is a symlink to the active release.
-- `shared/backend.env` and `shared/frontend.env` persist across releases.
-- `deploy/oracle/duro-golpe-backend.service` and `deploy/oracle/duro-golpe-frontend.service` assume that layout.
-
-### Reverse Proxy and Services
+### Reverse Proxy and Tunnel Assets
 
 Use the repo templates as the source of truth:
 
-- `deploy/oracle/Caddyfile`
-- `deploy/oracle/duro-golpe-backend.service`
-- `deploy/oracle/duro-golpe-frontend.service`
-- `deploy/oracle/README.md`
+- `deploy/local-tunnel/Caddyfile`
+- `deploy/local-tunnel/cloudflared-config.yml.example`
+- `deploy/local-tunnel/README.md`
 
-The `Caddyfile` preserves same-origin routing for:
+The local Caddy config preserves same-origin routing for:
 
 - page and asset traffic to the frontend
 - `/api/v1/*` to the backend
 - `/ws` to the backend with WebSocket upgrade support
 
-## Hosted Bootstrap
+The Cloudflare Tunnel config should target the local Caddy listener, not the frontend directly. That keeps:
 
-Use this flow for the first public beta environment:
+- auth redirects on one origin
+- browser API calls on one origin
+- WebSocket URLs on one origin
 
-1. Create `shared/backend.env` with Neon, Upstash, JWT, webhook, and domain values.
-2. Create `shared/frontend.env` with the single-origin HTTPS and WSS values.
-3. Upload the application into a new `releases/<release-id>` directory.
-4. In that release directory, run `npm ci`.
-5. Build both apps:
-   - `npm --workspace=backend run build`
-   - `npm --workspace=frontend run build`
-6. Repoint `current` to the new release.
-7. Run migrations with the hosted environment loaded:
+### Private-Beta Bootstrap
+
+Use this flow for the first private-beta environment:
+
+1. Create `backend/.env` with Neon, Upstash, JWT, webhook, and public tunnel values.
+2. Create `frontend/.env` with loopback `API_URL`, public tunnel `NEXT_PUBLIC_*` values, and `AUTH_COOKIE_SECURE=true`.
+3. Install dependencies:
+   - `npm ci`
+4. Start frontend and backend locally:
+   - `npm run dev:frontend`
+   - `npm run dev:backend`
+5. Start local Caddy with the local-tunnel config.
+6. Start Cloudflare Tunnel and confirm the public hostname resolves to the local Caddy listener.
+7. Run migrations against the managed Postgres target:
    - `npm run db:migrate`
-8. Load the default hosted beta dataset:
-   - `npm run bootstrap:hosted`
-9. Install the `systemd` units and enable them:
-   - `sudo systemctl enable duro-golpe-backend duro-golpe-frontend`
-10. Start or restart both services.
-11. Place the Caddy config and reload Caddy.
-12. Run the hosted verification checklist before inviting users.
+8. Load the default private-beta dataset:
+   - `npm run seed:demo`
+9. Run the private-beta verification checklist before inviting friends.
 
-Why `bootstrap:hosted` is the default:
+Why `seed:demo` is the default:
 
 - it uses the deterministic demo dataset
-- it does not rely on Docker-managed infrastructure
-- it gives the public beta a rich, explorable starting point
+- it does not require provider availability
+- it gives private beta testers a rich environment immediately
 
-## Seed Modes in Hosted Environments
+## Seed Modes by Environment
 
 Choose seed mode intentionally:
 
-- `npm run bootstrap:hosted`
-  - Default for the first hosted beta database
-  - Runs migrations and loads the deterministic demo dataset
+- `npm run seed:demo`
+  - Default for local showcase and local-tunnel private beta
+  - Seeds the deterministic, feature-rich dataset
 - `npm --workspace=backend run seed:smoke`
-  - For release verification or isolated smoke environments
-  - Prefer a disposable database or a separate Neon branch
-  - Do not run this against the shared public beta database unless you intend to replace its state
-- `npm run bootstrap:hosted:provider`
-  - For provider-backed ingestion when `API_FOOTBALL_KEY` is configured
-  - Use only when you explicitly want live provider data instead of the demo-first beta dataset
+  - For release verification and smoke automation
+  - Prefer disposable data state, a separate Neon branch, or a clearly resettable beta database
+- `npm run seed`
+  - For provider-backed ingestion when `FOOTBALL_DATA_TOKEN` is configured
+  - Uses `football-data.org` v4 `Worldcup` coverage for real 2026 teams and fixtures
+  - Pair with `FOOTBALL_DATA_POLL_ENABLED=true` for automatic delayed sync, or with `npm run match:override -- ...` for manual contingency
+  - If converting an existing hosted beta, run `npm run beta:reset -- --confirm` before provider seeding so demo social state does not mix with real fixtures
 
 ## Outright Resolution
 
@@ -256,22 +407,24 @@ Smoke helpers:
 1. `npm --workspace=backend run smoke:lock-match -- <MATCH_ID>`
 2. `npm --workspace=backend run smoke:lock-outrights`
 
-## Hosted Verification Checklist
+## Private-Beta Verification Checklist
 
-Run these checks after each hosted release:
+Run these checks after each private-beta boot or app update:
 
-1. Open the public home page and confirm it loads over HTTPS.
-2. Open a protected route such as `/matches` while logged out and confirm the redirect stays on `https://<domain>/login?...` instead of leaking `localhost` or another upstream host.
+1. Open the public tunnel URL and confirm the home page loads over HTTPS.
+2. Open a protected route such as `/matches` while logged out and confirm the redirect stays on `https://<public-tunnel-host>/login?...` instead of leaking `localhost` or loopback ports.
 3. Register or log in and confirm authenticated navigation still reaches `/matches`, `/leagues`, and `/outrights`.
 4. Confirm server-rendered match cards appear on `/matches`.
-5. Call `https://<domain>/api/v1/matches` and confirm the backend responds with `200`.
+5. Call `https://<public-tunnel-host>/api/v1/matches` and confirm the backend responds with `200`.
 6. Open a match detail page, submit a prediction, refresh, and confirm the persisted prediction still appears.
-7. Open a league page and confirm ranking entries render.
-8. Confirm the browser establishes a WebSocket connection to `wss://<domain>/ws`.
-9. Check `systemctl status duro-golpe-backend duro-golpe-frontend` and confirm both services are healthy.
-10. Check Caddy logs and backend logs for startup or proxy errors.
+7. Open a league page and confirm ranking entries render, the social feed appears, and posting to the mural no longer crashes the page.
+8. Confirm the browser establishes a WebSocket connection to `wss://<public-tunnel-host>/ws`.
+9. Confirm Cloudflare Tunnel is healthy and still pointing to the local Caddy listener.
+10. If using real fixtures, confirm either the football-data poller is logging healthy sync windows or the manual override command path is documented and ready.
+11. Check frontend, backend, and Caddy logs for startup or proxy errors.
+12. Open DevTools and confirm the final page URL and websocket URL do not expose JWTs through query parameters.
 
-If you want deterministic smoke coverage, run the smoke flow against a disposable verification environment instead of the shared public beta database.
+If you want deterministic smoke coverage, run the smoke flow against a disposable verification database or branch instead of the shared beta state.
 
 ## Launch Smoke Checklist
 
@@ -309,42 +462,47 @@ It re-runs `npm --workspace=backend run seed:smoke` before the browser suite, re
 
 ## Backups and Rollback
 
-Before each hosted release:
+Before each private-beta reset or notable app update:
 
 1. Capture a logical Postgres backup using the direct Neon migration URL.
-2. Keep the current release directory available until the new release is verified.
-3. Preserve `shared/backend.env` and `shared/frontend.env` outside the release artifact.
+2. Keep copies of the frontend and backend environment files that drove the working beta session.
+3. Preserve any local reverse-proxy or tunnel config changes that are known-good.
 
 Recommended backup command pattern:
 
 ```bash
-pg_dump "$DATABASE_MIGRATION_URL" > /srv/duro-golpe/backups/pre-release-$(date +%Y%m%d-%H%M%S).sql
+pg_dump "$DATABASE_MIGRATION_URL" > ./backups/pre-beta-$(date +%Y%m%d-%H%M%S).sql
 ```
 
 Rollback flow:
 
-1. Repoint `/srv/duro-golpe/current` to the previous release directory.
-2. Restart `duro-golpe-backend` and `duro-golpe-frontend`.
-3. Re-run the hosted verification checklist.
-4. If the failure is schema or data related, restore the pre-release dump before reopening the environment.
+1. Stop the frontend, backend, and tunnel processes.
+2. Restore the last known-good `.env` files and local reverse-proxy/tunnel config.
+3. Restart frontend, backend, local Caddy, and Cloudflare Tunnel.
+4. Re-run the private-beta verification checklist.
+5. If the failure is schema or data related, restore the pre-change Postgres dump before reopening the session.
 
 Notes:
 
-- Upstash Redis is operational state, not the primary system of record; the critical rollback artifact is the Postgres backup plus the previous app release.
-- If the release changed the shared public beta data in a destructive way, restore the database before inviting users back in.
+- Upstash Redis is operational state, not the primary system of record; the critical rollback artifact is the Postgres backup plus the working local runtime configuration.
+- This environment is a private beta hosted from a personal machine. Sleep, reboot, or tunnel failure can temporarily take it offline.
+
+## Previous Oracle VM Path
+
+The earlier Oracle-based path remains a historical reference under `deploy/oracle/`, but it is no longer the recommended default for private beta. The local-tunnel path is safer and simpler for the current project stage because it removes the always-exposed public VM while preserving the same-origin reverse-proxy model.
 
 ## Current Verification Commands
 
 1. `npm run typecheck`
 2. `npm run test:launch-smoke`
 3. `npm --workspace=backend run outrights:resolve -- --help` is not implemented; use the usage string in the CLI output when arguments are missing.
+4. `npm run match:override -- <MATCH_ID_OR_PROVIDER_ID> <SCHEDULED|LIVE|FINISHED> [HOME] [AWAY]`
 
 ## Notes
 
-- `npm run bootstrap` still provisions the deterministic local demo dataset with Docker-managed dependencies.
-- `npm run bootstrap:provider` preserves the old local provider-backed bootstrap flow.
-- `npm run bootstrap:hosted` is the canonical first-load path for the Oracle VM hosted beta.
-- `npm run bootstrap:hosted:provider` exists for the hosted case where you explicitly want provider-backed ingestion.
+- `npm run bootstrap` still provisions the deterministic local demo dataset with Docker-managed dependencies for local development.
+- `npm run bootstrap:provider` preserves the local provider-backed bootstrap flow.
+- The canonical private-beta bootstrap is now migrations plus `npm run seed:demo` with managed Neon and Upstash endpoints.
 - `npm run test:launch-smoke` already re-runs `npm --workspace=backend run seed:smoke` and injects the resulting smoke match UUID automatically.
 - WebSocket smoke depends on the backend, Redis, and frontend all running with valid auth tokens.
 - The launch smoke command intentionally runs on Chromium with a single worker because the scenarios mutate shared backend state.

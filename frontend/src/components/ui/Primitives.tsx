@@ -36,15 +36,15 @@ export function HeroSection({
   aside?: ReactNode
 }) {
   return (
-    <section className="dg-surface-dark dg-reveal relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
-      <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,var(--pitch),var(--gold),var(--sky),var(--coral))]" />
+    <section className="dg-panel dg-reveal relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
+      <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,var(--accent),var(--pitch),var(--gold))]" />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.8fr)] lg:items-end">
         <div className="relative z-10">
-          {eyebrow && <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--gold)]">{eyebrow}</p>}
-          <h1 className="max-w-3xl text-4xl font-black leading-[0.98] text-white sm:text-5xl lg:text-6xl">
+          {eyebrow && <p className="mb-4 text-xs font-bold uppercase tracking-[0.16em] text-[var(--accent-strong)]">{eyebrow}</p>}
+          <h1 className="max-w-3xl text-4xl font-black leading-[0.98] text-[var(--ink)] sm:text-5xl lg:text-6xl">
             {title}
           </h1>
-          {children && <div className="mt-5 max-w-2xl text-base leading-7 text-white/82 sm:text-lg">{children}</div>}
+          {children && <div className="mt-5 max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg">{children}</div>}
           {actions && <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">{actions}</div>}
         </div>
         {aside && <div className="relative z-10">{aside}</div>}
@@ -70,7 +70,7 @@ export function SectionHeader({
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         {eyebrow && (
-          <p className={`text-xs font-bold uppercase tracking-[0.14em] ${inverse ? 'text-[var(--gold)]' : 'text-[var(--pitch-dark)]'}`}>
+          <p className={`text-xs font-bold uppercase tracking-[0.14em] ${inverse ? 'text-[var(--sky)]' : 'text-[var(--accent-strong)]'}`}>
             {eyebrow}
           </p>
         )}

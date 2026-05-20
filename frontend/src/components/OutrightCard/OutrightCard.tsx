@@ -145,10 +145,10 @@ export function OutrightCard({
                 aria-pressed={isSelected}
                 className={`min-h-touch w-full rounded-md border px-4 py-3 text-left text-sm font-bold transition ${
                   isSelected
-                    ? 'border-[var(--pitch-dark)] bg-green-600 bg-[var(--pitch-dark)] text-white shadow-md'
+                    ? 'border-[var(--accent-strong)] bg-[var(--accent-strong)] text-white shadow-md'
                     : isLocked || selectionLimitReached
                       ? 'border-[var(--line)] bg-[rgba(18,33,58,0.04)] text-[var(--muted)]'
-                      : 'border-[var(--line)] bg-white/70 text-[var(--ink)] hover:border-[var(--pitch)] hover:bg-[rgba(12,143,79,0.08)]'
+                      : 'border-[var(--line)] bg-white/70 text-[var(--ink)] hover:border-[var(--accent)] hover:bg-[rgba(22,129,255,0.08)]'
                 }`}
               >
                 {option.label}
@@ -166,7 +166,7 @@ export function OutrightCard({
         )}
 
         {success && (
-          <p role="status" className="mb-3 rounded-md border border-[rgba(12,143,79,0.22)] bg-[rgba(12,143,79,0.1)] px-3 py-2 text-sm font-bold text-[var(--pitch-dark)]">
+          <p role="status" className="mb-3 rounded-md border border-[rgba(22,129,255,0.22)] bg-[rgba(22,129,255,0.1)] px-3 py-2 text-sm font-bold text-[var(--accent-strong)]">
             Aposta especial salva com sucesso.
           </p>
         )}

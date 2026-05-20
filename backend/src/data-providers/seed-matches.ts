@@ -1,25 +1,32 @@
-import { db } from '../db/index.js'
-import { getTeams, getFixtures } from './api-football.js'
+import { getWorldCupMatches, getWorldCupTeams, formatFootballDataStage } from './football-data.js'
+import { mapFootballDataStatus } from '../realtime/events.js'
 import { validateTournamentCounts } from '../tournament/constants.js'
+import type { SeedTeamInput } from '../seeds/support.js'
 import { seedCatalogs, upsertMatches, upsertTeams } from '../seeds/support.js'
 
 async function seedTeams(): Promise<Map<number, string>> {
-  const apiTeams = await getTeams()
+  const providerTeams = await getWorldCupTeams()
   const idMap = new Map<number, string>()
   const idsByKey = await upsertTeams(
-    apiTeams.map((apiTeam) => ({
-      key: String(apiTeam.id),
-      apiFootballId: String(apiTeam.id),
-      name: apiTeam.name,
-      fifaCode: apiTeam.code,
-      flagUrl: apiTeam.logo,
-    })),
+    providerTeams.map((team) => {
+      if (!team.tla) {
+        throw new Error(`football-data team ${team.id} is missing tla/code`)
+      }
+
+      return {
+        key: String(team.id),
+        apiFootballId: String(team.id),
+        name: team.name,
+        fifaCode: team.tla,
+        flagUrl: team.crest,
+      }
+    }),
   )
 
-  for (const apiTeam of apiTeams) {
-    const teamId = idsByKey[String(apiTeam.id)]
+  for (const team of providerTeams) {
+    const teamId = idsByKey[String(team.id)]
     if (teamId) {
-      idMap.set(apiTeam.id, teamId)
+      idMap.set(team.id, teamId)
     }
   }
 
@@ -27,31 +34,96 @@ async function seedTeams(): Promise<Map<number, string>> {
   return idMap
 }
 
-async function seedMatches(teamIdMap: Map<number, string>): Promise<void> {
-  const fixtures = await getFixtures()
-  validateTournamentCounts({ teamCount: teamIdMap.size, matchCount: fixtures.length })
-  const usableFixtures = fixtures.filter(
-    (fixture) => teamIdMap.has(fixture.teams.home.id) && teamIdMap.has(fixture.teams.away.id),
-  )
+function getPlaceholderStagePrefix(stage: string | null): string {
+  switch (stage) {
+    case 'LAST_32':
+      return 'R32'
+    case 'LAST_16':
+      return 'R16'
+    case 'QUARTER_FINALS':
+      return 'QF'
+    case 'SEMI_FINALS':
+      return 'SF'
+    case 'THIRD_PLACE':
+      return '3P'
+    case 'FINAL':
+      return 'FIN'
+    default:
+      return 'KO'
+  }
+}
 
-  await upsertMatches(
-    usableFixtures.map((fixture) => ({
-      apiFootballId: String(fixture.id),
-      homeTeamKey: String(fixture.teams.home.id),
-      awayTeamKey: String(fixture.teams.away.id),
-      kickoffTime: new Date(fixture.date),
-      stage: fixture.league.round,
-      venue: fixture.venue.name,
-      status: 'SCHEDULED',
-      homeScore: null,
-      awayScore: null,
-    })),
-    Object.fromEntries(
+function buildPlaceholderTeams(fixtures: Awaited<ReturnType<typeof getWorldCupMatches>>): SeedTeamInput[] {
+  const placeholderTeams: SeedTeamInput[] = []
+  const stageSequence = new Map<string, number>()
+
+  for (const fixture of fixtures) {
+    if (fixture.homeTeam.id != null && fixture.awayTeam.id != null) {
+      continue
+    }
+
+    const stagePrefix = getPlaceholderStagePrefix(fixture.stage)
+    const nextSequence = (stageSequence.get(stagePrefix) ?? 0) + 1
+    stageSequence.set(stagePrefix, nextSequence)
+
+    const slotBase = `${stagePrefix}${String(nextSequence).padStart(2, '0')}`
+
+    if (fixture.homeTeam.id == null) {
+      placeholderTeams.push({
+        key: `slot:${fixture.id}:home`,
+        apiFootballId: null,
+        name: `A definir ${slotBase}A`,
+        fifaCode: `${slotBase}A`,
+        flagUrl: null,
+      })
+    }
+
+    if (fixture.awayTeam.id == null) {
+      placeholderTeams.push({
+        key: `slot:${fixture.id}:away`,
+        apiFootballId: null,
+        name: `A definir ${slotBase}B`,
+        fifaCode: `${slotBase}B`,
+        flagUrl: null,
+      })
+    }
+  }
+
+  return placeholderTeams
+}
+
+async function seedMatches(teamIdMap: Map<number, string>): Promise<void> {
+  const fixtures = await getWorldCupMatches()
+  validateTournamentCounts({ teamCount: teamIdMap.size, matchCount: fixtures.length })
+  const placeholderTeams = buildPlaceholderTeams(fixtures)
+  const placeholderTeamIdsByKey =
+    placeholderTeams.length > 0 ? await upsertTeams(placeholderTeams) : {}
+
+  const teamIdsByKey = {
+    ...Object.fromEntries(
       Array.from(teamIdMap.entries(), ([teamApiId, teamId]) => [String(teamApiId), teamId]),
     ),
+    ...placeholderTeamIdsByKey,
+  }
+
+  await upsertMatches(
+    fixtures.map((fixture) => ({
+      apiFootballId: String(fixture.id),
+      homeTeamKey:
+        fixture.homeTeam.id != null ? String(fixture.homeTeam.id) : `slot:${fixture.id}:home`,
+      awayTeamKey:
+        fixture.awayTeam.id != null ? String(fixture.awayTeam.id) : `slot:${fixture.id}:away`,
+      kickoffTime: new Date(fixture.utcDate),
+      stage: formatFootballDataStage(fixture.stage, fixture.group),
+      venue: fixture.venue,
+      status: mapFootballDataStatus(fixture.status) ?? 'SCHEDULED',
+      homeScore: fixture.score.fullTime.home,
+      awayScore: fixture.score.fullTime.away,
+    })),
+    teamIdsByKey,
   )
 
-  console.info(`Seeded ${usableFixtures.length} matches`)
+  console.info(`Seeded ${fixtures.length} matches`)
 }
 
 const teamIdMap = await seedTeams()

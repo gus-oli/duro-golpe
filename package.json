@@ -14,6 +14,7 @@
     "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
     "infra:up": "docker compose up -d db cache",
     "db:migrate": "npm --workspace=backend run db:migrate",
+    "beta:reset": "npm --workspace=backend run beta:reset --",
     "bootstrap": "npm run infra:up && npm run db:migrate && npm run seed:demo",
     "bootstrap:provider": "npm run infra:up && npm run db:migrate && npm --workspace=backend run seed",
     "bootstrap:hosted": "npm run db:migrate && npm run seed:demo",
@@ -22,7 +23,9 @@
     "test:launch-smoke": "node ./scripts/run-launch-smoke.mjs",
     "test:e2e": "npx playwright test",
     "seed": "npm --workspace=backend run seed",
-    "seed:demo": "npm --workspace=backend run seed:demo"
+    "seed:demo": "npm --workspace=backend run seed:demo",
+    "sync:provider": "npm --workspace=backend run sync:provider",
+    "match:override": "npm --workspace=backend run match:override --"
   },
   "engines": {
     "node": ">=22.0.0"

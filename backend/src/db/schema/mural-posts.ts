@@ -10,9 +10,7 @@ export const muralPosts = pgTable(
     leagueId: uuid('league_id')
       .notNull()
       .references(() => leagues.id, { onDelete: 'cascade' }),
-    matchId: uuid('match_id')
-      .notNull()
-      .references(() => matches.id, { onDelete: 'cascade' }),
+    matchId: uuid('match_id').references(() => matches.id, { onDelete: 'set null' }),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -20,7 +18,10 @@ export const muralPosts = pgTable(
     isHidden: boolean('is_hidden').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('mural_posts_feed_idx').on(t.leagueId, t.matchId, t.createdAt)],
+  (t) => [
+    index('mural_posts_league_feed_idx').on(t.leagueId, t.createdAt),
+    index('mural_posts_match_context_idx').on(t.leagueId, t.matchId, t.createdAt),
+  ],
 )
 
 export type MuralPost = typeof muralPosts.$inferSelect

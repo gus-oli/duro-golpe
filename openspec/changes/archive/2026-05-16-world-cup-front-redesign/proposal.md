@@ -1,3 +1,5 @@
+> Superseded for the main frontend journey by `sports-companion-product-shell`, which replaces this heavier broadcast-style direction with a lighter sports-companion shell and navigation model.
+
 ## Why
 
 The current frontend is functionally usable, but it still looks like an internal MVP and weakens confidence at the exact moment we want to move toward public launch. We need a cohesive World Cup-inspired experience that feels energetic, premium, and legible across the core user journey.

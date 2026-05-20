@@ -1,3 +1,5 @@
+> Historical note: the active frontend direction is now `sports-companion-product-shell`. The remaining verification items here are no longer the canonical path for the product shell redesign.
+
 ## 1. Visual Foundation
 
 - [x] 1.1 Define the new World Cup visual direction in frontend tokens, including color variables, background treatments, spacing, radius, shadow, and motion primitives
