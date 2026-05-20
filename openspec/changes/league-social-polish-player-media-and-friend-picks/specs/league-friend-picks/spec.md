@@ -51,3 +51,18 @@ The frontend SHALL provide natural paths to friend picks from league ranking, ma
 #### Scenario: User reviews outrights
 - **WHEN** a user is viewing outright markets
 - **THEN** the interface SHALL provide a way to compare league selections for those markets
+
+### Requirement: Friend-pick APIs SHALL fail safely and preserve page usability
+Friend-pick APIs and frontend surfaces SHALL avoid generic internal-server failures for expected missing-data, missing-pick, or schema-drift cases.
+
+#### Scenario: Friend-pick data is empty
+- **WHEN** a league has active members but no submitted picks for the requested context
+- **THEN** the system SHALL return a valid empty-pick DTO instead of a server error
+
+#### Scenario: Friend-pick lookup fails validation
+- **WHEN** the requested match, market, league, or member scope is invalid
+- **THEN** the backend SHALL return a typed client or authorization error without exposing unrelated data
+
+#### Scenario: Frontend receives a recoverable friend-pick error
+- **WHEN** a friend-pick panel cannot load comparison data
+- **THEN** the page SHALL remain usable and show a scoped error state instead of crashing the route

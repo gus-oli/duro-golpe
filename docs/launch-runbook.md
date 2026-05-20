@@ -210,12 +210,15 @@ Optional follow-up modes after the seed:
 If you want player faces in the individual outright cards:
 
 1. configure `API_FOOTBALL_KEY` in `backend/.env`
-2. run `npm --workspace=backend run outrights:enrich-player-media`
-3. use `npm --workspace=backend run outrights:enrich-player-media -- --refresh-all` when you want to recrawl players that already have cached photos
+2. run `npm --workspace=backend run outrights:enrich-player-media -- --limit=10` for a small first pass
+3. run `npm --workspace=backend run outrights:enrich-player-media` for the full pass
+4. use `npm --workspace=backend run outrights:enrich-player-media -- --refresh-all` when you want to recrawl players that already have cached photos
 
 Operational notes:
 
 - the script runs backend-side only and does not expose provider credentials to the frontend
+- API-Football requires `league` or `team` for player search; by default the script uses `league=1` and `season=2022`, which stays in historical World Cup data available to free plans
+- override the scope with `API_FOOTBALL_PLAYER_SEARCH_LEAGUE`, `API_FOOTBALL_PLAYER_SEARCH_SEASON`, `--league=<id>`, `--season=<year>`, or `--team=<id>` if needed
 - matching is done by player name, with team label used as a tie-breaker when the provider returns multiple candidates
 - if the provider does not return a usable photo, the UI falls back to flag or initial-based avatars automatically
 

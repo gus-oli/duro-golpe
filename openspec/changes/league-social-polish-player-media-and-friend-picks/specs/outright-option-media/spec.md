@@ -51,3 +51,26 @@ The individual outright catalog SHALL include high-signal likely contenders even
 #### Scenario: Star option comes from curated safety net
 - **WHEN** a player option is included before an official or preliminary squad source is available
 - **THEN** the option SHALL be marked with likely/curated source confidence metadata
+
+### Requirement: Outright markets SHALL remain available despite optional media or placeholder issues
+The outright page SHALL render configured markets whenever real markets exist, even if optional media enrichment is incomplete or invalid placeholder options were filtered out.
+
+#### Scenario: Optional player media is missing
+- **WHEN** an individual market contains options without cached player photos
+- **THEN** the market SHALL still render with fallback avatars
+
+#### Scenario: Optional team flag is missing
+- **WHEN** a team market contains real teams but some flags are unavailable
+- **THEN** the market SHALL still render with stable fallback visuals
+
+#### Scenario: Placeholder options are filtered out
+- **WHEN** a team market has a mix of real teams and unresolved knockout placeholders
+- **THEN** the placeholders SHALL be hidden while the real team options remain available
+
+#### Scenario: No configured market is available
+- **WHEN** the backend truly has no visible outright markets for the user
+- **THEN** the frontend SHALL show an explicit empty state instead of appearing broken or silently blank
+
+#### Scenario: Outright page hits a recoverable API error
+- **WHEN** an outright market request fails due to missing optional schema fields, provider cache gaps, or invalid option rows
+- **THEN** the route SHALL avoid crashing and SHALL surface an actionable scoped error or fallback

@@ -71,6 +71,28 @@ export interface ApiFootballPlayerSearchResult {
   }>
 }
 
+export interface ApiFootballPlayerSearchScope {
+  leagueId?: number
+  teamId?: number
+  season?: number
+}
+
+export function buildPlayerSearchUrl(
+  name: string,
+  scope: ApiFootballPlayerSearchScope,
+): string {
+  if (!scope.leagueId && !scope.teamId) {
+    throw new Error('API-Football player search requires leagueId or teamId.')
+  }
+
+  const params = new URLSearchParams({ search: name })
+  if (scope.leagueId) params.set('league', String(scope.leagueId))
+  if (scope.teamId) params.set('team', String(scope.teamId))
+  if (scope.season) params.set('season', String(scope.season))
+
+  return `${BASE_URL}/players?${params.toString()}`
+}
+
 export async function getTeams(leagueId = 1, season = 2026): Promise<ApiFootballTeam[]> {
   const response = await rateLimitedFetch(
     `${BASE_URL}/teams?league=${leagueId}&season=${season}`,
@@ -99,8 +121,11 @@ export async function getFixtures(leagueId = 1, season = 2026): Promise<ApiFootb
   return data.response
 }
 
-export async function searchPlayers(name: string): Promise<ApiFootballPlayerSearchResult[]> {
-  const response = await rateLimitedFetch(`${BASE_URL}/players?search=${encodeURIComponent(name)}`)
+export async function searchPlayers(
+  name: string,
+  scope: ApiFootballPlayerSearchScope,
+): Promise<ApiFootballPlayerSearchResult[]> {
+  const response = await rateLimitedFetch(buildPlayerSearchUrl(name, scope))
   const data = (await response.json()) as {
     errors?: string[] | Record<string, string>
     response: ApiFootballPlayerSearchResult[]
