@@ -456,7 +456,8 @@ export function MatchesWorkbench({
         </div>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)] p-2">
+        <div className="grid grid-cols-3 gap-2">
         {([
           { key: 'agenda', title: 'Agenda', description: 'Preencha a rodada por data e feche varios palpites de uma vez.' },
           { key: 'groups', title: 'Grupos', description: 'Revise a fase de grupos no formato mais natural para a Copa.' },
@@ -466,13 +467,13 @@ export function MatchesWorkbench({
             key={item.key}
             type="button"
             onClick={() => setTab(item.key)}
-            className={`rounded-[28px] border p-4 text-left transition ${tab === item.key ? 'border-[var(--accent)] bg-[rgba(22,129,255,0.08)] shadow-sm' : 'border-[var(--line)] bg-[color:var(--surface)] hover:border-[rgba(22,129,255,0.3)]'}`}
+            className={`rounded-[20px] border px-4 py-3 text-left transition ${tab === item.key ? 'border-[var(--accent)] bg-[rgba(22,129,255,0.08)] shadow-sm' : 'border-[var(--line)] bg-[color:var(--surface)] hover:border-[rgba(22,129,255,0.3)]'}`}
           >
-            <p className="dg-eyebrow">{item.title}</p>
-            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">{item.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.description}</p>
+            <p className="text-sm font-black text-[var(--ink)]">{item.title}</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{item.description}</p>
           </button>
         ))}
+        </div>
       </section>
 
       {tab === 'agenda' && (

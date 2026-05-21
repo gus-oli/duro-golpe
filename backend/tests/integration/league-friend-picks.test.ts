@@ -97,4 +97,23 @@ describe('League friend picks endpoints (integration)', () => {
     expect(response.statusCode).toBe(403)
     expect(response.json()).toMatchObject({ message: 'Acesso negado' })
   })
+
+  it('returns stable empty arrays when the target member has not submitted picks yet', async () => {
+    predictionServiceMocks.getLeagueUserMatchPredictions.mockResolvedValue([])
+    outrightServiceMocks.getLeagueUserOutrightSelections.mockResolvedValue([])
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/leagues/league-1/users/user-2/picks',
+      headers: { authorization: `Bearer ${token}` },
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toMatchObject({
+      leagueId: 'league-1',
+      userId: 'user-2',
+      matchPredictions: [],
+      outrightSelections: [],
+    })
+  })
 })

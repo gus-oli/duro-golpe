@@ -1,6 +1,14 @@
-import Link from 'next/link'
 import { cookies } from 'next/headers'
-import { PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
+import { notFound } from 'next/navigation'
+import { ProfileSettingsForm } from '@/components/Profile/ProfileSettingsForm'
+import { EmptyState, PageShell, StatusPill } from '@/components/ui/Primitives'
+
+interface AccountProfile {
+  id: string
+  email: string
+  displayName: string
+  avatarUrl: string | null
+}
 
 interface League {
   id: string
@@ -15,23 +23,15 @@ interface UserTotal {
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 
-function getUserIdFromToken(token: string): string | null {
+async function getMyProfile(token: string): Promise<AccountProfile | null> {
   try {
-    const payload = token.split('.')[1]
-    if (!payload) return null
-    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8')) as { sub?: string; name?: string; displayName?: string }
-    return decoded.sub ?? null
-  } catch {
-    return null
-  }
-}
-
-function getDisplayNameFromToken(token: string): string | null {
-  try {
-    const payload = token.split('.')[1]
-    if (!payload) return null
-    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8')) as { name?: string; displayName?: string; email?: string }
-    return decoded.displayName ?? decoded.name ?? decoded.email ?? null
+    const res = await fetch(`${API}/api/v1/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as { user: AccountProfile }
+    return data.user
   } catch {
     return null
   }
@@ -67,24 +67,27 @@ async function getMyLeagues(token: string): Promise<League[]> {
 export default async function ProfilePage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value ?? ''
-  const userId = getUserIdFromToken(token)
-  const displayName = getDisplayNameFromToken(token) ?? 'Jogador'
+  const profile = await getMyProfile(token)
+
+  if (!profile) {
+    notFound()
+  }
 
   const [myTotal, leagues] = await Promise.all([
-    userId ? getUserTotal(userId, token) : Promise.resolve(null),
+    getUserTotal(profile.id, token),
     getMyLeagues(token),
   ])
 
   return (
-    <PageShell>
+    <PageShell narrow>
       <div className="space-y-6">
         <section className="dg-panel p-5 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="dg-eyebrow">Conta</p>
-              <h1 className="mt-2 text-3xl font-black text-[var(--ink)] sm:text-4xl">{displayName}</h1>
+              <h1 className="mt-2 text-3xl font-black text-[var(--ink)] sm:text-4xl">{profile.displayName}</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-                Sua base de controle para voltar ao jogo, acompanhar desempenho e circular entre as superficies principais.
+                Ajuste seu apelido, e-mail e senha sem sair do fluxo do produto.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -94,28 +97,9 @@ export default async function ProfilePage() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <Link href="/matches" className="dg-card-interactive block p-5">
-            <p className="dg-eyebrow">Partidas</p>
-            <h2 className="mt-2 text-xl font-black text-[var(--ink)]">Voltar para agenda</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Abra jogos, envie palpites e acompanhe travas ao vivo.</p>
-          </Link>
-          <Link href="/leagues" className="dg-card-interactive block p-5">
-            <p className="dg-eyebrow">Ligas</p>
-            <h2 className="mt-2 text-xl font-black text-[var(--ink)]">Ver minhas ligas</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Ranking, badges e o codigo para puxar a galera.</p>
-          </Link>
-          <Link href="/outrights" className="dg-card-interactive block p-5">
-            <p className="dg-eyebrow">Especiais</p>
-            <h2 className="mt-2 text-xl font-black text-[var(--ink)]">Abrir mercados</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Campeão, finalistas e outros mercados de longo prazo.</p>
-          </Link>
-        </section>
-
-        {myTotal && (
+        {myTotal ? (
           <section className="dg-surface p-5 sm:p-6">
-            <SectionHeader eyebrow="Desempenho" title="Resumo de pontuação" />
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-3">
               <div className="dg-subtle-card p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--muted)]">Total</p>
                 <p className="mt-2 text-3xl font-black text-[var(--ink)]">{myTotal.totalPoints}</p>
@@ -130,7 +114,11 @@ export default async function ProfilePage() {
               </div>
             </div>
           </section>
+        ) : (
+          <EmptyState title="Resumo indisponivel" description="Seu placar total volta a aparecer assim que o backend responder esse painel." />
         )}
+
+        <ProfileSettingsForm initialProfile={profile} />
       </div>
     </PageShell>
   )

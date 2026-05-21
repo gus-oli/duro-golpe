@@ -156,6 +156,16 @@ Before trusting `/forgot-password` in the hosted beta:
 5. Trigger a reset request and confirm the backend no longer logs `relation "password_reset_tokens" does not exist`.
 6. If Brevo returns `unrecognised IP address`, disable API IP allowlisting for the beta key or update the allowlist to the current Render egress IP.
 
+### Hosted account + outright media verification
+
+Before trusting `/profile`, friend picks, and `/outrights` in the hosted beta:
+
+1. Run `npm run db:migrate` against the Neon target used by Render.
+2. Confirm the local Drizzle journal includes `0005_outright_option_media`.
+3. In Neon, verify `outright_options` includes `player_photo_url`, `player_photo_source`, and `player_photo_updated_at`.
+4. Open `/outrights` and confirm the page shows markets or an explicit scoped error state instead of silently rendering a blank list.
+5. Open a friend-picks modal and confirm it returns data or an empty state instead of a generic internal-server failure.
+
 ## Local Demo Bootstrap
 
 From the repository root:

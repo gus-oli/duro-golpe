@@ -14,6 +14,7 @@ import { oauthRoutes } from './auth/oauth.js'
 import { muralRoutes } from './mural/routes.js'
 import { badgeRoutes } from './badges/routes.js'
 import { scoringRoutes } from './scoring/routes.js'
+import { accountRoutes } from './account/routes.js'
 
 export async function buildServer(): Promise<ReturnType<typeof Fastify>> {
   const app = Fastify({
@@ -52,6 +53,7 @@ export async function buildServer(): Promise<ReturnType<typeof Fastify>> {
   await app.register(muralRoutes)
   await app.register(badgeRoutes)
   await app.register(scoringRoutes)
+  await app.register(accountRoutes)
   await app.register(matchRoutes)
   await app.register(predictionRoutes)
   await app.register(leagueRoutes)

@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from 'drizzle-orm'
+import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import {
   leagueMemberships,
@@ -13,6 +13,7 @@ import {
 import { scoreResolvedOutrightMarket } from './scoring.js'
 import { normalizeOutrightOptionIds, validateSelectionCardinality } from './outright-utils.js'
 import { assertActiveLeagueMember } from '../auth/access-control.js'
+import { hasColumns } from '../db/optional-columns.js'
 
 export { validateFinalistsPrediction } from './outright-utils.js'
 
@@ -67,6 +68,10 @@ function sortMarketOptions<T extends OutrightOption>(options: T[]): T[] {
   })
 }
 
+async function hasOutrightPlayerMediaColumns(): Promise<boolean> {
+  return hasColumns('outright_options', ['player_photo_url', 'player_photo_source', 'player_photo_updated_at'])
+}
+
 async function assertTargetLeagueMember(leagueId: string, targetUserId: string): Promise<void> {
   const [membership] = await db
     .select({ userId: leagueMemberships.userId })
@@ -86,6 +91,8 @@ async function assertTargetLeagueMember(leagueId: string, targetUserId: string):
 }
 
 export async function getOutrights(userId: string): Promise<unknown[]> {
+  const hasPlayerMedia = await hasOutrightPlayerMediaColumns()
+
   const [markets, options, userPredictions] = await Promise.all([
     db.select().from(outrightMarkets).orderBy(outrightMarkets.sortOrder),
     db
@@ -100,9 +107,11 @@ export async function getOutrights(userId: string): Promise<unknown[]> {
         sortOrder: outrightOptions.sortOrder,
         teamLabel: outrightOptions.teamLabel,
         teamFlagUrl: teams.flagUrl,
-        playerPhotoUrl: outrightOptions.playerPhotoUrl,
-        playerPhotoSource: outrightOptions.playerPhotoSource,
-        playerPhotoUpdatedAt: outrightOptions.playerPhotoUpdatedAt,
+        playerPhotoUrl: hasPlayerMedia ? outrightOptions.playerPhotoUrl : sql<string | null>`null`,
+        playerPhotoSource: hasPlayerMedia ? outrightOptions.playerPhotoSource : sql<string | null>`null`,
+        playerPhotoUpdatedAt: hasPlayerMedia
+          ? outrightOptions.playerPhotoUpdatedAt
+          : sql<Date | null>`null`,
       })
       .from(outrightOptions)
       .leftJoin(teams, eq(outrightOptions.teamId, teams.id)),
@@ -191,6 +200,7 @@ export async function getLeagueOutrightPredictions(
   marketId: string,
 ): Promise<LeagueMemberOutrightDto[]> {
   await assertActiveLeagueMember(requestingUserId, leagueId)
+  const hasPlayerMedia = await hasOutrightPlayerMediaColumns()
 
   const rows = await db
     .select({
@@ -203,7 +213,7 @@ export async function getLeagueOutrightPredictions(
       sourceTier: outrightOptions.sourceTier,
       teamId: outrightOptions.teamId,
       teamFlagUrl: teams.flagUrl,
-      playerPhotoUrl: outrightOptions.playerPhotoUrl,
+      playerPhotoUrl: hasPlayerMedia ? outrightOptions.playerPhotoUrl : sql<string | null>`null`,
       submittedAt: outrightPredictions.submittedAt,
     })
     .from(leagueMemberships)
@@ -256,6 +266,7 @@ export async function getLeagueUserOutrightSelections(
 ): Promise<LeagueUserOutrightSelectionDto[]> {
   await assertActiveLeagueMember(requestingUserId, leagueId)
   await assertTargetLeagueMember(leagueId, targetUserId)
+  const hasPlayerMedia = await hasOutrightPlayerMediaColumns()
 
   const rows = await db
     .select({
@@ -269,7 +280,7 @@ export async function getLeagueUserOutrightSelections(
       sourceTier: outrightOptions.sourceTier,
       teamId: outrightOptions.teamId,
       teamFlagUrl: teams.flagUrl,
-      playerPhotoUrl: outrightOptions.playerPhotoUrl,
+      playerPhotoUrl: hasPlayerMedia ? outrightOptions.playerPhotoUrl : sql<string | null>`null`,
       submittedAt: outrightPredictions.submittedAt,
     })
     .from(outrightPredictions)

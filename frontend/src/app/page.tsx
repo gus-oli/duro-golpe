@@ -25,29 +25,13 @@ interface UserTotal {
   totalPoints: number
 }
 
+interface AccountProfile {
+  id: string
+  email: string
+  displayName: string
+}
+
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
-
-function getUserIdFromToken(token: string): string | null {
-  try {
-    const payload = token.split('.')[1]
-    if (!payload) return null
-    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8')) as { sub?: string; displayName?: string; name?: string }
-    return decoded.sub ?? null
-  } catch {
-    return null
-  }
-}
-
-function getDisplayNameFromToken(token: string): string | null {
-  try {
-    const payload = token.split('.')[1]
-    if (!payload) return null
-    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8')) as { displayName?: string; name?: string; email?: string }
-    return decoded.displayName ?? decoded.name ?? decoded.email ?? null
-  } catch {
-    return null
-  }
-}
 
 async function getMatches(): Promise<Match[]> {
   try {
@@ -88,6 +72,20 @@ async function getOutrights(token: string): Promise<OutrightMarket[]> {
   }
 }
 
+async function getMyProfile(token: string): Promise<AccountProfile | null> {
+  try {
+    const res = await fetch(`${API}/api/v1/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as { user: AccountProfile }
+    return data.user
+  } catch {
+    return null
+  }
+}
+
 async function getUserTotal(userId: string, token: string): Promise<UserTotal | null> {
   try {
     const res = await fetch(`${API}/api/v1/users/${userId}/score`, {
@@ -101,25 +99,46 @@ async function getUserTotal(userId: string, token: string): Promise<UserTotal | 
   }
 }
 
-function getNextActionableMatch(matches: Match[]) {
-  return matches.find((match) => match.status === 'LIVE' || match.status === 'SCHEDULED' || match.status === 'LOCKED') ?? null
+function sortMatches(matches: Match[]): Match[] {
+  return [...matches].sort((left, right) => new Date(left.kickoffTime).getTime() - new Date(right.kickoffTime).getTime())
+}
+
+function getNextRelevantMatches(matches: Match[]): Match[] {
+  const sorted = sortMatches(matches)
+  const actionable =
+    sorted.find((match) => match.status === 'LIVE') ??
+    sorted.find((match) => match.status === 'SCHEDULED' || match.status === 'LOCKED') ??
+    sorted[0]
+
+  if (!actionable) {
+    return []
+  }
+
+  const targetDate = new Date(actionable.kickoffTime).toLocaleDateString('pt-BR')
+  return sorted.filter((match) => new Date(match.kickoffTime).toLocaleDateString('pt-BR') === targetDate)
+}
+
+function getActionLabel(status: Match['status']) {
+  if (status === 'SCHEDULED') return 'Palpitar'
+  if (status === 'LOCKED') return 'Fechado'
+  if (status === 'LIVE') return 'Ao vivo'
+  return 'Resultado'
 }
 
 async function AuthenticatedHome({ token }: { token: string }) {
-  const userId = getUserIdFromToken(token)
-  const displayName = getDisplayNameFromToken(token) ?? 'jogador'
-
+  const profile = await getMyProfile(token)
   const [matches, leagues, markets, myTotal] = await Promise.all([
     getMatches(),
     getMyLeagues(token),
     getOutrights(token),
-    userId ? getUserTotal(userId, token) : Promise.resolve(null),
+    profile ? getUserTotal(profile.id, token) : Promise.resolve(null),
   ])
 
-  const nextMatch = getNextActionableMatch(matches)
+  const nextMatches = getNextRelevantMatches(matches)
   const liveCount = matches.filter((match) => match.status === 'LIVE').length
   const openCount = matches.filter((match) => match.status === 'SCHEDULED').length
   const openMarkets = markets.filter((market) => market.status === 'OPEN').length
+  const displayName = profile?.displayName ?? 'jogador'
 
   return (
     <PageShell>
@@ -149,48 +168,71 @@ async function AuthenticatedHome({ token }: { token: string }) {
             <Link href="/leagues" className="dg-card-interactive block p-4">
               <p className="dg-eyebrow">Ligas</p>
               <h2 className="mt-2 text-xl font-black text-[var(--ink)]">Minha disputa</h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{leagues.length > 0 ? `${leagues.length} ligas para acompanhar.` : 'Entre em uma liga para transformar palpite em briga de tabela.'}</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                {leagues.length > 0 ? `${leagues.length} ligas para acompanhar.` : 'Entre em uma liga para transformar palpite em briga de tabela.'}
+              </p>
             </Link>
             <Link href="/outrights" className="dg-card-interactive block p-4">
               <p className="dg-eyebrow">Especiais</p>
               <h2 className="mt-2 text-xl font-black text-[var(--ink)]">Mercados longos</h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{openMarkets > 0 ? `${openMarkets} mercados ainda abertos.` : 'Veja o status dos mercados de longo prazo.'}</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                {openMarkets > 0 ? `${openMarkets} mercados ainda abertos.` : 'Veja o status dos mercados de longo prazo.'}
+              </p>
             </Link>
           </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="dg-surface p-5 sm:p-6">
-            <SectionHeader
-              eyebrow="Proxima acao"
-              title={nextMatch ? `${nextMatch.homeTeam.fifaCode} x ${nextMatch.awayTeam.fifaCode}` : 'Acompanhe a rodada'}
-              description={
-                nextMatch
-                  ? `${nextMatch.stage} · ${new Date(nextMatch.kickoffTime).toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}`
-                  : 'A agenda continua sendo o centro do seu dia de Copa.'
-              }
-              actions={
-                <Link href={nextMatch ? `/matches/${nextMatch.id}` : '/matches'} className="dg-button-primary">
-                  {nextMatch ? 'Abrir partida' : 'Ver partidas'}
-                </Link>
-              }
-            />
-          </div>
+        <section className="dg-surface p-5 sm:p-6">
+          <SectionHeader
+            eyebrow="Proxima acao"
+            title={
+              nextMatches[0]
+                ? new Date(nextMatches[0].kickoffTime).toLocaleDateString('pt-BR', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'long',
+                  })
+                : 'Acompanhe a rodada'
+            }
+            description={
+              nextMatches[0]
+                ? 'Todos os jogos da proxima janela relevante, para voce resolver a rodada em bloco.'
+                : 'A agenda continua sendo o centro do seu dia de Copa.'
+            }
+          />
 
-          <div className="dg-surface p-5 sm:p-6">
-            <SectionHeader eyebrow="Atalhos" title="Não deixe o produto morrer na agenda" />
-            <div className="mt-4 grid gap-3">
-              <Link href="/leagues" className="dg-subtle-card block p-4 text-sm font-bold text-[var(--ink)]">
-                {leagues[0] ? `Voltar para ${leagues[0].name}` : 'Criar ou entrar em uma liga'}
-              </Link>
-              <Link href="/outrights" className="dg-subtle-card block p-4 text-sm font-bold text-[var(--ink)]">
-                Revisar especiais antes do lock
-              </Link>
-              <Link href="/profile" className="dg-subtle-card block p-4 text-sm font-bold text-[var(--ink)]">
-                Abrir conta e resumo de pontuação
-              </Link>
+          {nextMatches.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-5 text-sm text-[var(--muted)]">
+              Nenhuma partida carregada no momento.
             </div>
-          </div>
+          ) : (
+            <div className="mt-5 grid gap-3 lg:grid-cols-2">
+              {nextMatches.map((match) => (
+                <Link key={match.id} href={`/matches/${match.id}`} className="dg-card-interactive block p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--accent-strong)]">{match.stage}</p>
+                      <h2 className="mt-2 text-xl font-black text-[var(--ink)]">
+                        {match.homeTeam.fifaCode} x {match.awayTeam.fifaCode}
+                      </h2>
+                      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                        {new Date(match.kickoffTime).toLocaleString('pt-BR', {
+                          weekday: 'short',
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                    <StatusPill tone={match.status === 'LIVE' ? 'live' : match.status === 'SCHEDULED' ? 'open' : match.status === 'LOCKED' ? 'locked' : 'resolved'}>
+                      {getActionLabel(match.status)}
+                    </StatusPill>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </PageShell>
@@ -242,7 +284,7 @@ function PublicHome() {
           {[
             ['Partidas e placares', 'Agenda rapida para abrir jogo, bater o olho e mandar o placar.'],
             ['Ligas com ranking vivo', 'Disputa privada com pontos, badges e a tabela sempre a vista.'],
-            ['Especiais que pesam', 'Campeão, finalistas e mercados longos para mexer na classificação.'],
+            ['Especiais que pesam', 'Campeao, finalistas e mercados longos para mexer na classificacao.'],
           ].map(([title, description]) => (
             <div key={title} className="dg-card p-5">
               <p className="dg-eyebrow">Duro Golpe</p>

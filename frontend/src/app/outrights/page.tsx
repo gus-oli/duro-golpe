@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { OutrightCard } from '@/components/OutrightCard/OutrightCard'
 import { EmptyState, PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
@@ -38,17 +37,21 @@ interface League {
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 
-async function getOutrights(token: string): Promise<OutrightMarket[]> {
+async function getOutrights(token: string): Promise<{ markets: OutrightMarket[]; error: string | null }> {
   try {
     const res = await fetch(`${API}/api/v1/outrights`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     })
-    if (!res.ok) return []
-    const data = (await res.json()) as { markets: OutrightMarket[] }
-    return data.markets
+
+    const data = (await res.json()) as { markets?: OutrightMarket[]; message?: string }
+    if (!res.ok) {
+      return { markets: [], error: data.message ?? 'Nao foi possivel carregar os mercados.' }
+    }
+
+    return { markets: data.markets ?? [], error: null }
   } catch {
-    return []
+    return { markets: [], error: 'Nao foi possivel carregar os mercados.' }
   }
 }
 
@@ -69,7 +72,7 @@ async function getMyLeagues(token: string): Promise<League[]> {
 export default async function OutrightsPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value ?? ''
-  const [markets, leagues] = await Promise.all([getOutrights(token), token ? getMyLeagues(token) : Promise.resolve([])])
+  const [{ markets, error }, leagues] = await Promise.all([getOutrights(token), token ? getMyLeagues(token) : Promise.resolve([])])
 
   const hasOpenMarkets = markets.some((market) => market.status === 'OPEN')
   const totalPoints = markets.reduce((sum, market) => sum + market.pointValue, 0)
@@ -89,7 +92,7 @@ export default async function OutrightsPage() {
               </div>
               <h1 className="mt-4 text-4xl font-black text-[var(--ink)] sm:text-5xl">Apostas Especiais</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-                Campeão, finalistas, artilharia e mercados que podem virar uma liga inteira.
+                Campeao, finalistas, artilharia e mercados que podem virar uma liga inteira.
               </p>
             </div>
             <div className="dg-subtle-card p-4">
@@ -99,36 +102,20 @@ export default async function OutrightsPage() {
           </div>
         </section>
 
-        <section className="grid gap-3 md:grid-cols-3">
-          <Link href="/matches" className="dg-card-interactive block p-4">
-            <p className="dg-eyebrow">Partidas</p>
-            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Voltar para a rodada</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Cruze o longo prazo com o placar do dia.</p>
-          </Link>
-          <Link href="/leagues" className="dg-card-interactive block p-4">
-            <p className="dg-eyebrow">Ligas</p>
-            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Ver disputa</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Especiais valem pesado na tabela da galera.</p>
-          </Link>
-          <Link href="/profile" className="dg-card-interactive block p-4">
-            <p className="dg-eyebrow">Conta</p>
-            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Abrir meu resumo</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Confira seu fluxo completo sem sair caçando rota.</p>
-          </Link>
-        </section>
-
         <SectionHeader
           eyebrow="Longo prazo"
           title="Mercados da Copa"
           description={
             hasOpenMarkets
-              ? 'Disponíveis até 1 hora antes da partida de abertura.'
-              : 'Todas as apostas especiais estão encerradas.'
+              ? 'Disponiveis ate 1 hora antes da partida de abertura.'
+              : 'Todas as apostas especiais estao encerradas.'
           }
         />
 
-        {markets.length === 0 ? (
-          <EmptyState title="Nenhum mercado disponível" description="Quando os especiais forem carregados, eles aparecem aqui." />
+        {error ? (
+          <EmptyState title="Mercados indisponiveis" description={error} />
+        ) : markets.length === 0 ? (
+          <EmptyState title="Nenhum mercado disponivel" description="Quando os especiais forem carregados, eles aparecem aqui." />
         ) : (
           <div className="grid gap-5 lg:grid-cols-2">
             {markets.map((market) => (

@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { MuralFeed } from '@/components/Mural/MuralFeed'
 import { TotalScore } from '@/components/Scoring/TotalScore'
 import { RankingClient } from '@/components/Leagues/RankingClient'
@@ -58,7 +57,7 @@ async function getLeague(leagueId: string, token: string): Promise<League | null
     })
     if (!res.ok) return null
     const data = (await res.json()) as { leagues: League[] }
-    return data.leagues.find((l) => l.id === leagueId) ?? null
+    return data.leagues.find((league) => league.id === leagueId) ?? null
   } catch {
     return null
   }
@@ -78,16 +77,16 @@ async function getRanking(leagueId: string, token: string): Promise<RankingEntry
   }
 }
 
-async function getUserTotal(userId: string, token: string): Promise<UserTotal> {
+async function getUserTotal(userId: string, token: string): Promise<UserTotal | null> {
   try {
     const res = await fetch(`${API}/api/v1/users/${userId}/score`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     })
-    if (!res.ok) return { totalPoints: 0, exactScoreCount: 0, winnerGoalDiffCount: 0 }
+    if (!res.ok) return null
     return res.json() as Promise<UserTotal>
   } catch {
-    return { totalPoints: 0, exactScoreCount: 0, winnerGoalDiffCount: 0 }
+    return null
   }
 }
 
@@ -124,29 +123,18 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
   return (
     <PageShell>
       <div className="space-y-6">
-        <Link href="/leagues" className="dg-button-secondary">
-          Voltar para Minhas Ligas
-        </Link>
-
         <section className="dg-panel p-5 sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill tone="open">Liga privada</StatusPill>
                 <span className="dg-chip">
-                  Codigo{' '}
-                  <span
-                    className="ml-1 font-mono"
-                    data-smoke="league-invite-code"
-                    data-invite-code={league.inviteCode}
-                  >
-                    {league.inviteCode}
-                  </span>
+                  Codigo <span className="ml-1 font-mono">{league.inviteCode}</span>
                 </span>
               </div>
               <h1 className="mt-4 text-4xl font-black text-[var(--ink)] sm:text-5xl">{league.name}</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-                Ranking vivo, pontuação total e conquistas da rodada no mesmo painel.
+                Ranking vivo, pontuacao total e conquistas da rodada no mesmo painel.
               </p>
             </div>
             <div className="dg-subtle-card p-4">
@@ -156,22 +144,25 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
           </div>
         </section>
 
-        <section className="grid gap-3 md:grid-cols-3">
-          <Link href="/matches" className="dg-card-interactive block p-4">
-            <p className="dg-eyebrow">Rodada</p>
-            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Ver partidas relevantes</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Volte para a agenda para continuar marcando pontos.</p>
-          </Link>
-          <Link href="/outrights" className="dg-card-interactive block p-4">
-            <p className="dg-eyebrow">Especiais</p>
-            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Mercados de longo prazo</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Especiais tambem podem virar a tabela da liga.</p>
-          </Link>
-          <Link href="/profile" className="dg-card-interactive block p-4">
-            <p className="dg-eyebrow">Conta</p>
-            <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Resumo do jogador</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">Tenha seus atalhos sem perder o fio da disputa.</p>
-          </Link>
+        {myTotal && token && (
+          <section aria-label="Minha pontuacao" className="space-y-4">
+            <SectionHeader eyebrow="Pontuacao" title="Minha Pontuacao" />
+            <TotalScore
+              initialTotalPoints={myTotal.totalPoints}
+              initialExactScoreCount={myTotal.exactScoreCount}
+              initialWinnerGoalDiffCount={myTotal.winnerGoalDiffCount}
+              realtimeEnabled={realtimeEnabled}
+            />
+          </section>
+        )}
+
+        <section aria-label="Classificacao" className="space-y-4">
+          <SectionHeader
+            eyebrow="Tabela"
+            title="Classificacao"
+            description="A disputa atualiza quando os resultados e especiais entram no placar."
+          />
+          <RankingClient leagueId={league.id} initialRanking={ranking} realtimeEnabled={realtimeEnabled} />
         </section>
 
         {token && (
@@ -191,27 +182,6 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
             </div>
           </section>
         )}
-
-        {myTotal && token && (
-          <section aria-label="Minha pontuação" className="space-y-4">
-            <SectionHeader eyebrow="Meu desempenho" title="Minha Pontuacao" />
-            <TotalScore
-              initialTotalPoints={myTotal.totalPoints}
-              initialExactScoreCount={myTotal.exactScoreCount}
-              initialWinnerGoalDiffCount={myTotal.winnerGoalDiffCount}
-              realtimeEnabled={realtimeEnabled}
-            />
-          </section>
-        )}
-
-        <section aria-label="Classificacao" className="space-y-4">
-          <SectionHeader
-            eyebrow="Tabela"
-            title="Classificacao"
-            description="A disputa atualiza quando os resultados e especiais entram no placar."
-          />
-          <RankingClient leagueId={league.id} initialRanking={ranking} realtimeEnabled={realtimeEnabled} />
-        </section>
       </div>
     </PageShell>
   )
