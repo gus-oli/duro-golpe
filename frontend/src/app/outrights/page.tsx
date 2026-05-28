@@ -38,7 +38,7 @@ interface League {
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 
-async function getOutrights(token: string): Promise<{ markets: OutrightMarket[]; error: string | null }> {
+async function getOutrights(token: string): Promise<{ markets: OutrightMarket[]; error: string | null; unauthorized: boolean }> {
   try {
     const res = await fetch(`${API}/api/v1/outrights`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -46,13 +46,17 @@ async function getOutrights(token: string): Promise<{ markets: OutrightMarket[];
     })
 
     const data = (await res.json()) as { markets?: OutrightMarket[]; message?: string }
-    if (!res.ok) {
-      return { markets: [], error: data.message ?? 'Nao foi possivel carregar os mercados.' }
+    if (res.status === 401) {
+      return { markets: [], error: data.message ?? 'Sessao expirada.', unauthorized: true }
     }
 
-    return { markets: data.markets ?? [], error: null }
+    if (!res.ok) {
+      return { markets: [], error: data.message ?? 'Nao foi possivel carregar os mercados.', unauthorized: false }
+    }
+
+    return { markets: data.markets ?? [], error: null, unauthorized: false }
   } catch {
-    return { markets: [], error: 'Nao foi possivel carregar os mercados.' }
+    return { markets: [], error: 'Nao foi possivel carregar os mercados.', unauthorized: false }
   }
 }
 
@@ -75,10 +79,17 @@ export default async function OutrightsPage() {
   const token = cookieStore.get('auth_token')?.value ?? ''
 
   if (!token) {
-    redirect('/login?next=/outrights')
+    redirect('/login?from=/outrights')
   }
 
-  const [{ markets, error }, leagues] = await Promise.all([getOutrights(token), token ? getMyLeagues(token) : Promise.resolve([])])
+  const [{ markets, error, unauthorized }, leagues] = await Promise.all([
+    getOutrights(token),
+    token ? getMyLeagues(token) : Promise.resolve([]),
+  ])
+
+  if (unauthorized) {
+    redirect('/login?from=/outrights')
+  }
 
   const hasOpenMarkets = markets.some((market) => market.status === 'OPEN')
   const totalPoints = markets.reduce((sum, market) => sum + market.pointValue, 0)

@@ -12,17 +12,18 @@ interface League {
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 
-async function getMyLeagues(token: string): Promise<League[]> {
+async function getMyLeagues(token: string): Promise<{ leagues: League[]; unauthorized: boolean }> {
   try {
     const res = await fetch(`${API}/api/v1/leagues`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: 'no-store',
     })
-    if (!res.ok) return []
+    if (res.status === 401) return { leagues: [], unauthorized: true }
+    if (!res.ok) return { leagues: [], unauthorized: false }
     const data = (await res.json()) as { leagues: League[] }
-    return data.leagues
+    return { leagues: data.leagues, unauthorized: false }
   } catch {
-    return []
+    return { leagues: [], unauthorized: false }
   }
 }
 
@@ -31,10 +32,14 @@ export default async function LeaguesPage() {
   const token = cookieStore.get('auth_token')?.value ?? ''
 
   if (!token) {
-    redirect('/login?next=/leagues')
+    redirect('/login?from=/leagues')
   }
 
-  const leagues = await getMyLeagues(token)
+  const { leagues, unauthorized } = await getMyLeagues(token)
+
+  if (unauthorized) {
+    redirect('/login?from=/leagues')
+  }
 
   return (
     <PageShell>
