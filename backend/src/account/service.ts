@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import { and, eq, ne } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { users } from '../db/schema/index.js'
+import { bumpSessionVersion } from '../auth/session-lifecycle.js'
 
 export interface AccountProfileDto {
   id: string
@@ -91,4 +92,5 @@ export async function changeMyPassword(
 
   const nextHash = await bcrypt.hash(input.newPassword, 12)
   await db.update(users).set({ passwordHash: nextHash }).where(eq(users.id, userId))
+  await bumpSessionVersion(userId)
 }

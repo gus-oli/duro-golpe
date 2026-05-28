@@ -5,7 +5,7 @@ import * as schema from './schema/index.js'
 
 const pool = new Pool({
   connectionString: config.DATABASE_URL,
-  max: 10,
+  max: config.DB_POOL_MAX,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 })

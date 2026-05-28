@@ -6,6 +6,8 @@ import { users } from '../db/schema/index.js'
 import { eq } from 'drizzle-orm'
 import { validateBody } from '../middleware/validate.js'
 import { confirmPasswordReset, requestPasswordReset } from './password-recovery.js'
+import { issueSessionToken } from './session-lifecycle.js'
+import { rateLimit } from '../middleware/rate-limit.js'
 
 const registerSchema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -30,7 +32,20 @@ const passwordResetConfirmSchema = z.object({
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post(
     '/api/v1/auth/register',
-    { preHandler: validateBody(registerSchema) },
+    {
+      preHandler: [
+        validateBody(registerSchema),
+        rateLimit({
+          key: 'auth-register',
+          windowMs: 15 * 60 * 1000,
+          max: 10,
+          extraBuckets: (request) => {
+            const email = (request.body as { email?: string } | undefined)?.email?.trim().toLowerCase()
+            return email ? [`email:${email}`] : []
+          },
+        }),
+      ],
+    },
     async (request, reply) => {
       const { email, displayName, password } = request.body as z.infer<typeof registerSchema>
 
@@ -43,16 +58,34 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       const [user] = await db
         .insert(users)
         .values({ email, displayName, passwordHash })
-        .returning({ id: users.id, email: users.email, displayName: users.displayName })
+        .returning({
+          id: users.id,
+          email: users.email,
+          displayName: users.displayName,
+          sessionVersion: users.sessionVersion,
+        })
 
-      const token = app.jwt.sign({ sub: user!.id }, { expiresIn: '7d' })
+      const token = issueSessionToken(app, user!)
       return reply.status(201).send({ token, user })
     },
   )
 
   app.post(
     '/api/v1/auth/login',
-    { preHandler: validateBody(loginSchema) },
+    {
+      preHandler: [
+        validateBody(loginSchema),
+        rateLimit({
+          key: 'auth-login',
+          windowMs: 15 * 60 * 1000,
+          max: 10,
+          extraBuckets: (request) => {
+            const email = (request.body as { email?: string } | undefined)?.email?.trim().toLowerCase()
+            return email ? [`email:${email}`] : []
+          },
+        }),
+      ],
+    },
     async (request, reply) => {
       const { email, password } = request.body as z.infer<typeof loginSchema>
 
@@ -66,7 +99,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(401).send({ statusCode: 401, error: 'Unauthorized', message: 'Credenciais inválidas' })
       }
 
-      const token = app.jwt.sign({ sub: user.id }, { expiresIn: '7d' })
+      const token = issueSessionToken(app, user)
       return reply.send({
         token,
         user: { id: user.id, email: user.email, displayName: user.displayName, avatarUrl: user.avatarUrl },
@@ -76,7 +109,20 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
   app.post(
     '/api/v1/auth/password-reset/request',
-    { preHandler: validateBody(passwordResetRequestSchema) },
+    {
+      preHandler: [
+        validateBody(passwordResetRequestSchema),
+        rateLimit({
+          key: 'auth-password-reset-request',
+          windowMs: 15 * 60 * 1000,
+          max: 5,
+          extraBuckets: (request) => {
+            const email = (request.body as { email?: string } | undefined)?.email?.trim().toLowerCase()
+            return email ? [`email:${email}`] : []
+          },
+        }),
+      ],
+    },
     async (request, reply) => {
       const { email } = request.body as z.infer<typeof passwordResetRequestSchema>
       await requestPasswordReset(email)
@@ -86,7 +132,16 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
   app.post(
     '/api/v1/auth/password-reset/confirm',
-    { preHandler: validateBody(passwordResetConfirmSchema) },
+    {
+      preHandler: [
+        validateBody(passwordResetConfirmSchema),
+        rateLimit({
+          key: 'auth-password-reset-confirm',
+          windowMs: 15 * 60 * 1000,
+          max: 10,
+        }),
+      ],
+    },
     async (request, reply) => {
       const { token, password } = request.body as z.infer<typeof passwordResetConfirmSchema>
       await confirmPasswordReset(token, password)

@@ -60,13 +60,30 @@ const optionalBoolean = z.preprocess((value) => {
   return value
 }, z.boolean().optional())
 
+const optionalDate = z.preprocess((value) => {
+  if (value instanceof Date) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.length === 0) return undefined
+    return new Date(trimmed)
+  }
+
+  return value
+}, z.date().optional())
+
 const envSchema = z.object({
   DATABASE_URL: z.string().url(),
+  DB_POOL_MAX: z.coerce.number().int().positive().max(60).default(5),
   REDIS_URL: z.string().url(),
   JWT_SECRET: z.string().min(32),
   API_FOOTBALL_KEY: optionalNonEmptyString,
   FOOTBALL_DATA_TOKEN: optionalNonEmptyString,
   FOOTBALL_DATA_POLL_ENABLED: optionalBoolean.default(false),
+  LOCK_SCHEDULERS_ENABLED: optionalBoolean.default(true),
+  LOCK_SCHEDULERS_START_AT: optionalDate,
   FOOTBALL_DATA_COMPETITION_CODE: z.string().min(1).default('WC'),
   FOOTBALL_DATA_SEASON: z.coerce.number().int().default(2026),
   WEBHOOK_SECRET: z.string().min(16),

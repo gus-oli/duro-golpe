@@ -2,23 +2,27 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { assertSelfAccess } from '../auth/access-control.js'
 import { requireAuth } from '../auth/middleware.js'
-import { validateQuery } from '../middleware/validate.js'
+import { validateParams, validateQuery } from '../middleware/validate.js'
 import { db } from '../db/index.js'
 import { matchScores, userTotals, users, matches, matchPredictions, matchResults } from '../db/schema/index.js'
 import { eq, and, desc, count, sql } from 'drizzle-orm'
 import { TIER_LABELS_PT, MAX_THEORETICAL_POINTS } from './types.js'
 import type { ScoringTier } from './types.js'
+import { routeIdSchema } from '../middleware/route-schemas.js'
 
 const matchScoresQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 })
 
+const userParamsSchema = z.object({ userId: routeIdSchema })
+const matchParamsSchema = z.object({ matchId: routeIdSchema })
+
 export async function scoringRoutes(app: FastifyInstance): Promise<void> {
   // GET /api/v1/users/:userId/score — UserTotal summary
   app.get<{ Params: { userId: string } }>(
     '/api/v1/users/:userId/score',
-    { preHandler: requireAuth },
+    { preHandler: [requireAuth, validateParams(userParamsSchema)] },
     async (request, reply) => {
       const { userId } = request.params
       assertSelfAccess(request.user.id, userId)
@@ -66,7 +70,7 @@ export async function scoringRoutes(app: FastifyInstance): Promise<void> {
   // GET /api/v1/users/:userId/scores/matches — paginated match score breakdown
   app.get<{ Params: { userId: string } }>(
     '/api/v1/users/:userId/scores/matches',
-    { preHandler: [requireAuth, validateQuery(matchScoresQuerySchema)] },
+    { preHandler: [requireAuth, validateParams(userParamsSchema), validateQuery(matchScoresQuerySchema)] },
     async (request, reply) => {
       const { userId } = request.params
       assertSelfAccess(request.user.id, userId)
@@ -127,7 +131,7 @@ export async function scoringRoutes(app: FastifyInstance): Promise<void> {
   // GET /api/v1/matches/:matchId/score-summary — tier distribution for a match
   app.get<{ Params: { matchId: string } }>(
     '/api/v1/matches/:matchId/score-summary',
-    { preHandler: requireAuth },
+    { preHandler: [requireAuth, validateParams(matchParamsSchema)] },
     async (request, reply) => {
       const { matchId } = request.params
 

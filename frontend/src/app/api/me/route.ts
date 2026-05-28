@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { rejectUntrustedMutation } from '@/lib/proxy-security'
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 
@@ -29,6 +30,11 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  const rejection = rejectUntrustedMutation(request)
+  if (rejection) {
+    return rejection
+  }
+
   const body = (await request.json()) as unknown
   return forward('PATCH', body)
 }

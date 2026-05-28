@@ -20,8 +20,34 @@ app.log.info(`Server running on ${config.BIND_HOST}:${config.PORT}`)
 const redisPublisher = createClient({ url: config.REDIS_URL })
 await redisPublisher.connect()
 
-startLockScheduler()
-startOutrightLockScheduler()
+function startLockSchedulers(): void {
+  startLockScheduler()
+  startOutrightLockScheduler()
+}
+
+function scheduleLockSchedulersStart(): void {
+  const startAt = config.LOCK_SCHEDULERS_START_AT
+
+  if (!startAt || Date.now() >= startAt.getTime()) {
+    startLockSchedulers()
+    return
+  }
+
+  const delayMs = Math.min(startAt.getTime() - Date.now(), 2_147_483_647)
+  app.log.info(`Lock schedulers waiting until ${startAt.toISOString()}`)
+
+  const timer = setTimeout(() => {
+    scheduleLockSchedulersStart()
+  }, delayMs)
+  timer.unref?.()
+}
+
+if (config.LOCK_SCHEDULERS_ENABLED) {
+  scheduleLockSchedulersStart()
+} else {
+  app.log.info('Lock schedulers disabled by LOCK_SCHEDULERS_ENABLED=false')
+}
+
 startFootballDataSync()
 await startRedisSubscriber()
 await startMuralSubscriber()

@@ -12,6 +12,22 @@ interface UseWebSocketOptions {
 
 const WS_URL = process.env['NEXT_PUBLIC_WS_URL'] ?? 'ws://localhost:3001'
 
+function buildWebSocketUrl(): string {
+  const url = new URL(WS_URL)
+
+  if (url.protocol === 'https:') {
+    url.protocol = 'wss:'
+  } else if (url.protocol === 'http:') {
+    url.protocol = 'ws:'
+  }
+
+  if (!url.pathname || url.pathname === '/') {
+    url.pathname = '/ws'
+  }
+
+  return url.toString()
+}
+
 export function useWebSocket(enabled: boolean, handlers: EventMap, options?: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null)
   const retriesRef = useRef(0)
@@ -34,7 +50,7 @@ export function useWebSocket(enabled: boolean, handlers: EventMap, options?: Use
   const connect = useCallback(() => {
     if (!enabled) return
 
-    const ws = new WebSocket(`${WS_URL}/ws`)
+    const ws = new WebSocket(buildWebSocketUrl())
     wsRef.current = ws
 
     ws.onmessage = (event) => {

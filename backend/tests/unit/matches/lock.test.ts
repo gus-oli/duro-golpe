@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shouldLockMatch } from '../../../src/matches/lock-utils.js'
+import { getEffectiveMatchStatus, shouldLockMatch } from '../../../src/matches/lock-utils.js'
 
 describe('shouldLockMatch', () => {
   const FIFTEEN_MIN = 15 * 60 * 1000
@@ -41,5 +41,28 @@ describe('shouldLockMatch', () => {
     const now = new Date('2026-06-15T20:44:59.000Z')
     const kickoff = new Date('2026-06-15T21:00:00.000Z')
     expect(shouldLockMatch(kickoff, now)).toBe(false)
+  })
+})
+
+describe('getEffectiveMatchStatus', () => {
+  it('reports scheduled matches as locked inside the prediction lock window', () => {
+    const now = new Date('2026-06-15T20:45:00.000Z')
+    const kickoff = new Date('2026-06-15T21:00:00.000Z')
+
+    expect(getEffectiveMatchStatus('SCHEDULED', kickoff, now)).toBe('LOCKED')
+  })
+
+  it('keeps future scheduled matches open', () => {
+    const now = new Date('2026-06-15T20:44:59.000Z')
+    const kickoff = new Date('2026-06-15T21:00:00.000Z')
+
+    expect(getEffectiveMatchStatus('SCHEDULED', kickoff, now)).toBe('SCHEDULED')
+  })
+
+  it('does not rewrite non-scheduled lifecycle statuses', () => {
+    const now = new Date('2026-06-15T20:45:00.000Z')
+    const kickoff = new Date('2026-06-15T21:00:00.000Z')
+
+    expect(getEffectiveMatchStatus('LIVE', kickoff, now)).toBe('LIVE')
   })
 })

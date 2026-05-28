@@ -12,6 +12,8 @@ Copy `backend/.env.example` and provide:
 - `JWT_SECRET`
 - `FOOTBALL_DATA_TOKEN` when using the free provider-backed World Cup 2026 seed or polling path
 - `FOOTBALL_DATA_POLL_ENABLED` when the backend should run the adaptive provider sync loop automatically
+- `LOCK_SCHEDULERS_ENABLED` when the backend should run minute-based match/outright lock jobs
+- `LOCK_SCHEDULERS_START_AT` when the lock schedulers should stay armed but delay startup until a specific date/time
 - `API_FOOTBALL_KEY` only for the legacy API-Football webhook path
 - `WEBHOOK_SECRET`
 - `BASE_URL`
@@ -33,6 +35,8 @@ REDIS_URL=rediss://default:<upstash-password>@<upstash-host>:6379
 JWT_SECRET=<32-plus-char-secret>
 FOOTBALL_DATA_TOKEN=<football-data-token>
 FOOTBALL_DATA_POLL_ENABLED=true
+LOCK_SCHEDULERS_ENABLED=true
+LOCK_SCHEDULERS_START_AT=2026-06-11T00:00:00-03:00
 WEBHOOK_SECRET=<16-plus-char-secret>
 BASE_URL=https://<public-tunnel-host>
 FRONTEND_URL=https://<public-tunnel-host>
@@ -52,6 +56,7 @@ Guidance:
 - Leave Google OAuth unset for the hosted free beta path; email/password plus reset-by-email is the supported auth story.
 - Keep `BIND_HOST=127.0.0.1` for the private-beta topology so the backend is not exposed to the local network by accident.
 - Keep `FOOTBALL_DATA_POLL_ENABLED=false` if you only want real fixtures from the seed and plan to drive results manually.
+- Set `LOCK_SCHEDULERS_START_AT=2026-06-11T00:00:00-03:00` before the tournament window if you want the lock schedulers deployed but not querying Postgres yet. Prediction routes still enforce the 15-minute lock by kickoff time, but DB statuses will not be proactively updated until schedulers start or a manual lock command is run.
 
 ### Frontend
 
@@ -61,6 +66,7 @@ Copy `frontend/.env.example` and provide:
 - `NEXT_PUBLIC_API_URL`
 - `NEXT_PUBLIC_WS_URL`
 - `NEXT_PUBLIC_REALTIME_ENABLED`
+- `NEXT_PUBLIC_MURAL_POLLING_ENABLED`
 - `AUTH_COOKIE_SECURE`
 
 Private-beta recommendations through a public tunnel:
@@ -70,6 +76,7 @@ API_URL=http://127.0.0.1:3001
 NEXT_PUBLIC_API_URL=https://<public-tunnel-host>
 NEXT_PUBLIC_WS_URL=wss://<public-tunnel-host>/ws
 NEXT_PUBLIC_REALTIME_ENABLED=true
+NEXT_PUBLIC_MURAL_POLLING_ENABLED=false
 AUTH_COOKIE_SECURE=true
 NODE_ENV=production
 ```
@@ -79,6 +86,7 @@ Guidance:
 - `API_URL` is for frontend server-side calls on the operator machine, so keep it on loopback.
 - `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_WS_URL` are for browser traffic, so they must use the public tunnel origin.
 - Set `NEXT_PUBLIC_REALTIME_ENABLED=false` for the split-origin zero-cost hosted beta if you want to avoid browser WebSocket noise and rely on polling-first freshness.
+- Keep `NEXT_PUBLIC_MURAL_POLLING_ENABLED=false` when WebSockets are healthy so the mural uses Redis/WebSocket events instead of recurring browser polling. Set it to `true` only as a temporary fallback.
 - Only set `AUTH_COOKIE_SECURE=false` for temporary plain-HTTP testing on a raw local address. Keep it `true` for tunnel-based private beta because the public tunnel URL is HTTPS.
 
 ## Zero-Cost Hosted Beta
@@ -113,7 +121,9 @@ DATABASE_MIGRATION_URL=postgresql://<neon-direct-migration-url>?sslmode=require
 REDIS_URL=rediss://default:<upstash-password>@<upstash-host>:6379
 JWT_SECRET=<32-plus-char-secret>
 FOOTBALL_DATA_TOKEN=<football-data-token>
-FOOTBALL_DATA_POLL_ENABLED=true
+FOOTBALL_DATA_POLL_ENABLED=false
+LOCK_SCHEDULERS_ENABLED=true
+LOCK_SCHEDULERS_START_AT=2026-06-11T00:00:00-03:00
 WEBHOOK_SECRET=<16-plus-char-secret>
 BASE_URL=https://<render-backend-host>
 FRONTEND_URL=https://<vercel-frontend-host>
@@ -131,7 +141,8 @@ NODE_ENV=production
 API_URL=https://<render-backend-host>
 NEXT_PUBLIC_API_URL=https://<render-backend-host>
 NEXT_PUBLIC_WS_URL=wss://<render-backend-host>/ws
-NEXT_PUBLIC_REALTIME_ENABLED=false
+NEXT_PUBLIC_REALTIME_ENABLED=true
+NEXT_PUBLIC_MURAL_POLLING_ENABLED=false
 AUTH_COOKIE_SECURE=true
 NODE_ENV=production
 ```
@@ -141,7 +152,9 @@ Hosted free-beta notes:
 - Use email/password auth only; do not expose Google login in the Vercel login surface for this phase.
 - Use the password-reset flow backed by Brevo instead of operator-driven manual resets.
 - Ping `https://<render-backend-host>/health` every 5 minutes from an external uptime service to reduce Render sleep events.
-- Keep the league mural on polling-first freshness; do not depend on authenticated split-origin WebSockets for the beta experience.
+- Keep `FOOTBALL_DATA_POLL_ENABLED=false` while no provider sync is needed.
+- Keep `LOCK_SCHEDULERS_ENABLED=true` with `LOCK_SCHEDULERS_START_AT=2026-06-11T00:00:00-03:00` before opening day so the backend deploys with the lockers armed but does not run their minute jobs yet.
+- Keep `NEXT_PUBLIC_REALTIME_ENABLED=true` and `NEXT_PUBLIC_MURAL_POLLING_ENABLED=false` when WebSockets are healthy so the mural is push-first instead of polling-first.
 - Expect cold starts if the keepalive service fails or Render restarts the free service.
 - If Brevo API IP allowlisting is enabled, expect reset-email delivery to break whenever Render free changes egress IP; the recommended beta setup is leaving Brevo API IP allowlisting disabled for this key.
 

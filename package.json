@@ -25,10 +25,16 @@
     "seed": "npm --workspace=backend run seed",
     "seed:demo": "npm --workspace=backend run seed:demo",
     "sync:provider": "npm --workspace=backend run sync:provider",
-    "match:override": "npm --workspace=backend run match:override --"
+    "match:override": "npm --workspace=backend run match:override --",
+    "audit:prod": "npm audit --omit=dev",
+    "security:gate": "node ./scripts/check-prod-audit.mjs"
   },
   "engines": {
     "node": ">=22.0.0"
+  },
+  "overrides": {
+    "fast-uri": "3.1.2",
+    "postcss": "8.5.10"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1"

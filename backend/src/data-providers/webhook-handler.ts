@@ -1,7 +1,9 @@
 import type { FastifyInstance } from 'fastify'
+import { timingSafeEqual } from 'node:crypto'
 import { config } from '../config.js'
 import { mapApiFootballStatus } from '../realtime/events.js'
 import { applyProviderMatchSnapshot } from './match-reconciliation.js'
+import { rateLimit } from '../middleware/rate-limit.js'
 
 interface ApiFootballWebhookBody {
   fixture?: {
@@ -14,10 +16,26 @@ interface ApiFootballWebhookBody {
   }
 }
 
+function hasValidWebhookSecret(input: string | undefined): boolean {
+  if (!input) {
+    return false
+  }
+
+  const expected = Buffer.from(config.WEBHOOK_SECRET)
+  const provided = Buffer.from(input)
+  if (expected.length !== provided.length) {
+    return false
+  }
+
+  return timingSafeEqual(expected, provided)
+}
+
 export async function webhookRoutes(app: FastifyInstance): Promise<void> {
-  app.post('/api/v1/webhooks/api-football', async (request, reply) => {
+  app.post('/api/v1/webhooks/api-football', {
+    preHandler: rateLimit({ key: 'webhook-api-football', windowMs: 60 * 1000, max: 120 }),
+  }, async (request, reply) => {
     const secret = request.headers['x-webhook-secret']
-    if (secret !== config.WEBHOOK_SECRET) {
+    if (!hasValidWebhookSecret(Array.isArray(secret) ? secret[0] : secret)) {
       return reply.status(401).send({ message: 'Unauthorized' })
     }
 

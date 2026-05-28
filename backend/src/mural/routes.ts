@@ -1,8 +1,10 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { requireAuth } from '../auth/middleware.js'
-import { validateBody, validateQuery } from '../middleware/validate.js'
+import { validateBody, validateParams, validateQuery } from '../middleware/validate.js'
 import { createPost, getPosts, hidePostForActor } from './service.js'
+import { routeIdSchema } from '../middleware/route-schemas.js'
+import { rateLimit } from '../middleware/rate-limit.js'
 
 const basePostBodySchema = z.object({
   content: z
@@ -21,6 +23,15 @@ const querySchema = z.object({
   after: z.string().datetime().optional(),
 })
 
+const leagueParamsSchema = z.object({ leagueId: routeIdSchema })
+const matchParamsSchema = z.object({ leagueId: routeIdSchema, matchId: routeIdSchema })
+const leaguePostParamsSchema = z.object({ leagueId: routeIdSchema, postId: routeIdSchema })
+const matchPostParamsSchema = z.object({
+  leagueId: routeIdSchema,
+  matchId: routeIdSchema,
+  postId: routeIdSchema,
+})
+
 type LeagueParams = { Params: { leagueId: string } }
 type MatchParams = { Params: { leagueId: string; matchId: string } }
 type LeaguePostParams = { Params: { leagueId: string; postId: string } }
@@ -29,7 +40,7 @@ type MatchPostParams = { Params: { leagueId: string; matchId: string; postId: st
 export async function muralRoutes(app: FastifyInstance): Promise<void> {
   app.get<LeagueParams>(
     '/api/v1/leagues/:leagueId/mural',
-    { preHandler: [requireAuth, validateQuery(querySchema)] },
+    { preHandler: [requireAuth, validateParams(leagueParamsSchema), validateQuery(querySchema)] },
     async (request, reply) => {
       const { leagueId } = request.params
       const { limit, before, after } = request.query as z.infer<typeof querySchema>
@@ -40,7 +51,14 @@ export async function muralRoutes(app: FastifyInstance): Promise<void> {
 
   app.post<LeagueParams>(
     '/api/v1/leagues/:leagueId/mural',
-    { preHandler: [requireAuth, validateBody(leaguePostBodySchema)] },
+    {
+      preHandler: [
+        requireAuth,
+        validateParams(leagueParamsSchema),
+        validateBody(leaguePostBodySchema),
+        rateLimit({ key: 'mural-post-league', windowMs: 5 * 60 * 1000, max: 20 }),
+      ],
+    },
     async (request, reply) => {
       const { leagueId } = request.params
       const { content, matchId } = request.body as z.infer<typeof leaguePostBodySchema>
@@ -51,7 +69,7 @@ export async function muralRoutes(app: FastifyInstance): Promise<void> {
 
   app.get<MatchParams>(
     '/api/v1/leagues/:leagueId/matches/:matchId/mural',
-    { preHandler: [requireAuth, validateQuery(querySchema)] },
+    { preHandler: [requireAuth, validateParams(matchParamsSchema), validateQuery(querySchema)] },
     async (request, reply) => {
       const { leagueId, matchId } = request.params
       const { limit, before, after } = request.query as z.infer<typeof querySchema>
@@ -62,7 +80,14 @@ export async function muralRoutes(app: FastifyInstance): Promise<void> {
 
   app.post<MatchParams>(
     '/api/v1/leagues/:leagueId/matches/:matchId/mural',
-    { preHandler: [requireAuth, validateBody(basePostBodySchema)] },
+    {
+      preHandler: [
+        requireAuth,
+        validateParams(matchParamsSchema),
+        validateBody(basePostBodySchema),
+        rateLimit({ key: 'mural-post-match', windowMs: 5 * 60 * 1000, max: 20 }),
+      ],
+    },
     async (request, reply) => {
       const { leagueId, matchId } = request.params
       const { content } = request.body as z.infer<typeof basePostBodySchema>
@@ -73,14 +98,26 @@ export async function muralRoutes(app: FastifyInstance): Promise<void> {
 
   app.patch<LeaguePostParams>(
     '/api/v1/leagues/:leagueId/mural/:postId/hide',
-    { preHandler: requireAuth },
+    {
+      preHandler: [
+        requireAuth,
+        validateParams(leaguePostParamsSchema),
+        rateLimit({ key: 'mural-hide-league', windowMs: 5 * 60 * 1000, max: 30 }),
+      ],
+    },
     async (request, reply) =>
       reply.status(200).send(await hidePostForActor(request.user.id, request.params.leagueId, request.params.postId)),
   )
 
   app.patch<MatchPostParams>(
     '/api/v1/leagues/:leagueId/matches/:matchId/mural/:postId/hide',
-    { preHandler: requireAuth },
+    {
+      preHandler: [
+        requireAuth,
+        validateParams(matchPostParamsSchema),
+        rateLimit({ key: 'mural-hide-match', windowMs: 5 * 60 * 1000, max: 30 }),
+      ],
+    },
     async (request, reply) =>
       reply.status(200).send(await hidePostForActor(request.user.id, request.params.leagueId, request.params.postId)),
   )

@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { rejectUntrustedMutation } from '@/lib/proxy-security'
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 
@@ -22,6 +23,9 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
+  const rejection = rejectUntrustedMutation(req)
+  if (rejection) return rejection
+
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
   if (!token) return NextResponse.json({ message: 'Não autenticado' }, { status: 401 })

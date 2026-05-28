@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { PageShell } from '@/components/ui/Primitives'
+import { getSafeLoginRedirectTarget } from '@/lib/proxy-security'
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
@@ -29,7 +30,7 @@ export default function LoginPage() {
         return
       }
 
-      window.location.assign(searchParams.get('from') ?? '/matches')
+      window.location.assign(getSafeLoginRedirectTarget(searchParams.get('from')))
     } catch {
       setError('Erro de conexão')
     } finally {

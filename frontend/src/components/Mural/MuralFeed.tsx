@@ -5,6 +5,7 @@ import { MuralInput } from './MuralInput'
 import { MuralPost } from './MuralPost'
 import type { MuralPostItem } from './types'
 import { mergeIncomingPosts, mergeSinglePost, sortChronologically } from './feed-state'
+import { useWebSocket } from '@/hooks/useWebSocket'
 
 interface MuralFeedProps {
   leagueId: string
@@ -18,6 +19,21 @@ function isNearBottom(element: HTMLElement | null) {
   return element.scrollHeight - element.scrollTop - element.clientHeight < 48
 }
 
+function isMuralPollingEnabled(realtimeEnabled: boolean): boolean {
+  const flag = process.env['NEXT_PUBLIC_MURAL_POLLING_ENABLED']
+  if (flag == null) {
+    return !realtimeEnabled
+  }
+
+  return flag.toLowerCase() === 'true'
+}
+
+interface MuralPostNewEvent {
+  type: 'mural:post:new'
+  leagueId: string
+  post: MuralPostItem
+}
+
 export function MuralFeed({ leagueId, initialPosts, currentUserId, realtimeEnabled }: MuralFeedProps) {
   const [posts, setPosts] = useState<MuralPostItem[]>(sortChronologically(initialPosts))
   const [freshIds, setFreshIds] = useState<string[]>([])
@@ -28,6 +44,7 @@ export function MuralFeed({ leagueId, initialPosts, currentUserId, realtimeEnabl
   const shouldStickToBottomRef = useRef(true)
   const justAppendedRef = useRef(false)
   const fastPollingUntilRef = useRef(0)
+  const pollingEnabled = isMuralPollingEnabled(realtimeEnabled)
 
   useEffect(() => {
     let cancelled = false
@@ -80,7 +97,7 @@ export function MuralFeed({ leagueId, initialPosts, currentUserId, realtimeEnabl
     }
 
     function scheduleNext() {
-      if (cancelled) return
+      if (cancelled || !pollingEnabled) return
       timeoutId = window.setTimeout(async () => {
         timeoutId = null
         await refreshFeed()
@@ -90,15 +107,18 @@ export function MuralFeed({ leagueId, initialPosts, currentUserId, realtimeEnabl
 
     function handleFocus() {
       if (document.visibilityState !== 'visible') return
-       fastPollingUntilRef.current = Date.now() + 20_000
+      fastPollingUntilRef.current = Date.now() + 20_000
       void refreshFeed()
-      if (timeoutId == null) {
+      if (pollingEnabled && timeoutId == null) {
         scheduleNext()
       }
     }
 
-    void refreshFeed()
-    scheduleNext()
+    if (pollingEnabled) {
+      void refreshFeed()
+      scheduleNext()
+    }
+
     window.addEventListener('focus', handleFocus)
     document.addEventListener('visibilitychange', handleFocus)
 
@@ -110,7 +130,40 @@ export function MuralFeed({ leagueId, initialPosts, currentUserId, realtimeEnabl
       window.removeEventListener('focus', handleFocus)
       document.removeEventListener('visibilitychange', handleFocus)
     }
-  }, [leagueId, realtimeEnabled])
+  }, [leagueId, realtimeEnabled, pollingEnabled])
+
+  useWebSocket(
+    realtimeEnabled,
+    {
+      'mural:post:new': (data) => {
+        const event = data as MuralPostNewEvent
+        if (event.leagueId !== leagueId) return
+
+        setPosts((prev) => {
+          const nearBottom = isNearBottom(listRef.current)
+          const alreadyPresent = prev.some((post) => post.id === event.post.id)
+          const next = mergeSinglePost(prev, event.post)
+
+          if (!alreadyPresent) {
+            setFreshIds((existing) => Array.from(new Set([...existing, event.post.id])))
+
+            if (!nearBottom) {
+              setNewPostsCount((count) => count + 1)
+            } else {
+              shouldStickToBottomRef.current = true
+            }
+
+            justAppendedRef.current = true
+          }
+
+          return next
+        })
+      },
+    },
+    {
+      subscriptions: [{ type: 'subscribe:mural', leagueId }],
+    },
+  )
 
   useEffect(() => {
     if (freshIds.length === 0) return

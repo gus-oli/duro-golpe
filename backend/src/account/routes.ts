@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { requireAuth } from '../auth/middleware.js'
 import { validateBody } from '../middleware/validate.js'
 import { changeMyPassword, getMyProfile, updateMyProfile } from './service.js'
+import { rateLimit } from '../middleware/rate-limit.js'
 
 const profileUpdateSchema = z.object({
   displayName: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(50),
@@ -23,7 +24,11 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
   app.patch(
     '/api/v1/me',
     {
-      preHandler: [requireAuth, validateBody(profileUpdateSchema)],
+      preHandler: [
+        requireAuth,
+        validateBody(profileUpdateSchema),
+        rateLimit({ key: 'account-update-profile', windowMs: 5 * 60 * 1000, max: 20 }),
+      ],
     },
     async (request, reply) => {
       const profile = await updateMyProfile(request.user.id, request.body as z.infer<typeof profileUpdateSchema>)
@@ -34,7 +39,11 @@ export async function accountRoutes(app: FastifyInstance): Promise<void> {
   app.post(
     '/api/v1/me/password',
     {
-      preHandler: [requireAuth, validateBody(passwordChangeSchema)],
+      preHandler: [
+        requireAuth,
+        validateBody(passwordChangeSchema),
+        rateLimit({ key: 'account-change-password', windowMs: 15 * 60 * 1000, max: 10 }),
+      ],
     },
     async (request, reply) => {
       await changeMyPassword(request.user.id, request.body as z.infer<typeof passwordChangeSchema>)

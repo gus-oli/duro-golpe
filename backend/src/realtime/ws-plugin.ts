@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { assertActiveLeagueMember, matchExists } from '../auth/access-control.js'
 import { getAuthTokenFromCookieHeader } from '../auth/cookies.js'
+import { isSessionPayloadCurrent, type SessionPayload } from '../auth/session-lifecycle.js'
 import { subscribeToMural } from '../mural/broadcaster.js'
 import { subscribeToMatch } from './broadcaster.js'
 import { registerUserSession } from './user-sessions.js'
@@ -18,7 +19,10 @@ export async function wsPlugin(app: FastifyInstance): Promise<void> {
 
       let userId: string
       try {
-        const payload = app.jwt.verify<{ sub: string }>(cookieToken)
+        const payload = app.jwt.verify<SessionPayload>(cookieToken)
+        if (!(await isSessionPayloadCurrent(payload))) {
+          throw new Error('stale-session')
+        }
         userId = payload.sub
       } catch {
         socket.close(1008, 'Unauthorized')

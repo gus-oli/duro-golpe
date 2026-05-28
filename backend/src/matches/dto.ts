@@ -1,4 +1,5 @@
 import type { Match } from '../db/schema/matches.js'
+import { getEffectiveMatchStatus } from './lock-utils.js'
 
 interface MatchTeamDto {
   id: string
@@ -54,12 +55,14 @@ function buildUserPrediction(prediction: MatchPredictionDto | null): MatchListIt
 }
 
 export function buildMatchListItemDto(projection: MatchProjection): MatchListItemDto {
+  const status = getEffectiveMatchStatus(projection.status, projection.kickoffTime)
+
   return {
     id: projection.id,
     kickoffTime: projection.kickoffTime.toISOString(),
     stage: projection.stage,
     venue: projection.venue,
-    status: projection.status,
+    status,
     homeScore: projection.homeScore,
     awayScore: projection.awayScore,
     homeTeam: projection.homeTeam,

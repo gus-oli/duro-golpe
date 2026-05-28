@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { rejectUntrustedMutation } from '@/lib/proxy-security'
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 type Params = { params: Promise<{ matchId: string }> }
@@ -9,6 +10,11 @@ async function proxyPredictionRequest(
   matchId: string,
   method: 'POST' | 'PUT',
 ) {
+  const rejection = rejectUntrustedMutation(request)
+  if (rejection) {
+    return rejection
+  }
+
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value
   if (!token) {

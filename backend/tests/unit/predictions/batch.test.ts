@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({
-  matches: new Map<string, { id: string; status: 'SCHEDULED' | 'LOCKED' | 'LIVE' | 'FINISHED' }>(),
+  matches: new Map<string, { id: string; status: 'SCHEDULED' | 'LOCKED' | 'LIVE' | 'FINISHED'; kickoffTime?: string }>(),
   predictions: new Map<string, { id: string; userId: string; matchId: string; predictedHome: number; predictedAway: number; submittedAt?: Date }>(),
 }))
 
@@ -113,6 +113,27 @@ describe('savePredictionsBatch', () => {
     expect(result.failed).toEqual([
       expect.objectContaining({
         matchId: 'match-locked',
+        statusCode: 403,
+        message: 'Palpites encerrados para esta partida',
+      }),
+    ])
+  })
+
+  it('rejects scheduled matches that are inside the time-based lock window', async () => {
+    state.matches.set('match-closing', {
+      id: 'match-closing',
+      status: 'SCHEDULED',
+      kickoffTime: new Date(Date.now() + 14 * 60 * 1000).toISOString(),
+    })
+
+    const result = await savePredictionsBatch('user-1', [
+      { matchId: 'match-closing', predictedHome: 1, predictedAway: 0 },
+    ])
+
+    expect(result.saved).toEqual([])
+    expect(result.failed).toEqual([
+      expect.objectContaining({
+        matchId: 'match-closing',
         statusCode: 403,
         message: 'Palpites encerrados para esta partida',
       }),

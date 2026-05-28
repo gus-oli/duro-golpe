@@ -4,7 +4,7 @@ import fastifyOauth2 = require('@fastify/oauth2')
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: { sub: string }
+    payload: { sub: string; sv: number }
     user: { id: string }
   }
 }

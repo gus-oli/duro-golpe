@@ -86,9 +86,11 @@ export function AppShell({ isAuthenticated, children }: { isAuthenticated: boole
                 </Link>
               </div>
 
-              <a href="/api/auth/logout" className="dg-shell-link">
-                Sair
-              </a>
+              <form action="/api/auth/logout" method="post">
+                <button type="submit" className="dg-shell-link">
+                  Sair
+                </button>
+              </form>
             </div>
           </header>
 

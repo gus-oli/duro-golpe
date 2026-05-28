@@ -17,5 +17,7 @@ Thumbs.db
 playwright-report/
 test-results/
 .localappdata/
+.npm-cache/
+backups/
 .claude/
 CLAUDE.md

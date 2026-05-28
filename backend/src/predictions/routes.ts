@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { requireAuth } from '../auth/middleware.js'
-import { validateBody } from '../middleware/validate.js'
+import { validateBody, validateParams } from '../middleware/validate.js'
 import {
   createPrediction,
   updatePrediction,
@@ -9,6 +9,8 @@ import {
   savePredictionsBatch,
   getLeagueMatchPredictions,
 } from './service.js'
+import { routeIdSchema } from '../middleware/route-schemas.js'
+import { rateLimit } from '../middleware/rate-limit.js'
 
 const predictionSchema = z.object({
   predictedHome: z.number().int().min(0).max(99),
@@ -28,10 +30,19 @@ const batchPredictionSchema = z.object({
     .max(64),
 })
 
+const matchParamsSchema = z.object({ matchId: routeIdSchema })
+const leagueMatchParamsSchema = z.object({ leagueId: routeIdSchema, matchId: routeIdSchema })
+
 export async function predictionRoutes(app: FastifyInstance): Promise<void> {
   app.post(
     '/api/v1/predictions/batch',
-    { preHandler: [requireAuth, validateBody(batchPredictionSchema)] },
+    {
+      preHandler: [
+        requireAuth,
+        validateBody(batchPredictionSchema),
+        rateLimit({ key: 'predictions-batch', windowMs: 5 * 60 * 1000, max: 30 }),
+      ],
+    },
     async (request, reply) => {
       const body = request.body as z.infer<typeof batchPredictionSchema>
       const result = await savePredictionsBatch(request.user.id, body.predictions)
@@ -41,7 +52,14 @@ export async function predictionRoutes(app: FastifyInstance): Promise<void> {
 
   app.post<{ Params: { matchId: string } }>(
     '/api/v1/matches/:matchId/predictions',
-    { preHandler: [requireAuth, validateBody(predictionSchema)] },
+    {
+      preHandler: [
+        requireAuth,
+        validateParams(matchParamsSchema),
+        validateBody(predictionSchema),
+        rateLimit({ key: 'prediction-create', windowMs: 5 * 60 * 1000, max: 60 }),
+      ],
+    },
     async (request, reply) => {
       const { matchId } = request.params
       const { predictedHome, predictedAway } = request.body as z.infer<typeof predictionSchema>
@@ -52,7 +70,14 @@ export async function predictionRoutes(app: FastifyInstance): Promise<void> {
 
   app.put<{ Params: { matchId: string } }>(
     '/api/v1/matches/:matchId/predictions',
-    { preHandler: [requireAuth, validateBody(predictionSchema)] },
+    {
+      preHandler: [
+        requireAuth,
+        validateParams(matchParamsSchema),
+        validateBody(predictionSchema),
+        rateLimit({ key: 'prediction-update', windowMs: 5 * 60 * 1000, max: 60 }),
+      ],
+    },
     async (request, reply) => {
       const { matchId } = request.params
       const { predictedHome, predictedAway } = request.body as z.infer<typeof predictionSchema>
@@ -63,7 +88,7 @@ export async function predictionRoutes(app: FastifyInstance): Promise<void> {
 
   app.get<{ Params: { matchId: string } }>(
     '/api/v1/matches/:matchId/predictions/me',
-    { preHandler: requireAuth },
+    { preHandler: [requireAuth, validateParams(matchParamsSchema)] },
     async (request, reply) => {
       const prediction = await getPredictionByUser(request.user.id, request.params.matchId)
       if (!prediction) {
@@ -75,7 +100,7 @@ export async function predictionRoutes(app: FastifyInstance): Promise<void> {
 
   app.get<{ Params: { leagueId: string; matchId: string } }>(
     '/api/v1/leagues/:leagueId/matches/:matchId/predictions',
-    { preHandler: requireAuth },
+    { preHandler: [requireAuth, validateParams(leagueMatchParamsSchema)] },
     async (request, reply) => {
       const predictions = await getLeagueMatchPredictions(request.user.id, request.params.leagueId, request.params.matchId)
       return reply.send({

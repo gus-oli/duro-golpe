@@ -1,10 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { shouldUseSecureAuthCookie } from '@/lib/auth-cookie'
+import { getSafeLogoutRedirectUrl, rejectUntrustedMutation } from '@/lib/proxy-security'
 
-function clearAuthCookie(request: Request) {
-  const referer = request.headers.get('referer')
-  const redirectUrl = referer ? new URL('/', referer) : new URL('/', 'http://localhost:3000')
-  const response = NextResponse.redirect(redirectUrl)
+function clearAuthCookie(request: NextRequest) {
+  const response = NextResponse.redirect(getSafeLogoutRedirectUrl(request))
 
   response.cookies.set('auth_token', '', {
     httpOnly: true,
@@ -17,10 +16,15 @@ function clearAuthCookie(request: Request) {
   return response
 }
 
-export async function GET(request: Request) {
-  return clearAuthCookie(request)
+export async function GET() {
+  return NextResponse.json({ message: 'Metodo nao permitido' }, { status: 405 })
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const rejection = rejectUntrustedMutation(request)
+  if (rejection) {
+    return rejection
+  }
+
   return clearAuthCookie(request)
 }

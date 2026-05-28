@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply, preHandlerHookHandler } from 'fastify'
-import { ZodSchema, ZodError } from 'zod'
+import { ZodSchema } from 'zod'
 
 export function validateBody<T>(schema: ZodSchema<T>): preHandlerHookHandler {
   return async (request: FastifyRequest, reply: FastifyReply) => {
@@ -34,5 +34,23 @@ export function validateQuery<T>(schema: ZodSchema<T>): preHandlerHookHandler {
       })
     }
     request.query = result.data as Record<string, unknown>
+  }
+}
+
+export function validateParams<T>(schema: ZodSchema<T>): preHandlerHookHandler {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
+    const result = schema.safeParse(request.params)
+    if (!result.success) {
+      return reply.status(400).send({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'ParÃ¢metros invÃ¡lidos',
+        details: result.error.errors.map((e) => ({
+          field: e.path.join('.'),
+          message: e.message,
+        })),
+      })
+    }
+    request.params = result.data as Record<string, unknown>
   }
 }

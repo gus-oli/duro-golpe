@@ -5,6 +5,7 @@ import { getMatchById } from '../matches/service.js'
 import type { MatchPrediction } from '../db/schema/predictions.js'
 import { assertActiveLeagueMember } from '../auth/access-control.js'
 import { alias } from 'drizzle-orm/pg-core'
+import { shouldLockMatch } from '../matches/lock-utils.js'
 
 const homeTeams = alias(teams, 'league_prediction_home_teams')
 const awayTeams = alias(teams, 'league_prediction_away_teams')
@@ -68,7 +69,7 @@ async function assertPredictionOpen(matchId: string) {
     throw err
   }
 
-  if (match.status !== 'SCHEDULED') {
+  if (match.status !== 'SCHEDULED' || shouldLockMatch(new Date(match.kickoffTime), new Date())) {
     const err = Object.assign(new Error('Palpites encerrados para esta partida'), { statusCode: 403 })
     throw err
   }

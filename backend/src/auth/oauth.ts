@@ -5,6 +5,7 @@ import { users } from '../db/schema/index.js'
 import { eq } from 'drizzle-orm'
 import { config } from '../config.js'
 import { serializeAuthCookie } from './cookies.js'
+import { issueSessionToken } from './session-lifecycle.js'
 
 interface GoogleUserInfo {
   sub: string
@@ -44,16 +45,16 @@ export async function oauthRoutes(app: FastifyInstance): Promise<void> {
 
     const [existing] = await db.select().from(users).where(eq(users.googleSub, googleUser.sub)).limit(1)
 
-    let userId: string
+    let sessionUser: { id: string; sessionVersion: number }
 
     if (existing) {
-      userId = existing.id
+      sessionUser = { id: existing.id, sessionVersion: existing.sessionVersion }
     } else {
       const [emailUser] = await db.select().from(users).where(eq(users.email, googleUser.email)).limit(1)
 
       if (emailUser) {
         await db.update(users).set({ googleSub: googleUser.sub }).where(eq(users.id, emailUser.id))
-        userId = emailUser.id
+        sessionUser = { id: emailUser.id, sessionVersion: emailUser.sessionVersion }
       } else {
         const [created] = await db
           .insert(users)
@@ -63,12 +64,12 @@ export async function oauthRoutes(app: FastifyInstance): Promise<void> {
             googleSub: googleUser.sub,
             avatarUrl: googleUser.picture ?? null,
           })
-          .returning({ id: users.id })
-        userId = created!.id
+          .returning({ id: users.id, sessionVersion: users.sessionVersion })
+        sessionUser = created!
       }
     }
 
-    const jwt = app.jwt.sign({ sub: userId }, { expiresIn: '7d' })
+    const jwt = issueSessionToken(app, sessionUser)
     reply.header('Set-Cookie', serializeAuthCookie(jwt))
     return reply.redirect(`${config.FRONTEND_URL}/matches`)
   })

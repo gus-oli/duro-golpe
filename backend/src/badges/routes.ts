@@ -1,14 +1,19 @@
 import type { FastifyInstance } from 'fastify'
+import { z } from 'zod'
 import { assertSelfAccess } from '../auth/access-control.js'
 import { requireAuth } from '../auth/middleware.js'
 import { db } from '../db/index.js'
 import { badges, userBadges, users } from '../db/schema/index.js'
 import { eq } from 'drizzle-orm'
+import { validateParams } from '../middleware/validate.js'
+import { routeIdSchema } from '../middleware/route-schemas.js'
+
+const userParamsSchema = z.object({ userId: routeIdSchema })
 
 export async function badgeRoutes(app: FastifyInstance): Promise<void> {
   app.get<{ Params: { userId: string } }>(
     '/api/v1/users/:userId/badges',
-    { preHandler: requireAuth },
+    { preHandler: [requireAuth, validateParams(userParamsSchema)] },
     async (request, reply) => {
       const { userId } = request.params
       assertSelfAccess(request.user.id, userId)

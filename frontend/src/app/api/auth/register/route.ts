@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { shouldUseSecureAuthCookie } from '@/lib/auth-cookie'
+import { rejectUntrustedMutation } from '@/lib/proxy-security'
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 
 export async function POST(request: NextRequest) {
+  const rejection = rejectUntrustedMutation(request)
+  if (rejection) {
+    return rejection
+  }
+
   const body = await request.json()
 
   const res = await fetch(`${API}/api/v1/auth/register`, {

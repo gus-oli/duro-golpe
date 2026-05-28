@@ -5,6 +5,7 @@ import { db } from '../db/index.js'
 import { passwordResetTokens, users } from '../db/schema/index.js'
 import { config } from '../config.js'
 import { sendPasswordResetEmail } from '../email/brevo.js'
+import { bumpSessionVersion } from './session-lifecycle.js'
 
 function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex')
@@ -64,4 +65,5 @@ export async function confirmPasswordReset(token: string, password: string): Pro
     await tx.update(users).set({ passwordHash }).where(eq(users.id, record.userId))
     await tx.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, record.id))
   })
+  await bumpSessionVersion(record.userId)
 }
