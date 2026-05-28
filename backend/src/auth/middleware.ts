@@ -12,7 +12,9 @@ export const requireAuth: preHandlerHookHandler = async (
       reason = 'missing-authorization'
     }
 
-    const payload = await request.jwtVerify<SessionPayload>()
+    await request.jwtVerify()
+
+    const payload = await request.jwtDecode<SessionPayload>()
     if (!(await isSessionPayloadCurrent(payload))) {
       reason = 'stale-session'
       throw new Error('stale-session')

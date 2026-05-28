@@ -14,6 +14,7 @@ const ACTIVE_LOOKBACK_HOURS = 4
 const ACTIVE_LOOKAHEAD_HOURS = 4
 const IDLE_LOOKAHEAD_DAYS = 2
 const DATE_WINDOW_BUFFER_DAYS = 1
+const MAX_TIMEOUT_MS = 2_147_483_647
 
 export interface FootballDataSyncSummary {
   processed: number
@@ -185,6 +186,18 @@ export async function syncFootballDataOnce(now = new Date()): Promise<FootballDa
 export function startFootballDataSync(): void {
   if (!config.FOOTBALL_DATA_POLL_ENABLED) {
     console.info('[FootballDataSync] Polling disabled; skipping provider sync loop')
+    return
+  }
+
+  const startAt = config.FOOTBALL_DATA_POLL_START_AT
+  if (startAt && Date.now() < startAt.getTime()) {
+    const delayMs = Math.min(startAt.getTime() - Date.now(), MAX_TIMEOUT_MS)
+    console.info(`[FootballDataSync] Polling waiting until ${startAt.toISOString()}`)
+
+    const timer = setTimeout(() => {
+      startFootballDataSync()
+    }, delayMs)
+    timer.unref?.()
     return
   }
 

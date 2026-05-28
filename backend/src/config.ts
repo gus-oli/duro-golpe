@@ -82,6 +82,7 @@ const envSchema = z.object({
   API_FOOTBALL_KEY: optionalNonEmptyString,
   FOOTBALL_DATA_TOKEN: optionalNonEmptyString,
   FOOTBALL_DATA_POLL_ENABLED: optionalBoolean.default(false),
+  FOOTBALL_DATA_POLL_START_AT: optionalDate,
   LOCK_SCHEDULERS_ENABLED: optionalBoolean.default(true),
   LOCK_SCHEDULERS_START_AT: optionalDate,
   FOOTBALL_DATA_COMPETITION_CODE: z.string().min(1).default('WC'),
