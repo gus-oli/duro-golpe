@@ -3,20 +3,13 @@
 import Link from 'next/link'
 import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
+import { AUTHENTICATED_NAV_ITEMS } from './app-shell-nav'
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
 }
 
 const PUBLIC_ONLY = new Set(['/login', '/register'])
-
-const NAV_ITEMS = [
-  { href: '/', label: 'Inicio' },
-  { href: '/matches', label: 'Partidas' },
-  { href: '/leagues', label: 'Ligas' },
-  { href: '/outrights', label: 'Especiais' },
-  { href: '/profile', label: 'Conta' },
-]
 
 export function AppShell({ isAuthenticated, children }: { isAuthenticated: boolean; children: ReactNode }) {
   const pathname = usePathname()
@@ -118,7 +111,7 @@ export function AppShell({ isAuthenticated, children }: { isAuthenticated: boole
                 </div>
 
                 <nav className="flex flex-col gap-2 px-4 py-4">
-                  {NAV_ITEMS.map((item) => {
+                  {AUTHENTICATED_NAV_ITEMS.map((item) => {
                     const isActive =
                       item.href === '/' ? pathname === '/' : pathname === item.href || pathname.startsWith(`${item.href}/`)
 

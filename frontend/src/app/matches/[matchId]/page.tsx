@@ -1,11 +1,12 @@
 import { MatchDetailClient } from '@/components/MatchCard/MatchDetailClient'
 import { ScoreBreakdown } from '@/components/Scoring/ScoreBreakdown'
 import { MatchLeaguePicks } from '@/components/Social/MatchLeaguePicks'
-import { PageShell, StatusPill } from '@/components/ui/Primitives'
+import { PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { isRealtimeEnabled } from '@/lib/realtime'
+import { SCORING_REFERENCE_ROUTE } from '@/lib/scoring-reference'
 
 interface Match {
   id: string
@@ -218,7 +219,16 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
         {token && leagues.length > 0 && <MatchLeaguePicks matchId={match.id} leagues={leagues} />}
 
         {token && userId && match.status === 'FINISHED' && (
-          <section aria-label="Sua pontuação">
+          <section aria-label="Sua pontuação" className="space-y-4">
+            <SectionHeader
+              eyebrow="Pontuacao"
+              title="Como esse jogo entrou no placar"
+              actions={
+                <Link href={SCORING_REFERENCE_ROUTE} className="dg-button-secondary">
+                  Entender a regra
+                </Link>
+              }
+            />
             <ScoreBreakdown userId={userId} matchId={match.id} />
           </section>
         )}

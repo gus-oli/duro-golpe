@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { useWebSocket } from '@/hooks/useWebSocket'
-
-const MAX_POINTS = 3200
+import { THEORETICAL_MAX_POINTS } from '@/lib/scoring-reference'
 
 interface TotalScoreProps {
   initialTotalPoints: number
@@ -39,7 +38,7 @@ export function TotalScore({
     },
   })
 
-  const progressPercent = Math.min(Math.round((totalPoints / MAX_POINTS) * 1000) / 10, 100)
+  const progressPercent = Math.min(Math.round((totalPoints / THEORETICAL_MAX_POINTS) * 1000) / 10, 100)
 
   return (
     <div className="dg-surface overflow-hidden">
@@ -50,7 +49,7 @@ export function TotalScore({
             <span className="font-[var(--font-display)] text-5xl font-black leading-none text-[var(--pitch-dark)]" aria-live="polite">
               {totalPoints}
             </span>
-            <span className="pb-1 text-sm font-bold text-[var(--muted)]">/ {MAX_POINTS} pts</span>
+            <span className="pb-1 text-sm font-bold text-[var(--muted)]">/ {THEORETICAL_MAX_POINTS} pts</span>
           </div>
         </div>
 

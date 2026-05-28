@@ -1,7 +1,9 @@
 import { cookies } from 'next/headers'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { OutrightCard } from '@/components/OutrightCard/OutrightCard'
 import { EmptyState, PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
+import { OUTRIGHT_SCORING_TOTAL_POINTS, SCORING_REFERENCE_ROUTE } from '@/lib/scoring-reference'
 
 interface OutrightOption {
   id: string
@@ -124,8 +126,13 @@ export default async function OutrightsPage() {
           title="Mercados da Copa"
           description={
             hasOpenMarkets
-              ? 'Disponiveis ate 1 hora antes da partida de abertura.'
+              ? `Disponiveis ate 1 hora antes da partida de abertura. Valem ${OUTRIGHT_SCORING_TOTAL_POINTS} pts no total.`
               : 'Todas as apostas especiais estao encerradas.'
+          }
+          actions={
+            <Link href={SCORING_REFERENCE_ROUTE} className="dg-button-secondary">
+              Ver regra da pontuacao
+            </Link>
           }
         />
 

@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node ../node_modules/vitest/vitest.mjs run tests/unit/player-option-state.test.ts tests/unit/mural-feed-state.test.ts tests/unit/option-media.test.ts --environment node"
+    "test": "node ../node_modules/vitest/vitest.mjs run tests/unit/player-option-state.test.ts tests/unit/mural-feed-state.test.ts tests/unit/option-media.test.ts tests/unit/scoring-reference.test.ts tests/unit/app-shell-nav.test.ts --environment node"
   },
   "dependencies": {
     "next": "^15.5.18",

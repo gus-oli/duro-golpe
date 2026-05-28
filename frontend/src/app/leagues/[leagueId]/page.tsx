@@ -1,11 +1,13 @@
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { MuralFeed } from '@/components/Mural/MuralFeed'
 import { TotalScore } from '@/components/Scoring/TotalScore'
 import { RankingClient } from '@/components/Leagues/RankingClient'
 import { PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
 import type { MuralPostItem } from '@/components/Mural/types'
 import { isRealtimeEnabled } from '@/lib/realtime'
+import { SCORING_REFERENCE_ROUTE } from '@/lib/scoring-reference'
 
 interface League {
   id: string
@@ -146,7 +148,15 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
 
         {myTotal && token && (
           <section aria-label="Minha pontuacao" className="space-y-4">
-            <SectionHeader eyebrow="Pontuacao" title="Minha Pontuacao" />
+            <SectionHeader
+              eyebrow="Pontuacao"
+              title="Minha Pontuacao"
+              actions={
+                <Link href={SCORING_REFERENCE_ROUTE} className="dg-button-secondary">
+                  Como pontua
+                </Link>
+              }
+            />
             <TotalScore
               initialTotalPoints={myTotal.totalPoints}
               initialExactScoreCount={myTotal.exactScoreCount}
