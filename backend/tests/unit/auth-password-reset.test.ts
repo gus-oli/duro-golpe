@@ -60,12 +60,12 @@ describe('Password reset routes', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/password-reset/confirm',
-      payload: { token: 'x'.repeat(64), password: 'nova-senha-segura' },
+      payload: { token: 'x'.repeat(64), password: 'NovaSenha1!' },
     })
 
     expect(response.statusCode).toBe(200)
     expect(response.json()).toMatchObject({ ok: true })
-    expect(recoveryMocks.confirmPasswordReset).toHaveBeenCalledWith('x'.repeat(64), 'nova-senha-segura')
+    expect(recoveryMocks.confirmPasswordReset).toHaveBeenCalledWith('x'.repeat(64), 'NovaSenha1!')
   })
 
   it('returns the recovery service error when a reset token is invalid', async () => {
@@ -76,10 +76,30 @@ describe('Password reset routes', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/password-reset/confirm',
-      payload: { token: 'x'.repeat(64), password: 'nova-senha-segura' },
+      payload: { token: 'x'.repeat(64), password: 'NovaSenha1!' },
     })
 
     expect(response.statusCode).toBe(400)
     expect(response.json()).toMatchObject({ message: 'Link de recuperação inválido ou expirado' })
+  })
+
+  it('rejects weak passwords before calling the recovery service', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/password-reset/confirm',
+      payload: { token: 'x'.repeat(64), password: 'fraca123' },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json()).toMatchObject({ message: 'Dados inválidos' })
+    expect(response.json()).toMatchObject({
+      details: [
+        expect.objectContaining({
+          field: 'password',
+          message: 'A senha precisa ter pelo menos 8 caracteres, com letra minúscula, letra maiúscula, número e símbolo.',
+        }),
+      ],
+    })
+    expect(recoveryMocks.confirmPasswordReset).not.toHaveBeenCalled()
   })
 })

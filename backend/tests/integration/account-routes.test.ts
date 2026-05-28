@@ -119,11 +119,38 @@ describe('Account routes (integration)', () => {
       },
       payload: {
         currentPassword: 'errada',
-        newPassword: 'nova-senha-segura',
+        newPassword: 'NovaSenha1!',
       },
     })
 
     expect(response.statusCode).toBe(400)
     expect(response.json()).toMatchObject({ message: 'Senha atual incorreta' })
+  })
+
+  it('rejects weak new passwords on POST /api/v1/me/password', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/me/password',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+      },
+      payload: {
+        currentPassword: 'Atual1!',
+        newPassword: 'fraca123',
+      },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json()).toMatchObject({ message: 'Dados invÃ¡lidos' })
+    expect(response.json()).toMatchObject({
+      details: [
+        expect.objectContaining({
+          field: 'newPassword',
+          message: 'A senha precisa ter pelo menos 8 caracteres, com letra minúscula, letra maiúscula, número e símbolo.',
+        }),
+      ],
+    })
+    expect(accountServiceMocks.changeMyPassword).not.toHaveBeenCalled()
   })
 })

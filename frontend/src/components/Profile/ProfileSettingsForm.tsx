@@ -3,6 +3,8 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { StatusPill } from '@/components/ui/Primitives'
+import { PasswordField } from '@/components/ui/PasswordField'
+import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from '@/lib/password-policy'
 
 interface AccountProfile {
   id: string
@@ -73,6 +75,11 @@ export function ProfileSettingsForm({ initialProfile }: { initialProfile: Accoun
     event.preventDefault()
     setPasswordError(null)
     setPasswordSuccess(null)
+
+    if (!isStrongPassword(newPassword)) {
+      setPasswordError(PASSWORD_POLICY_MESSAGE)
+      return
+    }
 
     const res = await fetch('/api/me/password', {
       method: 'POST',
@@ -153,28 +160,20 @@ export function ProfileSettingsForm({ initialProfile }: { initialProfile: Accoun
         <form className="mt-5 space-y-4" onSubmit={handlePasswordSubmit}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="currentPassword" className="dg-label">
-                Senha atual
-              </label>
-              <input
+              <PasswordField
                 id="currentPassword"
-                type="password"
-                className="dg-input"
+                label="Senha atual"
                 value={currentPassword}
-                onChange={(event) => setCurrentPassword(event.target.value)}
+                onChange={setCurrentPassword}
                 required
               />
             </div>
             <div>
-              <label htmlFor="newPassword" className="dg-label">
-                Nova senha
-              </label>
-              <input
+              <PasswordField
                 id="newPassword"
-                type="password"
-                className="dg-input"
+                label="Nova senha"
                 value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
+                onChange={setNewPassword}
                 minLength={8}
                 required
               />

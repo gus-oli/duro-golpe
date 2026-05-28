@@ -149,8 +149,8 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
         {myTotal && token && (
           <section aria-label="Minha pontuacao" className="space-y-4">
             <SectionHeader
-              eyebrow="Pontuacao"
-              title="Minha Pontuacao"
+              eyebrow="Pontuação"
+              title="Minha Pontuação"
               actions={
                 <Link href={SCORING_REFERENCE_ROUTE} className="dg-button-secondary">
                   Como pontua

@@ -15,7 +15,7 @@ export const MATCH_SCORING_TIERS = [
     code: 'WINNER_AND_GOAL_DIFF',
     label: 'Vencedor + saldo',
     points: 15,
-    description: 'Acerta quem venceu e tambem a diferenca de gols em jogos sem empate.',
+    description: 'Acerta quem venceu e também a diferença de gols em jogos sem empate.',
   },
   {
     code: 'WINNER_OR_DRAW',
@@ -33,17 +33,17 @@ export const MATCH_SCORING_TIERS = [
     code: 'TOTAL_MISS',
     label: 'Erro total',
     points: 0,
-    description: 'Nao bate em nenhum dos tiers acima.',
+    description: 'Não bate em nenhum dos tiers acima.',
   },
 ] as const
 
 export const OUTRIGHT_SCORING_MARKETS = [
-  { code: 'CHAMPION', name: 'Campeao', pointValue: 120, note: 'Selecao campea da Copa.' },
+  { code: 'CHAMPION', name: 'Campeão', pointValue: 120, note: 'Seleção campeã da Copa.' },
   { code: 'TOP_SCORER', name: 'Artilheiro', pointValue: 90, note: 'Artilheiro oficial do torneio.' },
   { code: 'GOLDEN_BALL', name: 'Bola de Ouro', pointValue: 90, note: 'Melhor jogador oficial da FIFA.' },
-  { code: 'FINALISTS', name: 'Finalistas', pointValue: 90, note: 'Precisa acertar as duas selecoes finalistas.' },
-  { code: 'REVELATION', name: 'Revelacao', pointValue: 70, note: 'Destaque jovem oficial da FIFA.' },
-  { code: 'BEST_ATTACK', name: 'Melhor Ataque', pointValue: 80, note: 'Time com mais gols, com desempate pela classificacao final oficial.' },
+  { code: 'FINALISTS', name: 'Finalistas', pointValue: 90, note: 'Precisa acertar as duas seleções finalistas.' },
+  { code: 'REVELATION', name: 'Revelação', pointValue: 70, note: 'Destaque jovem oficial da FIFA.' },
+  { code: 'BEST_ATTACK', name: 'Melhor Ataque', pointValue: 80, note: 'Time com mais gols, com desempate pela classificação final oficial.' },
   { code: 'LAST_PLACE', name: 'Lanterna', pointValue: 60, note: 'Pior campanha oficial do torneio.' },
 ] as const
 
@@ -74,7 +74,7 @@ export const SCORING_EXAMPLES = [
     prediction: '1 x 1',
     result: '0 x 0',
     points: 10,
-    explanation: 'Acertou o empate, mas nao o placar exato.',
+    explanation: 'Acertou o empate, mas não o placar exato.',
   },
   {
     title: 'Gols de um time',

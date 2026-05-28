@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { PageShell } from '@/components/ui/Primitives'
+import { PasswordField } from '@/components/ui/PasswordField'
+import { getPasswordPolicyStatus, isStrongPassword, PASSWORD_POLICY_MESSAGE } from '@/lib/password-policy'
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams()
@@ -13,6 +15,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const passwordStatus = getPasswordPolicyStatus(password)
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -25,6 +28,11 @@ export default function ResetPasswordPage() {
 
     if (password !== confirmPassword) {
       setError('As senhas precisam ser iguais.')
+      return
+    }
+
+    if (!isStrongPassword(password)) {
+      setError(PASSWORD_POLICY_MESSAGE)
       return
     }
 
@@ -64,28 +72,39 @@ export default function ResetPasswordPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
           <div>
-            <label htmlFor="password" className="dg-label">Nova senha</label>
-            <input
+            <PasswordField
               id="password"
-              type="password"
+              label="Nova senha"
               autoComplete="new-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="dg-input"
+              onChange={setPassword}
               required
               minLength={8}
+              describedBy="reset-password-rules"
             />
+            <div id="reset-password-rules" className="mt-3 space-y-2">
+              {passwordStatus.map((rule) => (
+                <p
+                  key={rule.id}
+                  className={
+                    rule.passed
+                      ? 'text-sm font-medium text-[var(--pitch-dark)]'
+                      : 'text-sm font-medium text-[var(--muted)]'
+                  }
+                >
+                  {rule.passed ? 'OK' : 'Falta'}: {rule.label}
+                </p>
+              ))}
+            </div>
           </div>
 
           <div>
-            <label htmlFor="confirm-password" className="dg-label">Confirmar senha</label>
-            <input
-              id="confirm-password"
-              type="password"
+            <PasswordField
+              id="confirmPassword"
+              label="Confirmar senha"
               autoComplete="new-password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="dg-input"
+              onChange={setConfirmPassword}
               required
               minLength={8}
             />

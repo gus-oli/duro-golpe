@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { PageShell } from '@/components/ui/Primitives'
+import { PasswordField } from '@/components/ui/PasswordField'
 import { getSafeLoginRedirectTarget } from '@/lib/proxy-security'
 
 export default function LoginPage() {
@@ -63,14 +64,12 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="dg-label">Senha</label>
-              <input
+              <PasswordField
                 id="password"
-                type="password"
+                label="Senha"
                 autoComplete="current-password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="dg-input"
+                onChange={setPassword}
                 required
               />
             </div>

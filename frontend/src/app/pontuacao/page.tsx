@@ -29,19 +29,19 @@ export default async function ScoringReferencePage() {
           <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <StatusPill tone="resolved">{THEORETICAL_MAX_POINTS} pts maximos</StatusPill>
+                <StatusPill tone="resolved">{THEORETICAL_MAX_POINTS} pts máximos</StatusPill>
                 <span className="dg-chip">{OUTRIGHT_SCORING_MARKETS.length} especiais</span>
                 <span className="dg-chip">{TOURNAMENT_MATCH_COUNT} jogos</span>
               </div>
-              <h1 className="mt-4 text-4xl font-black text-[var(--ink)] sm:text-5xl">Como a pontuacao funciona</h1>
+              <h1 className="mt-4 text-4xl font-black text-[var(--ink)] sm:text-5xl">Como a pontuação funciona</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-                Aqui fica a regra oficial do bolao: quanto vale cada acerto de partida, como os especiais entram na conta
-                e por que a classificacao desempata do jeito que desempata.
+                Aqui fica a regra oficial do bolão: quanto vale cada acerto de partida, como os especiais entram na conta
+                e por que a classificação desempata do jeito que desempata.
               </p>
             </div>
 
             <div className="dg-surface-dark p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/70">Teto teorico</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/70">Teto teórico</p>
               <p className="mt-2 font-[var(--font-display)] text-4xl font-black">{THEORETICAL_MAX_POINTS} pts</p>
               <div className="mt-4 grid gap-2 text-sm text-white/82">
                 <div className="flex items-center justify-between gap-3 rounded-md bg-white/8 px-3 py-2">
@@ -60,8 +60,8 @@ export default async function ScoringReferencePage() {
         <section className="space-y-4">
           <SectionHeader
             eyebrow="Partidas"
-            title="Pontuacao por jogo"
-            description={`Cada partida entrega um unico tier, sem acumular pontos entre criterios. O maximo por jogo e ${MATCH_SCORING_MAX_POINTS} pontos.`}
+            title="Pontuação por jogo"
+            description={`Cada partida entrega um único tier, sem acumular pontos entre critérios. O máximo por jogo é ${MATCH_SCORING_MAX_POINTS} pontos.`}
           />
 
           <div className="grid gap-4 lg:grid-cols-5">
@@ -79,8 +79,8 @@ export default async function ScoringReferencePage() {
         <section className="space-y-4">
           <SectionHeader
             eyebrow="Exemplos"
-            title="Leituras rapidas da regra"
-            description="Os casos abaixo ajudam a separar tiers parecidos sem voce precisar decorar a engine."
+            title="Leituras rápidas da regra"
+            description="Os casos abaixo ajudam a separar tiers parecidos sem você precisar decorar a engine."
           />
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -120,7 +120,7 @@ export default async function ScoringReferencePage() {
           <SectionHeader
             eyebrow="Especiais"
             title="Mercados que pesam na tabela"
-            description={`Os especiais somam ${OUTRIGHT_SCORING_TOTAL_POINTS} pontos no teto total e entram no mesmo placar da liga quando forem resolvidos.`}
+              description={`Os especiais somam ${OUTRIGHT_SCORING_TOTAL_POINTS} pontos no teto total e entram no mesmo placar da liga quando forem resolvidos.`}
           />
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -146,7 +146,7 @@ export default async function ScoringReferencePage() {
             <SectionHeader
               eyebrow="Desempate"
               title="Como a liga decide quem fica na frente"
-              description="Quando duas pessoas empatam em pontos, a classificacao segue esta ordem."
+              description="Quando duas pessoas empatam em pontos, a classificação segue esta ordem."
             />
 
             <div className="mt-5 space-y-3">
@@ -162,8 +162,8 @@ export default async function ScoringReferencePage() {
           </div>
 
           <aside className="dg-surface p-5">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent-strong)]">Atalho util</p>
-            <h2 className="mt-2 text-2xl font-black text-[var(--ink)]">Onde voce ve isso ao vivo</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent-strong)]">Atalho útil</p>
+            <h2 className="mt-2 text-2xl font-black text-[var(--ink)]">Onde você vê isso ao vivo</h2>
             <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
               Acompanhe o total na sua liga, revise o breakdown de partidas encerradas e compare o peso dos especiais sem
               sair do fluxo principal.

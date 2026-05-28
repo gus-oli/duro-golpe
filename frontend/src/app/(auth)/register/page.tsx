@@ -3,17 +3,34 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { PageShell } from '@/components/ui/Primitives'
+import { PasswordField } from '@/components/ui/PasswordField'
+import { getPasswordPolicyStatus, isStrongPassword, PASSWORD_POLICY_MESSAGE } from '@/lib/password-policy'
 
 export default function RegisterPage() {
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const passwordStatus = getPasswordPolicyStatus(password)
+  const passwordIsStrong = isStrongPassword(password)
+  const passwordsMatch = password.length > 0 && password === confirmPassword
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    if (!passwordIsStrong) {
+      setError(PASSWORD_POLICY_MESSAGE)
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError('As senhas precisam ser iguais.')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -75,22 +92,50 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="dg-label">Senha</label>
-            <input
+            <PasswordField
               id="password"
-              type="password"
+              label="Senha"
               autoComplete="new-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="dg-input"
+              onChange={setPassword}
+              required
+              minLength={8}
+              describedBy="password-rules"
+            />
+            <div id="password-rules" className="mt-3 space-y-2">
+              {passwordStatus.map((rule) => (
+                <p
+                  key={rule.id}
+                  className={
+                    rule.passed
+                      ? 'text-sm font-medium text-[var(--pitch-dark)]'
+                      : 'text-sm font-medium text-[var(--muted)]'
+                  }
+                >
+                  {rule.passed ? 'OK' : 'Falta'}: {rule.label}
+                </p>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <PasswordField
+              id="confirmPassword"
+              label="Confirmar senha"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
               required
               minLength={8}
             />
+            {confirmPassword.length > 0 && !passwordsMatch && (
+              <p className="mt-2 text-sm font-medium text-red-700">As senhas precisam ser iguais.</p>
+            )}
           </div>
 
           {error && <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700">{error}</p>}
 
-          <button type="submit" disabled={isSubmitting} className="dg-button-primary w-full">
+          <button type="submit" disabled={isSubmitting || !passwordIsStrong || !passwordsMatch} className="dg-button-primary w-full">
             {isSubmitting ? 'Criando conta...' : 'Criar conta'}
           </button>
 

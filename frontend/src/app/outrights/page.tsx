@@ -131,7 +131,7 @@ export default async function OutrightsPage() {
           }
           actions={
             <Link href={SCORING_REFERENCE_ROUTE} className="dg-button-secondary">
-              Ver regra da pontuacao
+              Ver regra da pontuação
             </Link>
           }
         />

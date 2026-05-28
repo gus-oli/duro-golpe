@@ -221,7 +221,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
         {token && userId && match.status === 'FINISHED' && (
           <section aria-label="Sua pontuação" className="space-y-4">
             <SectionHeader
-              eyebrow="Pontuacao"
+              eyebrow="Pontuação"
               title="Como esse jogo entrou no placar"
               actions={
                 <Link href={SCORING_REFERENCE_ROUTE} className="dg-button-secondary">

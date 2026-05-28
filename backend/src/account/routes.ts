@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { requireAuth } from '../auth/middleware.js'
+import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from '../auth/password-policy.js'
 import { validateBody } from '../middleware/validate.js'
 import { changeMyPassword, getMyProfile, updateMyProfile } from './service.js'
 import { rateLimit } from '../middleware/rate-limit.js'
@@ -12,7 +13,7 @@ const profileUpdateSchema = z.object({
 
 const passwordChangeSchema = z.object({
   currentPassword: z.string().min(1, 'Informe a senha atual'),
-  newPassword: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres'),
+  newPassword: z.string().refine(isStrongPassword, PASSWORD_POLICY_MESSAGE),
 })
 
 export async function accountRoutes(app: FastifyInstance): Promise<void> {

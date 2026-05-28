@@ -7,13 +7,14 @@ test.describe('Launch onboarding and prediction persistence', () => {
   test('registers a user and persists a match prediction through refresh', async ({ page }) => {
     const uniqueSuffix = Date.now()
     const email = `launch-${uniqueSuffix}@example.com`
-    const password = 'durogolpe123'
+    const password = 'DuroGolpe1!'
     const matchId = process.env.E2E_MATCH_ID ?? 'test-match-id'
 
     await page.goto('/register')
     await page.getByLabel(/nome/i).fill('Launch Tester')
     await page.getByLabel(/e-mail/i).fill(email)
-    await page.getByLabel(/senha/i).fill(password)
+    await page.locator('#password').fill(password)
+    await page.locator('#confirmPassword').fill(password)
     await page.getByRole('button', { name: /criar conta/i }).click()
 
     await expect(page).toHaveURL(/\/matches$/)

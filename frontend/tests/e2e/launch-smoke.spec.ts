@@ -28,12 +28,12 @@ test.describe('Launch smoke core journey', () => {
     const userA = {
       name: `Smoke A ${uniqueSuffix}`,
       email: `smoke-a-${uniqueSuffix}@example.com`,
-      password: 'durogolpe123',
+      password: 'DuroGolpe1!',
     }
     const userB = {
       name: `Smoke B ${uniqueSuffix}`,
       email: `smoke-b-${uniqueSuffix}@example.com`,
-      password: 'durogolpe123',
+      password: 'DuroGolpe1!',
     }
 
     await page.goto('/register')
@@ -44,6 +44,8 @@ test.describe('Launch smoke core journey', () => {
     await expect(page.locator('#displayName')).toHaveValue(userA.name)
     await expect(page.locator('#email')).toHaveValue(userA.email)
     await expect(page.locator('#password')).toHaveValue(userA.password)
+    await page.locator('#confirmPassword').fill(userA.password)
+    await expect(page.locator('#confirmPassword')).toHaveValue(userA.password)
     await page.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit())
     await expect
       .poll(async () => {
@@ -150,6 +152,8 @@ test.describe('Launch smoke core journey', () => {
     await expect(pageB.locator('#displayName')).toHaveValue(userB.name)
     await expect(pageB.locator('#email')).toHaveValue(userB.email)
     await expect(pageB.locator('#password')).toHaveValue(userB.password)
+    await pageB.locator('#confirmPassword').fill(userB.password)
+    await expect(pageB.locator('#confirmPassword')).toHaveValue(userB.password)
     await pageB.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit())
     await expect
       .poll(async () => {

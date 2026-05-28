@@ -44,7 +44,7 @@ export function TotalScore({
     <div className="dg-surface overflow-hidden">
       <div className="grid gap-5 p-5 sm:grid-cols-[1fr_1.2fr] sm:items-center">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Pontuacao total</p>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Pontuação total</p>
           <div className="mt-2 flex items-end gap-2">
             <span className="font-[var(--font-display)] text-5xl font-black leading-none text-[var(--pitch-dark)]" aria-live="polite">
               {totalPoints}

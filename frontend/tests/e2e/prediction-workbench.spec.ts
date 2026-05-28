@@ -4,12 +4,13 @@ test.describe('Match prediction workbench', () => {
   test('edits multiple predictions from the agenda and saves them in one action', async ({ page }) => {
     const uniqueSuffix = Date.now()
     const email = `workbench-${uniqueSuffix}@example.com`
-    const password = 'durogolpe123'
+    const password = 'DuroGolpe1!'
 
     await page.goto('/register')
     await page.getByLabel(/nome/i).fill('Workbench Tester')
     await page.getByLabel(/e-mail/i).fill(email)
-    await page.getByLabel(/senha/i).fill(password)
+    await page.locator('#password').fill(password)
+    await page.locator('#confirmPassword').fill(password)
     await page.getByRole('button', { name: /criar conta/i }).click()
 
     await expect(page).toHaveURL(/\/matches$/)

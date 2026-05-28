@@ -8,11 +8,12 @@ import { validateBody } from '../middleware/validate.js'
 import { confirmPasswordReset, requestPasswordReset } from './password-recovery.js'
 import { issueSessionToken } from './session-lifecycle.js'
 import { rateLimit } from '../middleware/rate-limit.js'
+import { isStrongPassword, PASSWORD_POLICY_MESSAGE } from './password-policy.js'
 
 const registerSchema = z.object({
   email: z.string().email('E-mail inválido'),
   displayName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(50),
-  password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres'),
+  password: z.string().refine(isStrongPassword, PASSWORD_POLICY_MESSAGE),
 })
 
 const loginSchema = z.object({
@@ -26,7 +27,7 @@ const passwordResetRequestSchema = z.object({
 
 const passwordResetConfirmSchema = z.object({
   token: z.string().min(32, 'Token inválido'),
-  password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres'),
+  password: z.string().refine(isStrongPassword, PASSWORD_POLICY_MESSAGE),
 })
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {

@@ -7,7 +7,7 @@ test.describe('Live score WebSocket', () => {
   test('score updates in real-time without page reload after a live webhook', async ({ page, request }) => {
     const uniqueSuffix = Date.now()
     const email = `live-${uniqueSuffix}@example.com`
-    const password = 'durogolpe123'
+    const password = 'DuroGolpe1!'
     const matchId = process.env.E2E_MATCH_ID ?? ''
     const webhookSecret = process.env.WEBHOOK_SECRET ?? ''
 
@@ -24,9 +24,11 @@ test.describe('Live score WebSocket', () => {
     await page.locator('#displayName').fill(`Live Score ${uniqueSuffix}`)
     await page.locator('#email').fill(email)
     await page.locator('#password').fill(password)
+    await page.locator('#confirmPassword').fill(password)
     await expect(page.locator('#displayName')).toHaveValue(`Live Score ${uniqueSuffix}`)
     await expect(page.locator('#email')).toHaveValue(email)
     await expect(page.locator('#password')).toHaveValue(password)
+    await expect(page.locator('#confirmPassword')).toHaveValue(password)
     await page.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit())
     await expect
       .poll(async () => {
