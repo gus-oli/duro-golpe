@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { EmptyState, PageShell, SectionHeader } from '@/components/ui/Primitives'
 
 interface League {
@@ -28,6 +29,11 @@ async function getMyLeagues(token: string): Promise<League[]> {
 export default async function LeaguesPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value ?? ''
+
+  if (!token) {
+    redirect('/login?next=/leagues')
+  }
+
   const leagues = await getMyLeagues(token)
 
   return (

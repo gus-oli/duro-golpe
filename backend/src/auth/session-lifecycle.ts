@@ -7,7 +7,7 @@ const SESSION_MAX_AGE = '7d'
 
 export interface SessionPayload {
   sub: string
-  sv: number
+  sv?: number
   iat?: number
   exp?: number
 }
@@ -35,7 +35,15 @@ export async function isSessionPayloadCurrent(payload: SessionPayload): Promise<
     .where(eq(users.id, payload.sub))
     .limit(1)
 
-  return Boolean(user && user.sessionVersion === payload.sv)
+  if (!user) {
+    return false
+  }
+
+  if (payload.sv == null) {
+    return user.sessionVersion === 0
+  }
+
+  return user.sessionVersion === payload.sv
 }
 
 export async function bumpSessionVersion(userId: string): Promise<void> {

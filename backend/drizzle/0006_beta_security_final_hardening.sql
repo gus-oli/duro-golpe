@@ -1,2 +1,2 @@
 ALTER TABLE "users"
-ADD COLUMN "session_version" integer DEFAULT 0 NOT NULL;
+ADD COLUMN IF NOT EXISTS "session_version" integer DEFAULT 0 NOT NULL;

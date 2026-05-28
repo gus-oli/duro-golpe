@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { OutrightCard } from '@/components/OutrightCard/OutrightCard'
 import { EmptyState, PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
 
@@ -72,6 +73,11 @@ async function getMyLeagues(token: string): Promise<League[]> {
 export default async function OutrightsPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value ?? ''
+
+  if (!token) {
+    redirect('/login?next=/outrights')
+  }
+
   const [{ markets, error }, leagues] = await Promise.all([getOutrights(token), token ? getMyLeagues(token) : Promise.resolve([])])
 
   const hasOpenMarkets = markets.some((market) => market.status === 'OPEN')
