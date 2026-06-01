@@ -178,6 +178,7 @@ Before trusting `/profile`, friend picks, and `/outrights` in the hosted beta:
 3. In Neon, verify `outright_options` includes `player_photo_url`, `player_photo_source`, and `player_photo_updated_at`.
 4. Open `/outrights` and confirm the page shows markets or an explicit scoped error state instead of silently rendering a blank list.
 5. Open a friend-picks modal and confirm it returns data or an empty state instead of a generic internal-server failure.
+6. Confirm `/outrights` shows 8 active markets, including `Melhor Goleiro`.
 
 ## Local Demo Bootstrap
 
@@ -281,7 +282,7 @@ What the provider-backed seed recreates:
 
 - tournament teams
 - tournament fixtures
-- outright and badge catalogs
+- outright and badge catalogs, including `Melhor Goleiro`
 
 What only comes back through real player activity:
 
@@ -454,10 +455,13 @@ Examples:
 
 1. `npm --workspace=backend run outrights:resolve -- CHAMPION Brasil`
 2. `npm --workspace=backend run outrights:resolve -- FINALISTS Brasil Franca`
+3. `npm --workspace=backend run outrights:resolve -- BEST_GOALKEEPER Emiliano Martinez - Argentina`
 
 Notes:
 
 - The resolver now matches by id or label and ignores accents for comparison, so `Brasil`, `Franca`, `França`, `Brazil`, or an option UUID can all be used depending on the seeded dataset.
+
+- Resolve `BEST_GOALKEEPER` only after the official FIFA/adidas Golden Glove winner is confirmed.
 
 Smoke helpers:
 
@@ -492,9 +496,10 @@ Run these scenarios against the release candidate:
 3. Submit a prediction, refresh the page, and confirm the persisted prediction is still shown.
 4. Join a league and confirm the ranking page loads with total points.
 5. Open `/outrights`, save selections including `Finalistas`, and confirm locked markets reject edits.
-6. Trigger a match lock event and confirm the match detail page disables prediction input without reload.
-7. Trigger a live score webhook and confirm the match detail page updates the score in place.
-8. Resolve an outright market and confirm total score plus league ranking update for affected users.
+6. Confirm `Melhor Goleiro` appears as a player market with search and save flow working.
+7. Trigger a match lock event and confirm the match detail page disables prediction input without reload.
+8. Trigger a live score webhook and confirm the match detail page updates the score in place.
+9. Resolve an outright market and confirm total score plus league ranking update for affected users.
 
 ## Automated Launch Smoke
 
@@ -511,9 +516,10 @@ This command runs the deterministic Chromium-only launch smoke coverage with one
 3. prediction persistence after refresh
 4. league creation, join flow, and ranking visibility
 5. outright submission plus rejection after markets are locked
-6. real match lock propagation to the open match detail page
-7. live score webhook propagation to the open match detail page
-8. outright resolution updating totals and league ranking
+6. best-goalkeeper market visibility alongside the other outrights
+7. real match lock propagation to the open match detail page
+8. live score webhook propagation to the open match detail page
+9. outright resolution updating totals and league ranking
 
 It re-runs `npm --workspace=backend run seed:smoke` before the browser suite, resolves the seeded smoke match UUID automatically, and passes that value into Playwright on every run.
 
@@ -538,6 +544,11 @@ Rollback flow:
 3. Restart frontend, backend, local Caddy, and Cloudflare Tunnel.
 4. Re-run the private-beta verification checklist.
 5. If the failure is schema or data related, restore the pre-change Postgres dump before reopening the session.
+
+Market-specific guidance:
+
+- If `Melhor Goleiro` was deployed but no user selected it yet, you can remove or hide the catalog entry and rerun the seed.
+- If users already selected `Melhor Goleiro`, prefer locking the market or marking options inactive through the normal seed path instead of deleting outright option records.
 
 Notes:
 

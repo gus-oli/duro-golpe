@@ -5,6 +5,7 @@ import {
 } from '../data-providers/api-football.js'
 import { db } from '../db/index.js'
 import { outrightOptions } from '../db/schema/index.js'
+import type { OutrightPlayerSourceTier } from './player-option-types.js'
 
 function readNumberArg(name: string): number | undefined {
   const prefix = `--${name}=`
@@ -28,7 +29,7 @@ function getSearchScope(): ApiFootballPlayerSearchScope {
   const leagueId =
     readNumberArg('league') ?? readNumberEnv('API_FOOTBALL_PLAYER_SEARCH_LEAGUE') ?? 1
   const season =
-    readNumberArg('season') ?? readNumberEnv('API_FOOTBALL_PLAYER_SEARCH_SEASON') ?? 2022
+    readNumberArg('season') ?? readNumberEnv('API_FOOTBALL_PLAYER_SEARCH_SEASON') ?? 2024
 
   return teamId ? { teamId, season } : { leagueId, season }
 }
@@ -75,6 +76,40 @@ function chooseBestPlayerMatch(
   )
 }
 
+const SOURCE_TIER_PRIORITY: Record<OutrightPlayerSourceTier, number> = {
+  OFFICIAL: 0,
+  PRELIMINARY: 1,
+  LIKELY: 2,
+}
+
+type PlayerPhotoRow = {
+  id: string
+  label: string
+  teamLabel: string | null
+  playerPhotoUrl: string | null
+  isFeatured: boolean
+  sourceTier: OutrightPlayerSourceTier | null
+  sortOrder: number
+}
+
+function comparePlayerPhotoRows(a: PlayerPhotoRow, b: PlayerPhotoRow): number {
+  if (a.isFeatured !== b.isFeatured) {
+    return a.isFeatured ? -1 : 1
+  }
+
+  const aTier = a.sourceTier ? SOURCE_TIER_PRIORITY[a.sourceTier] : Number.MAX_SAFE_INTEGER
+  const bTier = b.sourceTier ? SOURCE_TIER_PRIORITY[b.sourceTier] : Number.MAX_SAFE_INTEGER
+  if (aTier !== bTier) {
+    return aTier - bTier
+  }
+
+  if (a.sortOrder !== b.sortOrder) {
+    return a.sortOrder - b.sortOrder
+  }
+
+  return a.label.localeCompare(b.label)
+}
+
 async function enrichPlayerPhotos(
   onlyMissing = true,
   searchScope = getSearchScope(),
@@ -85,13 +120,22 @@ async function enrichPlayerPhotos(
       label: outrightOptions.label,
       teamLabel: outrightOptions.teamLabel,
       playerPhotoUrl: outrightOptions.playerPhotoUrl,
+      isFeatured: outrightOptions.isFeatured,
+      sourceTier: outrightOptions.sourceTier,
+      sortOrder: outrightOptions.sortOrder,
     })
     .from(outrightOptions)
     .where(
       onlyMissing
-        ? and(isNull(outrightOptions.teamId), isNull(outrightOptions.playerPhotoUrl))
-        : isNull(outrightOptions.teamId),
+        ? and(
+            isNull(outrightOptions.teamId),
+            eq(outrightOptions.isActive, true),
+            isNull(outrightOptions.playerPhotoUrl),
+          )
+        : and(isNull(outrightOptions.teamId), eq(outrightOptions.isActive, true)),
     )
+
+  rows.sort(comparePlayerPhotoRows)
 
   const limit = readNumberArg('limit')
   const targetRows = limit ? rows.slice(0, limit) : rows

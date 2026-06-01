@@ -14,16 +14,17 @@ describe('scoring reference data', () => {
     expect(MATCH_SCORING_TIERS.map((tier) => tier.points)).toEqual([25, 15, 10, 5, 0])
   })
 
-  it('describes the seven active outright markets totaling 600 points', () => {
-    expect(OUTRIGHT_SCORING_MARKETS).toHaveLength(7)
+  it('describes the eight active outright markets totaling 670 points', () => {
+    expect(OUTRIGHT_SCORING_MARKETS).toHaveLength(8)
     expect(OUTRIGHT_SCORING_MARKETS.find((market) => market.code === 'CHAMPION')?.pointValue).toBe(120)
+    expect(OUTRIGHT_SCORING_MARKETS.find((market) => market.code === 'BEST_GOALKEEPER')?.pointValue).toBe(70)
     expect(OUTRIGHT_SCORING_MARKETS.find((market) => market.code === 'FINALISTS')?.pointValue).toBe(90)
-    expect(OUTRIGHT_SCORING_TOTAL_POINTS).toBe(600)
+    expect(OUTRIGHT_SCORING_TOTAL_POINTS).toBe(670)
   })
 
-  it('keeps the 3200-point ceiling and scoring route aligned with product copy', () => {
+  it('keeps the 3270-point ceiling and scoring route aligned with product copy', () => {
     expect(THEORETICAL_MATCH_POINTS).toBe(2600)
-    expect(THEORETICAL_MAX_POINTS).toBe(3200)
+    expect(THEORETICAL_MAX_POINTS).toBe(3270)
     expect(SCORING_REFERENCE_ROUTE).toBe('/pontuacao')
   })
 

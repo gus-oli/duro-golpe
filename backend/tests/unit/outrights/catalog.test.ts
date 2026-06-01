@@ -6,11 +6,12 @@ import {
 } from '../../../src/outrights/catalog.js'
 
 describe('launch outright catalog', () => {
-  it('offers exactly the 7 launch markets in display order', () => {
+  it('offers exactly the 8 active outright markets in display order', () => {
     expect(OUTRIGHT_MARKET_CATALOG.map((market) => market.code)).toEqual([
       OUTRIGHT_MARKET_CODES.CHAMPION,
       OUTRIGHT_MARKET_CODES.TOP_SCORER,
       OUTRIGHT_MARKET_CODES.GOLDEN_BALL,
+      OUTRIGHT_MARKET_CODES.BEST_GOALKEEPER,
       OUTRIGHT_MARKET_CODES.FINALISTS,
       OUTRIGHT_MARKET_CODES.REVELATION,
       OUTRIGHT_MARKET_CODES.BEST_ATTACK,
@@ -18,9 +19,9 @@ describe('launch outright catalog', () => {
     ])
   })
 
-  it('totals 600 outright points toward the 3200-point launch ceiling', () => {
-    expect(OUTRIGHT_MARKET_TOTAL_POINTS).toBe(600)
-    expect(OUTRIGHT_MARKET_CATALOG.reduce((sum, market) => sum + market.pointValue, 0)).toBe(600)
+  it('totals 670 outright points toward the 3270-point launch ceiling', () => {
+    expect(OUTRIGHT_MARKET_TOTAL_POINTS).toBe(670)
+    expect(OUTRIGHT_MARKET_CATALOG.reduce((sum, market) => sum + market.pointValue, 0)).toBe(670)
   })
 
   it('removes Zebra and renames Ataque+Positivo to Melhor Ataque', () => {
@@ -40,5 +41,17 @@ describe('launch outright catalog', () => {
 
     const nonFinalists = OUTRIGHT_MARKET_CATALOG.filter((market) => market.code !== OUTRIGHT_MARKET_CODES.FINALISTS)
     expect(nonFinalists.every((market) => market.selectionMin === 1 && market.selectionMax === 1)).toBe(true)
+  })
+
+  it('adds Melhor Goleiro as a single-selection player market', () => {
+    expect(
+      OUTRIGHT_MARKET_CATALOG.find((market) => market.code === OUTRIGHT_MARKET_CODES.BEST_GOALKEEPER),
+    ).toMatchObject({
+      name: 'Melhor Goleiro',
+      pointValue: 70,
+      selectionMin: 1,
+      selectionMax: 1,
+      optionType: 'PLAYER',
+    })
   })
 })

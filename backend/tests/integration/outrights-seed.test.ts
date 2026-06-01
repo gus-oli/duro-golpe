@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 // Integration tests for outright markets seed.
 // Pure FINALISTS scoring logic tests are in backend/tests/unit/outrights/finalists.test.ts.
@@ -14,8 +14,8 @@ describe('Outright markets seed (integration)', () => {
     })
 
     it('has correct point values for all markets', async () => {
-      // Expected: Campeão=100, Artilheiro=80, Bola de Ouro=80, Finalistas=70,
-      //           Zebra=60, Revelação=50, Ataque+Positivo=50, Lanterna=40
+      // Expected: Campeao=120, Artilheiro=90, Bola de Ouro=90, Melhor Goleiro=70,
+      //           Finalistas=90, Revelacao=70, Melhor Ataque=80, Lanterna=60
       expect(true).toBe(true)
     })
 

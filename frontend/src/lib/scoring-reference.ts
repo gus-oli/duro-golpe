@@ -41,9 +41,20 @@ export const OUTRIGHT_SCORING_MARKETS = [
   { code: 'CHAMPION', name: 'Campeão', pointValue: 120, note: 'Seleção campeã da Copa.' },
   { code: 'TOP_SCORER', name: 'Artilheiro', pointValue: 90, note: 'Artilheiro oficial do torneio.' },
   { code: 'GOLDEN_BALL', name: 'Bola de Ouro', pointValue: 90, note: 'Melhor jogador oficial da FIFA.' },
+  {
+    code: 'BEST_GOALKEEPER',
+    name: 'Melhor Goleiro',
+    pointValue: 70,
+    note: 'Vencedor oficial do adidas Golden Glove da FIFA.',
+  },
   { code: 'FINALISTS', name: 'Finalistas', pointValue: 90, note: 'Precisa acertar as duas seleções finalistas.' },
   { code: 'REVELATION', name: 'Revelação', pointValue: 70, note: 'Destaque jovem oficial da FIFA.' },
-  { code: 'BEST_ATTACK', name: 'Melhor Ataque', pointValue: 80, note: 'Time com mais gols, com desempate pela classificação final oficial.' },
+  {
+    code: 'BEST_ATTACK',
+    name: 'Melhor Ataque',
+    pointValue: 80,
+    note: 'Time com mais gols, com desempate pela classificação final oficial.',
+  },
   { code: 'LAST_PLACE', name: 'Lanterna', pointValue: 60, note: 'Pior campanha oficial do torneio.' },
 ] as const
 

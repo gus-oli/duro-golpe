@@ -31,10 +31,44 @@ describe('Outright markets (integration)', () => {
   })
 
   describe('GET /api/v1/outrights', () => {
-    it('returns the 7-market launch catalog for the authenticated user', async () => {
+    it('returns the active outright catalog for the authenticated user', async () => {
       outrightServiceMocks.getOutrights.mockResolvedValue([
-        { id: 'champion', name: 'CampeÃ£o', pointValue: 120, options: [], selectionMin: 1, selectionMax: 1, status: 'OPEN', optionType: 'TEAM', userPrediction: null, userSelections: [] },
-        { id: 'finalists', name: 'Finalistas', pointValue: 90, options: [], selectionMin: 2, selectionMax: 2, status: 'OPEN', optionType: 'TEAM', userPrediction: null, userSelections: [] },
+        {
+          id: 'champion',
+          name: 'Campeao',
+          pointValue: 120,
+          options: [],
+          selectionMin: 1,
+          selectionMax: 1,
+          status: 'OPEN',
+          optionType: 'TEAM',
+          userPrediction: null,
+          userSelections: [],
+        },
+        {
+          id: 'best-goalkeeper',
+          name: 'Melhor Goleiro',
+          pointValue: 70,
+          options: [],
+          selectionMin: 1,
+          selectionMax: 1,
+          status: 'OPEN',
+          optionType: 'PLAYER',
+          userPrediction: null,
+          userSelections: [],
+        },
+        {
+          id: 'finalists',
+          name: 'Finalistas',
+          pointValue: 90,
+          options: [],
+          selectionMin: 2,
+          selectionMax: 2,
+          status: 'OPEN',
+          optionType: 'TEAM',
+          userPrediction: null,
+          userSelections: [],
+        },
       ])
 
       const response = await app.inject({
@@ -47,7 +81,8 @@ describe('Outright markets (integration)', () => {
       expect(outrightServiceMocks.getOutrights).toHaveBeenCalledWith('user-1')
       expect(response.json()).toEqual({
         markets: expect.arrayContaining([
-          expect.objectContaining({ name: 'CampeÃ£o', pointValue: 120 }),
+          expect.objectContaining({ name: 'Campeao', pointValue: 120 }),
+          expect.objectContaining({ name: 'Melhor Goleiro', pointValue: 70, optionType: 'PLAYER' }),
           expect.objectContaining({ name: 'Finalistas', pointValue: 90, selectionMax: 2 }),
         ]),
       })
