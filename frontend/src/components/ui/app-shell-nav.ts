@@ -3,6 +3,7 @@ export const AUTHENTICATED_NAV_ITEMS = [
   { href: '/matches', label: 'Partidas' },
   { href: '/leagues', label: 'Ligas' },
   { href: '/outrights', label: 'Especiais' },
-  { href: '/pontuacao', label: 'Pontuação' },
+  { href: '/simulador', label: 'Simulador' },
+  { href: '/pontuacao', label: 'Pontuacao' },
   { href: '/profile', label: 'Conta' },
 ] as const

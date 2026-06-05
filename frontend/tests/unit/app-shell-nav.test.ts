@@ -8,6 +8,7 @@ describe('authenticated shell navigation', () => {
       '/matches',
       '/leagues',
       '/outrights',
+      '/simulador',
       '/pontuacao',
       '/profile',
     ])

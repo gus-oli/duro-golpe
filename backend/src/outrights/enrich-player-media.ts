@@ -1,6 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm'
 import {
   type ApiFootballPlayerSearchScope,
+  searchPlayerProfiles,
   searchPlayers,
 } from '../data-providers/api-football.js'
 import { db } from '../db/index.js'
@@ -56,6 +57,76 @@ function normalize(value: string | null | undefined): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+}
+
+function getSearchTerms(playerName: string): string[] {
+  const trimmed = playerName.trim()
+  if (!trimmed) return []
+
+  const terms = [trimmed]
+  const parts = trimmed.split(/\s+/).filter(Boolean)
+  const lastName = parts.at(-1)
+
+  if (lastName && lastName.length >= 3 && !terms.includes(lastName)) {
+    terms.push(lastName)
+  }
+
+  return terms
+}
+
+function sanitizeSearchTerm(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function matchesPlayerName(
+  playerName: string,
+  candidate: { player: { name?: string; firstname?: string; lastname?: string } },
+): boolean {
+  const normalizedTarget = normalize(playerName)
+  const fullName = normalize(candidate.player.name)
+  const composedName = normalize([candidate.player.firstname, candidate.player.lastname].filter(Boolean).join(' '))
+
+  return (
+    fullName === normalizedTarget ||
+    composedName === normalizedTarget ||
+    fullName.includes(normalizedTarget) ||
+    composedName.includes(normalizedTarget)
+  )
+}
+
+async function findPlayerCandidates(
+  playerName: string,
+  searchScope: ApiFootballPlayerSearchScope,
+) {
+  for (const term of getSearchTerms(playerName)) {
+    const sanitizedTerm = sanitizeSearchTerm(term)
+    if (sanitizedTerm.length < 3) {
+      continue
+    }
+
+    const profileCandidates = await searchPlayerProfiles(sanitizedTerm)
+    const exactProfileMatches = profileCandidates.filter((candidate) => matchesPlayerName(playerName, candidate))
+    if (exactProfileMatches.length > 0) {
+      return { candidates: exactProfileMatches, source: 'profiles' as const }
+    }
+
+    if (profileCandidates.length > 0) {
+      return { candidates: profileCandidates, source: 'profiles' as const }
+    }
+  }
+
+  const fallbackTerm = sanitizeSearchTerm(playerName)
+  if (fallbackTerm.length < 3) {
+    return { candidates: [], source: 'search' as const }
+  }
+
+  const fallbackCandidates = await searchPlayers(fallbackTerm, searchScope)
+  return { candidates: fallbackCandidates, source: 'search' as const }
 }
 
 function chooseBestPlayerMatch(
@@ -154,7 +225,7 @@ async function enrichPlayerPhotos(
     }
 
     try {
-      const candidates = await searchPlayers(playerName, searchScope)
+      const { candidates, source } = await findPlayerCandidates(playerName, searchScope)
       const chosen = chooseBestPlayerMatch(row.teamLabel ?? teamLabel, candidates)
       if (!chosen?.player.photo) {
         skipped += 1
@@ -166,7 +237,7 @@ async function enrichPlayerPhotos(
         .update(outrightOptions)
         .set({
           playerPhotoUrl: chosen.player.photo,
-          playerPhotoSource: 'api-football:search',
+          playerPhotoSource: `api-football:${source}`,
           playerPhotoUpdatedAt: new Date(),
         })
         .where(eq(outrightOptions.id, row.id))

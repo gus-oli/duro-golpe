@@ -159,7 +159,7 @@ async function AuthenticatedHome({ token }: { token: string }) {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Link href="/matches" className="dg-card-interactive block p-4">
               <p className="dg-eyebrow">Partidas</p>
               <h2 className="mt-2 text-xl font-black text-[var(--ink)]">Abrir agenda</h2>
@@ -177,6 +177,13 @@ async function AuthenticatedHome({ token }: { token: string }) {
               <h2 className="mt-2 text-xl font-black text-[var(--ink)]">Mercados longos</h2>
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
                 {openMarkets > 0 ? `${openMarkets} mercados ainda abertos.` : 'Veja o status dos mercados de longo prazo.'}
+              </p>
+            </Link>
+            <Link href="/simulador" className="dg-card-interactive block p-4">
+              <p className="dg-eyebrow">Simulador</p>
+              <h2 className="mt-2 text-xl font-black text-[var(--ink)]">Minha Copa</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                Monte grupos, terceiros e mata-mata com o chaveamento oficial da Copa 2026.
               </p>
             </Link>
           </div>

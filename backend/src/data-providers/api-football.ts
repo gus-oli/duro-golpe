@@ -60,6 +60,9 @@ export interface ApiFootballPlayerSearchResult {
   player: {
     id: number
     name: string
+    firstname?: string
+    lastname?: string
+    nationality?: string
     photo: string
   }
   statistics?: Array<{
@@ -91,6 +94,11 @@ export function buildPlayerSearchUrl(
   if (scope.season) params.set('season', String(scope.season))
 
   return `${BASE_URL}/players?${params.toString()}`
+}
+
+export function buildPlayerProfileSearchUrl(name: string): string {
+  const params = new URLSearchParams({ search: name })
+  return `${BASE_URL}/players/profiles?${params.toString()}`
 }
 
 export async function getTeams(leagueId = 1, season = 2026): Promise<ApiFootballTeam[]> {
@@ -132,6 +140,18 @@ export async function searchPlayers(
   }
   if (Array.isArray(data.errors) ? data.errors.length > 0 : data.errors && Object.keys(data.errors).length > 0) {
     throw new Error(`API-Football players error: ${JSON.stringify(data.errors)}`)
+  }
+  return data.response
+}
+
+export async function searchPlayerProfiles(name: string): Promise<ApiFootballPlayerSearchResult[]> {
+  const response = await rateLimitedFetch(buildPlayerProfileSearchUrl(name))
+  const data = (await response.json()) as {
+    errors?: string[] | Record<string, string>
+    response: ApiFootballPlayerSearchResult[]
+  }
+  if (Array.isArray(data.errors) ? data.errors.length > 0 : data.errors && Object.keys(data.errors).length > 0) {
+    throw new Error(`API-Football player profiles error: ${JSON.stringify(data.errors)}`)
   }
   return data.response
 }
