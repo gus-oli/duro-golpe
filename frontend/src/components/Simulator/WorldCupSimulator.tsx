@@ -45,15 +45,23 @@ const RIGHT_SIDE = {
 }
 const EXPORT_CANVAS_WIDTH = 2600
 const EXPORT_CANVAS_HEIGHT = 1500
-const EXPORT_NODE_WIDTH = 250
-const EXPORT_NODE_HEIGHT = 96
-const EXPORT_LEFT_X = [80, 430, 710, 960]
+const EXPORT_NODE_WIDTH = 270
+const EXPORT_NODE_HEIGHT = 116
+const EXPORT_LEFT_X = [74, 430, 720, 990]
 const EXPORT_RIGHT_X = EXPORT_LEFT_X.map((x) => EXPORT_CANVAS_WIDTH - x - EXPORT_NODE_WIDTH)
 const EXPORT_Y = {
-  round32: [70, 220, 370, 520, 830, 980, 1130, 1280],
-  round16: [145, 445, 905, 1205],
-  quarterfinal: [295, 1055],
-  semifinal: [675],
+  round32: [86, 246, 406, 566, 796, 956, 1116, 1276],
+  round16: [166, 486, 876, 1196],
+  quarterfinal: [326, 1036],
+  semifinal: [666],
+}
+const EXPORT_ROUND_LABELS: Record<RoundName, string> = {
+  round32: '16 avos',
+  round16: 'Oitavas',
+  quarterfinal: 'Quartas',
+  semifinal: 'Semifinal',
+  thirdPlace: '3o lugar',
+  final: 'Final',
 }
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -176,23 +184,75 @@ function drawExportText(
   context.restore()
 }
 
-function drawExportTeamBadge(context: CanvasRenderingContext2D, team: SimulatorTeam | null, x: number, y: number, selected: boolean, faded = false) {
-  const radius = 28
+function collectExportTeams(bracket: ResolvedKnockoutMatch[], champion: SimulatorTeam | null) {
+  const teams = new Map<string, SimulatorTeam>()
+  for (const match of bracket) {
+    for (const slot of [match.home, match.away]) {
+      if (slot.team) teams.set(slot.team.id, slot.team)
+    }
+  }
+  if (champion) teams.set(champion.id, champion)
+  return [...teams.values()]
+}
+
+function loadExportImage(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => resolve(image)
+    image.onerror = () => resolve(null)
+    image.src = src
+  })
+}
+
+async function loadExportFlagImages(teams: SimulatorTeam[]) {
+  const entries = await Promise.all(
+    teams.map(async (team) => {
+      if (!team.flagUrl) return [team.id, null] as const
+      return [team.id, await loadExportImage(team.flagUrl)] as const
+    }),
+  )
+  return new Map(entries)
+}
+
+function drawExportFlag(
+  context: CanvasRenderingContext2D,
+  flagImages: Map<string, HTMLImageElement | null>,
+  team: SimulatorTeam | null,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  faded = false,
+) {
   context.save()
   context.globalAlpha = faded ? 0.42 : 1
-  context.beginPath()
-  context.arc(x + radius, y + radius, radius, 0, Math.PI * 2)
-  context.fillStyle = selected ? '#dbeafe' : '#ffffff'
+  drawRoundedRect(context, x, y, width, height, 7)
+  context.fillStyle = '#ffffff'
   context.fill()
-  context.lineWidth = selected ? 5 : 3
-  context.strokeStyle = selected ? '#1681ff' : '#d7dde4'
+  context.save()
+  context.clip()
+  const image = team ? flagImages.get(team.id) : null
+  if (image) {
+    const scale = Math.max(width / image.width, height / image.height)
+    const drawWidth = image.width * scale
+    const drawHeight = image.height * scale
+    context.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight)
+  } else {
+    context.fillStyle = '#f5f1e9'
+    context.fillRect(x, y, width, height)
+    drawExportText(context, team ? getTeamFallback(team) : '?', x + width / 2, y + height / 2 + 1, width - 8, '900 14px Arial', '#102036', 'center')
+  }
+  context.restore()
+  context.lineWidth = 2
+  context.strokeStyle = '#d7dde4'
   context.stroke()
-  drawExportText(context, team ? getTeamFallback(team) : '?', x + radius, y + radius + 1, 44, '900 18px Arial', '#102036', 'center')
   context.restore()
 }
 
 function drawExportMatch(
   context: CanvasRenderingContext2D,
+  flagImages: Map<string, HTMLImageElement | null>,
   match: ResolvedKnockoutMatch,
   x: number,
   y: number,
@@ -208,19 +268,18 @@ function drawExportMatch(
   context.fill()
   context.setLineDash([7, 5])
   context.lineWidth = 2
-  context.strokeStyle = '#d7dde4'
+  context.strokeStyle = '#d9e1ea'
   context.stroke()
   context.setLineDash([])
-  drawExportText(context, `M${match.matchNumber}`, x + 18, y + 18, 70, '900 16px Arial', '#718096')
-  drawExportText(context, ROUND_LABELS[match.round], x + width - 18, y + 18, 130, '900 14px Arial', '#005ecb', 'right')
+  drawExportText(context, EXPORT_ROUND_LABELS[match.round], x + width / 2, y + 20, width - 34, '900 16px Arial', '#005ecb', 'center')
 
   for (let index = 0; index < teams.length; index += 1) {
     const slot = teams[index]
-    const rowY = y + 30 + index * 32
+    const rowY = y + 36 + index * 36
     const isWinner = Boolean(slot.team && match.winner?.id === slot.team.id)
     const isEliminated = Boolean(match.winner && slot.team && match.winner.id !== slot.team.id)
 
-    drawRoundedRect(context, x + 12, rowY, width - 24, 28, 8)
+    drawRoundedRect(context, x + 14, rowY, width - 28, 32, 8)
     context.fillStyle = isWinner ? 'rgba(22,129,255,0.14)' : '#f5f1e9'
     context.fill()
     context.lineWidth = 2
@@ -228,11 +287,10 @@ function drawExportMatch(
     context.stroke()
     context.globalAlpha = isEliminated ? 0.46 : 1
 
-    const badgeX = align === 'right' ? x + width - 54 : x + 18
-    const textX = align === 'right' ? x + width - 66 : x + 66
-    drawExportTeamBadge(context, slot.team, badgeX, rowY - 14, isWinner, isEliminated)
-    drawExportText(context, slot.label, textX, rowY + 8, 62, '900 12px Arial', '#718096', align === 'right' ? 'right' : 'left')
-    drawExportText(context, slot.team?.fifaCode ?? '---', textX, rowY + 23, 115, '900 18px Arial', '#102036', align === 'right' ? 'right' : 'left')
+    const flagX = align === 'right' ? x + width - 58 : x + 24
+    const textX = align === 'right' ? x + width - 72 : x + 72
+    drawExportFlag(context, flagImages, slot.team, flagX, rowY + 5, 38, 22, isEliminated)
+    drawExportText(context, slot.team?.fifaCode ?? '---', textX, rowY + 17, 126, '900 22px Arial', '#102036', align === 'right' ? 'right' : 'left')
     context.globalAlpha = 1
   }
   context.restore()
@@ -255,6 +313,7 @@ function drawExportConnector(context: CanvasRenderingContext2D, fromX: number, f
 
 function drawExportSide(
   context: CanvasRenderingContext2D,
+  flagImages: Map<string, HTMLImageElement | null>,
   bracket: ResolvedKnockoutMatch[],
   side: typeof LEFT_SIDE,
   xValues: number[],
@@ -268,7 +327,7 @@ function drawExportSide(
     for (let index = 0; index < rounds[column].length; index += 1) {
       const match = bracket.find((candidate) => candidate.matchNumber === rounds[column][index])
       if (match) {
-        drawExportMatch(context, match, xValues[column], yValues[column][index], align)
+        drawExportMatch(context, flagImages, match, xValues[column], yValues[column][index], align)
       }
     }
   }
@@ -287,7 +346,8 @@ function drawExportSide(
   }
 }
 
-function downloadBracketPng(bracket: ResolvedKnockoutMatch[], champion: SimulatorTeam | null) {
+async function downloadBracketPng(bracket: ResolvedKnockoutMatch[], champion: SimulatorTeam | null) {
+  const flagImages = await loadExportFlagImages(collectExportTeams(bracket, champion))
   const canvas = document.createElement('canvas')
   canvas.width = EXPORT_CANVAS_WIDTH
   canvas.height = EXPORT_CANVAS_HEIGHT
@@ -300,27 +360,72 @@ function downloadBracketPng(bracket: ResolvedKnockoutMatch[], champion: Simulato
   context.fillStyle = gradient
   context.fillRect(0, 0, EXPORT_CANVAS_WIDTH, EXPORT_CANVAS_HEIGHT)
 
-  drawExportText(context, 'Duro Golpe - Simulador da Copa 2026', EXPORT_CANVAS_WIDTH / 2, 42, 720, '900 30px Arial', '#102036', 'center')
-  drawExportSide(context, bracket, LEFT_SIDE, EXPORT_LEFT_X, 'left')
-  drawExportSide(context, bracket, RIGHT_SIDE, EXPORT_RIGHT_X, 'right')
+  drawExportText(context, 'Duro Golpe - Simulador da Copa 2026', EXPORT_CANVAS_WIDTH / 2, 48, 800, '900 34px Arial', '#102036', 'center')
+  drawExportSide(context, flagImages, bracket, LEFT_SIDE, EXPORT_LEFT_X, 'left')
+  drawExportSide(context, flagImages, bracket, RIGHT_SIDE, EXPORT_RIGHT_X, 'right')
 
   const finalMatch = bracket.find((match) => match.matchNumber === 104)
   const thirdPlaceMatch = bracket.find((match) => match.matchNumber === 103)
-  if (finalMatch) drawExportMatch(context, finalMatch, 1175, 610, 'center')
-  if (thirdPlaceMatch) drawExportMatch(context, thirdPlaceMatch, 1175, 835, 'center')
+  if (finalMatch) drawExportMatch(context, flagImages, finalMatch, 1165, 650, 'center')
+  if (thirdPlaceMatch) drawExportMatch(context, flagImages, thirdPlaceMatch, 1165, 880, 'center')
 
   context.save()
-  context.beginPath()
-  context.arc(EXPORT_CANVAS_WIDTH / 2, 380, 72, 0, Math.PI * 2)
+  drawRoundedRect(context, EXPORT_CANVAS_WIDTH / 2 - 160, 262, 320, 220, 18)
   context.fillStyle = '#ffffff'
   context.fill()
-  context.lineWidth = 4
+  context.lineWidth = 3
   context.strokeStyle = '#d7dde4'
   context.stroke()
-  drawExportTeamBadge(context, champion, EXPORT_CANVAS_WIDTH / 2 - 28, 352, Boolean(champion))
-  drawExportText(context, 'CAMPEAO', EXPORT_CANVAS_WIDTH / 2, 495, 180, '900 18px Arial', '#005ecb', 'center')
-  drawExportText(context, champion?.fifaCode ?? '---', EXPORT_CANVAS_WIDTH / 2, 540, 220, '900 54px Arial', '#102036', 'center')
+  drawExportFlag(context, flagImages, champion, EXPORT_CANVAS_WIDTH / 2 - 58, 296, 116, 70)
+  drawExportText(context, 'CAMPEAO', EXPORT_CANVAS_WIDTH / 2, 405, 220, '900 18px Arial', '#005ecb', 'center')
+  drawExportText(context, champion?.fifaCode ?? '---', EXPORT_CANVAS_WIDTH / 2, 446, 220, '900 56px Arial', '#102036', 'center')
   context.restore()
+
+  const link = document.createElement('a')
+  try {
+    link.href = canvas.toDataURL('image/png')
+    link.download = getDownloadName(champion)
+    link.click()
+  } catch {
+    const fallbackFlagImages = new Map<string, HTMLImageElement | null>()
+    await downloadBracketPngWithFlags(bracket, champion, fallbackFlagImages)
+  }
+}
+
+function downloadBracketPngWithFlags(
+  bracket: ResolvedKnockoutMatch[],
+  champion: SimulatorTeam | null,
+  flagImages: Map<string, HTMLImageElement | null>,
+) {
+  const canvas = document.createElement('canvas')
+  canvas.width = EXPORT_CANVAS_WIDTH
+  canvas.height = EXPORT_CANVAS_HEIGHT
+  const context = canvas.getContext('2d')
+  if (!context) return
+
+  const gradient = context.createLinearGradient(0, 0, 0, EXPORT_CANVAS_HEIGHT)
+  gradient.addColorStop(0, '#ffffff')
+  gradient.addColorStop(1, '#f7faf8')
+  context.fillStyle = gradient
+  context.fillRect(0, 0, EXPORT_CANVAS_WIDTH, EXPORT_CANVAS_HEIGHT)
+  drawExportText(context, 'Duro Golpe - Simulador da Copa 2026', EXPORT_CANVAS_WIDTH / 2, 48, 800, '900 34px Arial', '#102036', 'center')
+  drawExportSide(context, flagImages, bracket, LEFT_SIDE, EXPORT_LEFT_X, 'left')
+  drawExportSide(context, flagImages, bracket, RIGHT_SIDE, EXPORT_RIGHT_X, 'right')
+
+  const finalMatch = bracket.find((match) => match.matchNumber === 104)
+  const thirdPlaceMatch = bracket.find((match) => match.matchNumber === 103)
+  if (finalMatch) drawExportMatch(context, flagImages, finalMatch, 1165, 650, 'center')
+  if (thirdPlaceMatch) drawExportMatch(context, flagImages, thirdPlaceMatch, 1165, 880, 'center')
+
+  drawRoundedRect(context, EXPORT_CANVAS_WIDTH / 2 - 160, 262, 320, 220, 18)
+  context.fillStyle = '#ffffff'
+  context.fill()
+  context.lineWidth = 3
+  context.strokeStyle = '#d7dde4'
+  context.stroke()
+  drawExportFlag(context, flagImages, champion, EXPORT_CANVAS_WIDTH / 2 - 58, 296, 116, 70)
+  drawExportText(context, 'CAMPEAO', EXPORT_CANVAS_WIDTH / 2, 405, 220, '900 18px Arial', '#005ecb', 'center')
+  drawExportText(context, champion?.fifaCode ?? '---', EXPORT_CANVAS_WIDTH / 2, 446, 220, '900 56px Arial', '#102036', 'center')
 
   const link = document.createElement('a')
   link.href = canvas.toDataURL('image/png')
@@ -435,6 +540,7 @@ export function WorldCupSimulator({ initialTeams }: { initialTeams: SimulatorTea
   }))
   const [hasLoadedLocalState, setHasLoadedLocalState] = useState(false)
   const [activeRound, setActiveRound] = useState<RoundName>('round32')
+  const [isExportingPng, setIsExportingPng] = useState(false)
 
   useEffect(() => {
     try {
@@ -547,6 +653,16 @@ export function WorldCupSimulator({ initialTeams }: { initialTeams: SimulatorTea
     window.localStorage.removeItem(SIMULATOR_STORAGE_KEY)
     setState(next)
     setActiveRound('round32')
+  }
+
+  async function exportBracketPng() {
+    if (isExportingPng) return
+    setIsExportingPng(true)
+    try {
+      await downloadBracketPng(bracket, champion)
+    } finally {
+      setIsExportingPng(false)
+    }
   }
 
   if (!hasCompleteGroups(groupedTeams)) {
@@ -710,8 +826,8 @@ export function WorldCupSimulator({ initialTeams }: { initialTeams: SimulatorTea
               <>
                 <StatusPill tone={champion ? 'success' : 'neutral'}>{champion ? `${champion.name} campeao` : 'Em aberto'}</StatusPill>
                 {readyForBracket && completeRanking && (
-                  <button type="button" className="dg-button-primary" onClick={() => downloadBracketPng(bracket, champion)}>
-                    Baixar PNG
+                  <button type="button" className="dg-button-primary" onClick={exportBracketPng} disabled={isExportingPng}>
+                    {isExportingPng ? 'Gerando PNG' : 'Baixar PNG'}
                   </button>
                 )}
               </>
