@@ -63,6 +63,39 @@ const EXPORT_ROUND_LABELS: Record<RoundName, string> = {
   thirdPlace: '3o lugar',
   final: 'Final',
 }
+const EXPORT_FLAG_PALETTES: Record<string, [string, string, string]> = {
+  ALG: ['#006233', '#ffffff', '#d21034'],
+  ARG: ['#74acdf', '#ffffff', '#f6b40e'],
+  AUS: ['#012169', '#ffffff', '#e4002b'],
+  BEL: ['#000000', '#ffd90c', '#ef3340'],
+  BIH: ['#002395', '#fecb00', '#ffffff'],
+  BRA: ['#009739', '#fedd00', '#012169'],
+  CAN: ['#ff0000', '#ffffff', '#ff0000'],
+  COL: ['#fcd116', '#003893', '#ce1126'],
+  COD: ['#007fff', '#f7d618', '#ce1021'],
+  CPV: ['#003893', '#ffffff', '#cf2027'],
+  CRO: ['#ff0000', '#ffffff', '#171796'],
+  CZE: ['#ffffff', '#d7141a', '#11457e'],
+  ECU: ['#ffdd00', '#034ea2', '#ed1c24'],
+  EGY: ['#ce1126', '#ffffff', '#000000'],
+  ESP: ['#aa151b', '#f1bf00', '#aa151b'],
+  FRA: ['#002395', '#ffffff', '#ed2939'],
+  GER: ['#000000', '#dd0000', '#ffce00'],
+  GHA: ['#ce1126', '#fcd116', '#006b3f'],
+  HAI: ['#00209f', '#d21034', '#ffffff'],
+  IRN: ['#239f40', '#ffffff', '#da0000'],
+  IRQ: ['#ce1126', '#ffffff', '#000000'],
+  JPN: ['#ffffff', '#ffffff', '#bc002d'],
+  KOR: ['#ffffff', '#0047a0', '#c60c30'],
+  KSA: ['#006c35', '#006c35', '#ffffff'],
+  MAR: ['#c1272d', '#c1272d', '#006233'],
+  NED: ['#ae1c28', '#ffffff', '#21468b'],
+  PAR: ['#d52b1e', '#ffffff', '#0038a8'],
+  QAT: ['#8a1538', '#ffffff', '#8a1538'],
+  RSA: ['#007a4d', '#ffb612', '#de3831'],
+  SWE: ['#006aa7', '#006aa7', '#fecc00'],
+  USA: ['#b22234', '#ffffff', '#3c3b6e'],
+}
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
@@ -198,10 +231,9 @@ function collectExportTeams(bracket: ResolvedKnockoutMatch[], champion: Simulato
 function loadExportImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const image = new Image()
-    image.crossOrigin = 'anonymous'
     image.onload = () => resolve(image)
     image.onerror = () => resolve(null)
-    image.src = src
+    image.src = `/api/flag-image?src=${encodeURIComponent(src)}`
   })
 }
 
@@ -213,6 +245,52 @@ async function loadExportFlagImages(teams: SimulatorTeam[]) {
     }),
   )
   return new Map(entries)
+}
+
+function getExportFlagPalette(team: SimulatorTeam | null): [string, string, string] {
+  if (!team) return ['#f5f1e9', '#ffffff', '#d7dde4']
+  const fromMap = EXPORT_FLAG_PALETTES[team.fifaCode]
+  if (fromMap) return fromMap
+
+  if (team.flagUrl?.startsWith('data:image/svg+xml')) {
+    const encodedSvg = team.flagUrl.slice(team.flagUrl.indexOf(',') + 1)
+    try {
+      const svg = decodeURIComponent(encodedSvg)
+      const colors = [...svg.matchAll(/(?:stop-color|fill)="(#[0-9a-fA-F]{3,6})"/g)].map((match) => match[1])
+      if (colors.length >= 3) return [colors[0], colors[1], colors[2]]
+      if (colors.length === 2) return [colors[0], colors[1], colors[0]]
+    } catch {
+      // Fall through to deterministic palette.
+    }
+  }
+
+  const seed = team.fifaCode.split('').reduce((total, char) => total + char.charCodeAt(0), 0)
+  const hues = [seed % 360, (seed * 3 + 90) % 360, (seed * 7 + 180) % 360]
+  return hues.map((hue) => `hsl(${hue}, 72%, 42%)`) as [string, string, string]
+}
+
+function drawExportSyntheticFlag(
+  context: CanvasRenderingContext2D,
+  team: SimulatorTeam | null,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const [primary, secondary, accent] = getExportFlagPalette(team)
+  context.save()
+  context.fillStyle = primary
+  context.fillRect(x, y, width, height)
+  context.fillStyle = secondary
+  context.fillRect(x, y + height / 3, width, height / 3)
+  context.fillStyle = accent
+  context.beginPath()
+  context.moveTo(x, y)
+  context.lineTo(x + width * 0.42, y + height / 2)
+  context.lineTo(x, y + height)
+  context.closePath()
+  context.fill()
+  context.restore()
 }
 
 function drawExportFlag(
@@ -239,9 +317,7 @@ function drawExportFlag(
     const drawHeight = image.height * scale
     context.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight)
   } else {
-    context.fillStyle = '#f5f1e9'
-    context.fillRect(x, y, width, height)
-    drawExportText(context, team ? getTeamFallback(team) : '?', x + width / 2, y + height / 2 + 1, width - 8, '900 14px Arial', '#102036', 'center')
+    drawExportSyntheticFlag(context, team, x, y, width, height)
   }
   context.restore()
   context.lineWidth = 2
