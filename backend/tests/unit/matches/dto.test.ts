@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildMatchDetailDto, buildMatchListItemDto } from '../../../src/matches/dto.js'
 
 const kickoffTime = new Date('2026-06-11T18:00:00.000Z')
@@ -30,6 +30,15 @@ const projection = {
 }
 
 describe('match DTO builders', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-01T12:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('builds the list item shape expected by the web UI', () => {
     expect(buildMatchListItemDto(projection)).toEqual({
       id: 'match-1',

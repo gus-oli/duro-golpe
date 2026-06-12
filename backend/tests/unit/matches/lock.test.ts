@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { getEffectiveMatchStatus, shouldLockMatch } from '../../../src/matches/lock-utils.js'
+import {
+  getEffectiveMatchStatus,
+  getLockableKickoffThreshold,
+  getMatchPredictionLockDeadline,
+  shouldLockMatch,
+} from '../../../src/matches/lock-utils.js'
 
 describe('shouldLockMatch', () => {
   const FIFTEEN_MIN = 15 * 60 * 1000
@@ -41,6 +46,21 @@ describe('shouldLockMatch', () => {
     const now = new Date('2026-06-15T20:44:59.000Z')
     const kickoff = new Date('2026-06-15T21:00:00.000Z')
     expect(shouldLockMatch(kickoff, now)).toBe(false)
+  })
+
+  it('locks 15 minutes before the UTC-3 displayed kickoff time', () => {
+    const kickoff = new Date('2026-06-15T21:00:00.000Z') // 18:00 UTC-3
+    const deadline = getMatchPredictionLockDeadline(kickoff)
+
+    expect(deadline.toISOString()).toBe('2026-06-15T20:45:00.000Z') // 17:45 UTC-3
+    expect(shouldLockMatch(kickoff, new Date('2026-06-15T20:44:59.999Z'))).toBe(false)
+    expect(shouldLockMatch(kickoff, new Date('2026-06-15T20:45:00.000Z'))).toBe(true)
+  })
+
+  it('uses the same kickoff threshold for scheduler queries', () => {
+    const now = new Date('2026-06-15T20:45:00.000Z')
+
+    expect(getLockableKickoffThreshold(now).toISOString()).toBe('2026-06-15T21:00:00.000Z')
   })
 })
 

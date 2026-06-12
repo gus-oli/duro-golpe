@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { EmptyState, SectionHeader, StatusPill } from '@/components/ui/Primitives'
+import { formatAppDate, formatAppDateTime, formatAppTime } from '@/lib/date-time'
 
 type MatchStatus = 'SCHEDULED' | 'LOCKED' | 'LIVE' | 'FINISHED'
 
@@ -38,7 +39,7 @@ interface BatchResponse {
 }
 
 function formatAgendaDate(kickoffTime: string) {
-  return new Date(kickoffTime).toLocaleDateString('pt-BR', {
+  return formatAppDate(kickoffTime, {
     weekday: 'long',
     day: '2-digit',
     month: 'long',
@@ -46,7 +47,7 @@ function formatAgendaDate(kickoffTime: string) {
 }
 
 function formatKickoff(kickoffTime: string) {
-  return new Date(kickoffTime).toLocaleString('pt-BR', {
+  return formatAppDateTime(kickoffTime, {
     weekday: 'short',
     day: '2-digit',
     month: 'short',
@@ -382,7 +383,7 @@ export function MatchesWorkbench({
     const scoreLabel =
       match.status === 'LIVE' || match.status === 'FINISHED'
         ? `${match.homeScore ?? 0} - ${match.awayScore ?? 0}`
-        : new Date(match.kickoffTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        : formatAppTime(match.kickoffTime, { hour: '2-digit', minute: '2-digit' })
 
     return (
       <article key={match.id} className="dg-surface p-4">

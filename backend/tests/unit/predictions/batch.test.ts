@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({
   matches: new Map<string, { id: string; status: 'SCHEDULED' | 'LOCKED' | 'LIVE' | 'FINISHED'; kickoffTime?: string }>(),
@@ -69,8 +69,13 @@ import { savePredictionsBatch } from '../../../src/predictions/service.js'
 
 describe('savePredictionsBatch', () => {
   beforeEach(() => {
+    vi.useRealTimers()
     state.matches.clear()
     state.predictions.clear()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('creates and updates predictions in the same batch', async () => {
@@ -134,6 +139,29 @@ describe('savePredictionsBatch', () => {
     expect(result.failed).toEqual([
       expect.objectContaining({
         matchId: 'match-closing',
+        statusCode: 403,
+        message: 'Palpites encerrados para esta partida',
+      }),
+    ])
+  })
+
+  it('rejects a prediction at the UTC-3 lock deadline for the match', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-15T20:45:00.000Z')) // 17:45 UTC-3
+    state.matches.set('match-utc3-deadline', {
+      id: 'match-utc3-deadline',
+      status: 'SCHEDULED',
+      kickoffTime: '2026-06-15T21:00:00.000Z', // 18:00 UTC-3
+    })
+
+    const result = await savePredictionsBatch('user-1', [
+      { matchId: 'match-utc3-deadline', predictedHome: 1, predictedAway: 0 },
+    ])
+
+    expect(result.saved).toEqual([])
+    expect(result.failed).toEqual([
+      expect.objectContaining({
+        matchId: 'match-utc3-deadline',
         statusCode: 403,
         message: 'Palpites encerrados para esta partida',
       }),

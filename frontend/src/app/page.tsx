@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { HeroSection, PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
+import { formatAppDate, formatAppDateTime, getAppDateKey } from '@/lib/date-time'
 
 interface Match {
   id: string
@@ -114,8 +115,8 @@ function getNextRelevantMatches(matches: Match[]): Match[] {
     return []
   }
 
-  const targetDate = new Date(actionable.kickoffTime).toLocaleDateString('pt-BR')
-  return sorted.filter((match) => new Date(match.kickoffTime).toLocaleDateString('pt-BR') === targetDate)
+  const targetDate = getAppDateKey(actionable.kickoffTime)
+  return sorted.filter((match) => getAppDateKey(match.kickoffTime) === targetDate)
 }
 
 function getActionLabel(status: Match['status']) {
@@ -194,7 +195,7 @@ async function AuthenticatedHome({ token }: { token: string }) {
             eyebrow="Proxima acao"
             title={
               nextMatches[0]
-                ? new Date(nextMatches[0].kickoffTime).toLocaleDateString('pt-BR', {
+                ? formatAppDate(nextMatches[0].kickoffTime, {
                     weekday: 'long',
                     day: '2-digit',
                     month: 'long',
@@ -223,7 +224,7 @@ async function AuthenticatedHome({ token }: { token: string }) {
                         {match.homeTeam.fifaCode} x {match.awayTeam.fifaCode}
                       </h2>
                       <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                        {new Date(match.kickoffTime).toLocaleString('pt-BR', {
+                        {formatAppDateTime(match.kickoffTime, {
                           weekday: 'short',
                           day: '2-digit',
                           month: 'short',

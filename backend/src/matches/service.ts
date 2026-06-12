@@ -4,6 +4,7 @@ import { db } from '../db/index.js'
 import { matchPredictions, matches, teams } from '../db/schema/index.js'
 import { buildMatchDetailDto, buildMatchListItemDto, type MatchDetailDto, type MatchListItemDto } from './dto.js'
 import type { Match } from '../db/schema/matches.js'
+import { getLockableKickoffThreshold } from './lock-utils.js'
 
 export interface MatchFilter {
   stage?: string
@@ -150,9 +151,8 @@ export async function lockMatch(matchId: string): Promise<boolean> {
 }
 
 export async function getMatchesToLock(now: Date): Promise<Match[]> {
-  const lockThreshold = new Date(now.getTime() + 15 * 60 * 1000)
   return db
     .select()
     .from(matches)
-    .where(and(eq(matches.status, 'SCHEDULED'), lte(matches.kickoffTime, lockThreshold)))
+    .where(and(eq(matches.status, 'SCHEDULED'), lte(matches.kickoffTime, getLockableKickoffThreshold(now))))
 }

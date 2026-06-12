@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { StatusPill } from '@/components/ui/Primitives'
+import { formatAppDateTime, formatAppTime } from '@/lib/date-time'
 
 interface TeamInfo {
   id: string
@@ -57,7 +58,6 @@ export function MatchCard({
   awayScore,
   userPrediction,
 }: MatchCardProps) {
-  const kickoff = new Date(kickoffTime)
   const isFinished = status === 'FINISHED'
   const statusMeta = getStatus({ status })
 
@@ -67,7 +67,7 @@ export function MatchCard({
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--accent-strong)]">{stage}</p>
           <p className="mt-1 text-sm font-medium text-[var(--muted)]">
-            {kickoff.toLocaleString('pt-BR', {
+            {formatAppDateTime(kickoffTime, {
               weekday: 'short',
               day: '2-digit',
               month: 'short',
@@ -83,7 +83,7 @@ export function MatchCard({
         <TeamBlock team={homeTeam} align="right" />
 
         <div className="dg-score-tile min-w-[78px] text-xl sm:min-w-[86px] sm:text-2xl">
-          {isFinished ? `${homeScore ?? 0} - ${awayScore ?? 0}` : kickoff.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          {isFinished ? `${homeScore ?? 0} - ${awayScore ?? 0}` : formatAppTime(kickoffTime, { hour: '2-digit', minute: '2-digit' })}
         </div>
 
         <TeamBlock team={awayTeam} />

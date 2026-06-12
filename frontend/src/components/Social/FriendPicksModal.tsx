@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { EmptyState, StatusPill } from '@/components/ui/Primitives'
+import { formatAppDateTime } from '@/lib/date-time'
 
 interface LeagueUser {
   userId: string
@@ -124,7 +125,7 @@ export function FriendPicksModal({ leagueId, user }: { leagueId: string; user: L
                                   {item.homeTeam.fifaCode} x {item.awayTeam.fifaCode}
                                 </p>
                                 <p className="mt-1 text-xs text-[var(--muted)]">
-                                  {new Date(item.kickoffTime).toLocaleString('pt-BR', {
+                                  {formatAppDateTime(item.kickoffTime, {
                                     day: '2-digit',
                                     month: 'short',
                                     hour: '2-digit',

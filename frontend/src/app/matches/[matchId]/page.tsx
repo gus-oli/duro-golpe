@@ -5,6 +5,7 @@ import { PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { formatAppDate, formatAppDateTime, formatAppTime } from '@/lib/date-time'
 import { isRealtimeEnabled } from '@/lib/realtime'
 import { SCORING_REFERENCE_ROUTE } from '@/lib/scoring-reference'
 
@@ -114,7 +115,6 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
 
   if (!match) notFound()
 
-  const kickoff = new Date(match.kickoffTime)
   const meta = statusMeta(match.status)
 
   return (
@@ -131,7 +131,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
                 {match.homeTeam.name} x {match.awayTeam.name}
               </h1>
               <p className="mt-3 text-sm font-medium leading-6 text-[var(--muted)]">
-                {kickoff.toLocaleString('pt-BR', {
+                {formatAppDateTime(match.kickoffTime, {
                   weekday: 'long',
                   day: '2-digit',
                   month: 'long',
@@ -181,10 +181,10 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
           <div className="dg-surface p-4">
             <p className="dg-eyebrow">Kickoff</p>
             <h2 className="mt-2 text-lg font-black text-[var(--ink)]">
-              {kickoff.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              {formatAppTime(match.kickoffTime, { hour: '2-digit', minute: '2-digit' })}
             </h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              {kickoff.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', weekday: 'long' })}
+              {formatAppDate(match.kickoffTime, { day: '2-digit', month: 'long', weekday: 'long' })}
             </p>
           </div>
         </section>

@@ -1,4 +1,5 @@
 import type { MuralPostItem } from './types'
+import { formatAppDate } from '@/lib/date-time'
 
 interface MuralPostProps extends MuralPostItem {
   currentUserId?: string
@@ -13,7 +14,7 @@ function relativeTime(isoDate: string): string {
   if (minutes < 60) return `${minutes}min`
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours}h`
-  return new Date(isoDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+  return formatAppDate(isoDate, { day: '2-digit', month: 'short' })
 }
 
 export function MuralPost({
