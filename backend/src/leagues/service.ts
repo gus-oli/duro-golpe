@@ -57,6 +57,22 @@ export async function getMyLeagues(userId: string): Promise<League[]> {
   return memberships.map((m) => m.league)
 }
 
+export async function deleteLeague(userId: string, leagueId: string): Promise<void> {
+  const [league] = await db.select().from(leagues).where(eq(leagues.id, leagueId)).limit(1)
+
+  if (!league) {
+    const err = Object.assign(new Error('Liga nÃ£o encontrada'), { statusCode: 404 })
+    throw err
+  }
+
+  if (league.createdBy !== userId) {
+    const err = Object.assign(new Error('Acesso negado'), { statusCode: 403 })
+    throw err
+  }
+
+  await db.delete(leagues).where(eq(leagues.id, leagueId))
+}
+
 export interface RankingEntry {
   userId: string
   displayName: string

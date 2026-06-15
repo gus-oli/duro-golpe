@@ -1,10 +1,11 @@
 import { createClient } from 'redis'
 import { config } from '../config.js'
 import { db } from '../db/index.js'
-import { matchScores } from '../db/schema/index.js'
+import { matchScores, userTotals } from '../db/schema/index.js'
 import { eq, and } from 'drizzle-orm'
-import { getStreaks } from './streak.js'
+import { getPositiveMatchScoreCount, getPreviousConsecutiveIncorrect, getStreaks } from './streak.js'
 import { recomputeUserTotal } from './totals.js'
+import type { BadgeEvaluationContext } from '../badges/types.js'
 
 interface ScoresUpdatedEvent {
   event: string
@@ -42,19 +43,40 @@ export async function startAggregator(publisher: ReturnType<typeof createClient>
                 .limit(1)
             : []
 
-        if (matchScore) {
-          const streaks = await getStreaks(userId)
+        if (matchScore && matchId) {
+          const [[total], streaks, positiveMatchScoreCount, previousConsecutiveIncorrect] = await Promise.all([
+            db
+              .select({
+                matchPoints: userTotals.matchPoints,
+                exactScoreCount: userTotals.exactScoreCount,
+                winnerGoalDiffCount: userTotals.winnerGoalDiffCount,
+              })
+              .from(userTotals)
+              .where(eq(userTotals.userId, userId))
+              .limit(1),
+            getStreaks(userId),
+            getPositiveMatchScoreCount(userId),
+            getPreviousConsecutiveIncorrect(userId, matchId),
+          ])
+
+          const payload: BadgeEvaluationContext & { event: 'badge.evaluate' } = {
+            event: 'badge.evaluate',
+            userId,
+            matchId,
+            tier: matchScore.tier as BadgeEvaluationContext['tier'],
+            isZebraMatch: false, // populated by scoring engine when API-Football provides underdog flag
+            consecutiveCorrect: streaks.consecutiveCorrect,
+            consecutiveIncorrect: streaks.consecutiveIncorrect,
+            exactScoreCount: Number(total?.exactScoreCount ?? 0),
+            winnerGoalDiffCount: Number(total?.winnerGoalDiffCount ?? 0),
+            matchPoints: Number(total?.matchPoints ?? 0),
+            positiveMatchScoreCount,
+            previousConsecutiveIncorrect,
+          }
+
           await publisher.publish(
             'badge.evaluate',
-            JSON.stringify({
-              event: 'badge.evaluate',
-              userId,
-              matchId,
-              tier: matchScore.tier,
-              isZebraMatch: false, // populated by scoring engine when API-Football provides underdog flag
-              consecutiveCorrect: streaks.consecutiveCorrect,
-              consecutiveIncorrect: streaks.consecutiveIncorrect,
-            }),
+            JSON.stringify(payload),
           )
         }
       }

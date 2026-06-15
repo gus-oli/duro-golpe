@@ -19,3 +19,29 @@ export function shouldAwardZebraHunter(
 ): boolean {
   return ctx.isZebraMatch && ctx.tier !== 'TOTAL_MISS'
 }
+
+export function shouldAwardPrimeiraCravada(ctx: Pick<BadgeEvaluationContext, 'exactScoreCount'>): boolean {
+  return ctx.exactScoreCount >= 1
+}
+
+export function shouldAwardHatTrickExato(ctx: Pick<BadgeEvaluationContext, 'exactScoreCount'>): boolean {
+  return ctx.exactScoreCount >= 3
+}
+
+export function shouldAwardReiDoSaldo(ctx: Pick<BadgeEvaluationContext, 'winnerGoalDiffCount'>): boolean {
+  return ctx.winnerGoalDiffCount >= 5
+}
+
+export function shouldAwardGolDeHonra(ctx: Pick<BadgeEvaluationContext, 'matchPoints'>): boolean {
+  return ctx.matchPoints > 0
+}
+
+export function shouldAwardRegularidade(ctx: Pick<BadgeEvaluationContext, 'positiveMatchScoreCount'>): boolean {
+  return ctx.positiveMatchScoreCount >= 10
+}
+
+export function shouldAwardVoltaPorCima(
+  ctx: Pick<BadgeEvaluationContext, 'tier' | 'previousConsecutiveIncorrect'>,
+): boolean {
+  return isCorrectResult(ctx.tier) && ctx.previousConsecutiveIncorrect >= 3
+}

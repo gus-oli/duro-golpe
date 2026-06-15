@@ -23,9 +23,9 @@ export function BadgeGrid({ badges }: BadgeGridProps) {
     <ul className="flex flex-wrap gap-2" aria-label="Conquistas">
       {badges.map((badge) => (
         <li key={badge.type}>
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex min-w-[64px] flex-col items-center gap-1">
             <BadgeIcon iconKey={badge.iconKey} labelPt={badge.labelPt} size="sm" />
-            <span className="text-xs text-gray-600 max-w-[60px] text-center leading-tight">
+            <span className="max-w-[76px] break-words text-center text-xs leading-tight text-gray-600">
               {badge.labelPt}
               {badge.type === 'ZEBRA_HUNTER' && badge.zebraCount != null && badge.zebraCount > 1 && (
                 <span className="block text-xs text-yellow-600 font-medium">×{badge.zebraCount}</span>

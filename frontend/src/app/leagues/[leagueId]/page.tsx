@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { MuralFeed } from '@/components/Mural/MuralFeed'
 import { TotalScore } from '@/components/Scoring/TotalScore'
 import { RankingClient } from '@/components/Leagues/RankingClient'
+import { LeagueDeleteControl } from '@/components/Leagues/LeagueDeleteControl'
 import { PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
 import type { MuralPostItem } from '@/components/Mural/types'
+import { canDeleteLeague } from '@/lib/league-management'
 import { isRealtimeEnabled } from '@/lib/realtime'
 import { SCORING_REFERENCE_ROUTE } from '@/lib/scoring-reference'
 
@@ -13,6 +15,7 @@ interface League {
   id: string
   name: string
   inviteCode: string
+  createdBy: string
 }
 
 interface RankingEntry {
@@ -191,6 +194,10 @@ export default async function LeagueDetailPage({ params }: { params: Promise<{ l
               />
             </div>
           </section>
+        )}
+
+        {canDeleteLeague(userId, league) && (
+          <LeagueDeleteControl leagueId={league.id} leagueName={league.name} />
         )}
       </div>
     </PageShell>

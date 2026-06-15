@@ -11,6 +11,12 @@ const SIZE_MAP = {
 }
 
 const ICON_MAP: Record<string, string> = {
+  'badge-primeira-cravada': '1x',
+  'badge-hat-trick-exato': '3x',
+  'badge-rei-do-saldo': '+5',
+  'badge-gol-de-honra': 'pts',
+  'badge-regularidade': '10',
+  'badge-volta-por-cima': 'UP',
   'badge-mestre': '🏆',
   'badge-pe-frio': '🧊',
   'badge-zebra': '🦓',

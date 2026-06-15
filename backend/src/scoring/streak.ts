@@ -1,6 +1,6 @@
 import { db } from '../db/index.js'
 import { matchScores, matchPredictions, matches } from '../db/schema/index.js'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, gt, lt, sql } from 'drizzle-orm'
 
 export interface StreakResult {
   consecutiveCorrect: number
@@ -50,4 +50,46 @@ export async function getStreaks(userId: string): Promise<StreakResult> {
   }
 
   return { consecutiveCorrect, consecutiveIncorrect }
+}
+
+export async function getPositiveMatchScoreCount(userId: string): Promise<number> {
+  const [row] = await db
+    .select({
+      count: sql<number>`COUNT(DISTINCT ${matchScores.matchId})`,
+    })
+    .from(matchScores)
+    .where(and(eq(matchScores.userId, userId), eq(matchScores.isSuperseded, false), gt(matchScores.points, 0)))
+
+  return Number(row?.count ?? 0)
+}
+
+export async function getPreviousConsecutiveIncorrect(userId: string, matchId: string): Promise<number> {
+  const [currentMatch] = await db
+    .select({ kickoffTime: matches.kickoffTime })
+    .from(matches)
+    .where(eq(matches.id, matchId))
+    .limit(1)
+
+  if (!currentMatch) return 0
+
+  const rows = await db
+    .select({ tier: matchScores.tier })
+    .from(matchScores)
+    .innerJoin(matches, eq(matchScores.matchId, matches.id))
+    .where(
+      and(
+        eq(matchScores.userId, userId),
+        eq(matchScores.isSuperseded, false),
+        lt(matches.kickoffTime, currentMatch.kickoffTime),
+      ),
+    )
+    .orderBy(desc(matches.kickoffTime))
+
+  let consecutiveIncorrect = 0
+  for (const row of rows) {
+    if (row.tier !== 'TOTAL_MISS') break
+    consecutiveIncorrect++
+  }
+
+  return consecutiveIncorrect
 }

@@ -5,6 +5,7 @@ import type { BadgeRule, BadgeEvaluationContext, BadgeEvaluationResult } from '.
 import { shouldAwardZebraHunter } from '../badge-rule-utils.js'
 
 export const ZEBRA_HUNTER_RULE: BadgeRule = {
+  badgeType: 'ZEBRA_HUNTER',
   async evaluate(ctx: BadgeEvaluationContext): Promise<BadgeEvaluationResult> {
     if (!shouldAwardZebraHunter(ctx)) return null
 

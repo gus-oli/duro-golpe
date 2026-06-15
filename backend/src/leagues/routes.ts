@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { requireAuth } from '../auth/middleware.js'
 import { validateBody, validateParams } from '../middleware/validate.js'
-import { createLeague, joinLeague, getMyLeagues, getLeagueRanking } from './service.js'
+import { createLeague, joinLeague, getMyLeagues, getLeagueRanking, deleteLeague } from './service.js'
 import { getLeagueUserMatchPredictions } from '../predictions/service.js'
 import { getLeagueUserOutrightSelections } from '../outrights/service.js'
 import { inviteCodeSchema, routeIdSchema } from '../middleware/route-schemas.js'
@@ -50,6 +50,15 @@ export async function leagueRoutes(app: FastifyInstance): Promise<void> {
     const myLeagues = await getMyLeagues(request.user.id)
     return reply.send({ leagues: myLeagues })
   })
+
+  app.delete<{ Params: { leagueId: string } }>(
+    '/api/v1/leagues/:leagueId',
+    { preHandler: [requireAuth, validateParams(leagueParamsSchema)] },
+    async (request, reply) => {
+      await deleteLeague(request.user.id, request.params.leagueId)
+      return reply.send({ deleted: true, leagueId: request.params.leagueId })
+    },
+  )
 
   app.get<{ Params: { leagueId: string } }>(
     '/api/v1/leagues/:leagueId/ranking',

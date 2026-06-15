@@ -7,6 +7,7 @@ interface League {
   id: string
   name: string
   inviteCode: string
+  createdBy: string
   createdAt: string
 }
 
@@ -27,6 +28,17 @@ async function getMyLeagues(token: string): Promise<{ leagues: League[]; unautho
   }
 }
 
+function getUserIdFromToken(token: string): string | null {
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8')) as { sub?: string }
+    return decoded.sub ?? null
+  } catch {
+    return null
+  }
+}
+
 export default async function LeaguesPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')?.value ?? ''
@@ -36,6 +48,7 @@ export default async function LeaguesPage() {
   }
 
   const { leagues, unauthorized } = await getMyLeagues(token)
+  const userId = getUserIdFromToken(token)
 
   if (unauthorized) {
     redirect('/login?from=/leagues')
@@ -84,6 +97,11 @@ export default async function LeaguesPage() {
                       <p className="mt-3 text-sm font-bold text-[var(--muted)]">
                         Codigo: <span className="font-mono text-[var(--night)]">{league.inviteCode}</span>
                       </p>
+                      {league.createdBy === userId && (
+                        <p className="mt-2 inline-flex rounded-md bg-[rgba(12,143,79,0.12)] px-2 py-1 text-xs font-black uppercase tracking-[0.08em] text-[var(--pitch-dark)]">
+                          Criada por voce
+                        </p>
+                      )}
                     </div>
                     <span className="rounded-md bg-[rgba(246,196,69,0.24)] px-3 py-2 text-sm font-black text-[#7c4a00]">
                       Ver

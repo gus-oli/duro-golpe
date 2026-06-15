@@ -1,37 +1,111 @@
-import { describe, it, expect } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { BadgeEvaluationContext, BadgeType } from '../../src/badges/types.js'
 
-// Integration tests for badge award pipeline.
-// Publishes badge.evaluate events via Redis and asserts user_badges row inserted.
-// Testcontainers wiring deferred — stubs demonstrate expected behaviour.
+vi.hoisted(() => {
+  process.env['DATABASE_URL'] = 'postgres://user:pass@localhost:5432/test'
+  process.env['REDIS_URL'] = 'redis://localhost:6379'
+  process.env['JWT_SECRET'] = 'x'.repeat(32)
+  process.env['WEBHOOK_SECRET'] = 'x'.repeat(16)
+  process.env['BASE_URL'] = 'http://localhost:3001'
+  process.env['FRONTEND_URL'] = 'http://localhost:3000'
+  process.env['NODE_ENV'] = 'test'
+})
+
+const state = vi.hoisted(() => ({
+  awarded: new Map<string, { userId: string; badgeType: BadgeType; awardedAt: Date }>(),
+  selectCall: 0,
+}))
+
+const sendToUserMock = vi.hoisted(() => vi.fn())
+
+vi.mock('../../src/realtime/user-sessions.js', () => ({
+  sendToUser: sendToUserMock,
+}))
+
+vi.mock('../../src/db/index.js', () => ({
+  db: {
+    insert: vi.fn(() => ({
+      values: ({ userId, badgeType }: { userId: string; badgeType: BadgeType }) => ({
+        onConflictDoNothing: () => ({
+          returning: async () => {
+            const key = `${userId}:${badgeType}`
+            if (state.awarded.has(key)) return []
+
+            state.awarded.set(key, { userId, badgeType, awardedAt: new Date('2026-06-15T12:00:00.000Z') })
+            return [{ id: key }]
+          },
+        }),
+      }),
+    })),
+    select: vi.fn(() => ({
+      from: () => ({
+        where: () => ({
+          limit: async () => {
+            state.selectCall += 1
+            if (state.selectCall % 2 === 1) {
+              return [
+                {
+                  type: 'PRIMEIRA_CRAVADA',
+                  labelPt: 'Primeira Cravada',
+                  descriptionPt: 'Acertou seu primeiro placar exato',
+                  iconKey: 'badge-primeira-cravada',
+                },
+              ]
+            }
+
+            const row = state.awarded.get('user-1:PRIMEIRA_CRAVADA')
+            return row ? [row] : []
+          },
+        }),
+      }),
+    })),
+  },
+}))
+
+function makeContext(overrides: Partial<BadgeEvaluationContext> = {}): BadgeEvaluationContext {
+  return {
+    userId: 'user-1',
+    matchId: 'match-1',
+    tier: 'TOTAL_MISS',
+    isZebraMatch: false,
+    consecutiveCorrect: 0,
+    consecutiveIncorrect: 0,
+    exactScoreCount: 1,
+    winnerGoalDiffCount: 0,
+    matchPoints: 0,
+    positiveMatchScoreCount: 0,
+    previousConsecutiveIncorrect: 0,
+    ...overrides,
+  }
+}
 
 describe('Badge award pipeline (integration)', () => {
-  describe('O_MESTRE badge', () => {
-    it('inserts user_badges row when consecutiveCorrect >= 5', async () => {
-      // TODO: wire testcontainers PG + Redis + startBadgeSubscriber()
-      // 1. Publish to Redis: badge.evaluate { userId, matchId, tier: 'EXACT_SCORE', consecutiveCorrect: 5, ... }
-      // 2. Wait for subscriber to process
-      // 3. SELECT user_badges WHERE user_id = ? AND badge_type = 'O_MESTRE'
-      // 4. Expect 1 row
-      expect(true).toBe(true)
-    })
-
-    it('does not insert duplicate (ON CONFLICT DO NOTHING) on second qualifying event', async () => {
-      // Publish same event twice → expect only 1 row in user_badges
-      expect(true).toBe(true)
-    })
-
-    it('emits badge:awarded WebSocket event to user after award', async () => {
-      // Connect user WS session → publish badge.evaluate → expect ws message with type badge:awarded
-      expect(true).toBe(true)
-    })
+  beforeEach(() => {
+    state.awarded.clear()
+    state.selectCall = 0
+    sendToUserMock.mockClear()
   })
 
-  describe('ZEBRA_HUNTER badge', () => {
-    it('increments zebra_count on second qualifying zebra match', async () => {
-      // First event → INSERT zebra_count = 1
-      // Second event → UPDATE zebra_count = 2
-      // SELECT → zebraCount: 2
-      expect(true).toBe(true)
+  it('awards an expanded scoring badge and emits badge:awarded once', async () => {
+    const { runEvaluation } = await import('../../src/badges/evaluator.js')
+
+    await runEvaluation(makeContext())
+    await runEvaluation(makeContext())
+
+    expect(state.awarded.get('user-1:PRIMEIRA_CRAVADA')).toMatchObject({
+      userId: 'user-1',
+      badgeType: 'PRIMEIRA_CRAVADA',
     })
+    expect(sendToUserMock).toHaveBeenCalledTimes(1)
+    expect(sendToUserMock).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({
+        type: 'badge:awarded',
+        badge: expect.objectContaining({
+          type: 'PRIMEIRA_CRAVADA',
+          iconKey: 'badge-primeira-cravada',
+        }),
+      }),
+    )
   })
 })
