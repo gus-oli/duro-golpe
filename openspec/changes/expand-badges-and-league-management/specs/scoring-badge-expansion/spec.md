@@ -62,3 +62,18 @@ Expanded scoring badges SHALL appear in the same user badge responses, league ra
 #### Scenario: Expanded badges appear in league ranking
 - **WHEN** league members view a ranking that includes a user with expanded scoring badges
 - **THEN** the ranking SHALL include those badges with the same shape used for existing badges
+
+### Requirement: System SHALL support administrative badge backfill
+The system SHALL provide an operator-triggered backfill path that evaluates existing non-superseded match scores for badge awards without relying on new scoring events.
+
+#### Scenario: Historical scores are evaluated chronologically
+- **WHEN** the badge backfill command runs
+- **THEN** the system SHALL evaluate non-superseded match scores in match kickoff order while maintaining independent badge context per user
+
+#### Scenario: Historical badge awards are idempotent
+- **WHEN** the badge backfill command is run more than once
+- **THEN** the system SHALL keep a single `user_badges` row per user and badge type
+
+#### Scenario: Historical badge backfill does not send old toasts
+- **WHEN** the badge backfill command awards a badge from historical scores
+- **THEN** the system SHALL NOT send a `badge:awarded` WebSocket notification for that historical award

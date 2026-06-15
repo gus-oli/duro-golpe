@@ -14,6 +14,7 @@ This change extends those existing surfaces instead of introducing a new gamific
 - Keep award writes idempotent through the existing `(user_id, badge_type)` uniqueness model.
 - Extend the badge evaluation context only with aggregate fields needed by the new rules.
 - Preserve the current WebSocket toast and ranking badge display behavior for all new badges.
+- Provide an operator-triggered backfill path for already-scored matches.
 - Add owner-only league deletion with explicit frontend confirmation.
 - Delete only league-owned data when a league is deleted.
 
@@ -61,6 +62,12 @@ All six new badges are one-time achievements. `zebraCount` remains special to `Z
 
 Alternative considered: rename `zebraCount` to a generic progress count. That would be cleaner long-term, but it requires a migration and API compatibility decision that this package does not need.
 
+### Backfill historical badges without notifications
+
+The badge backfill command should load non-superseded `match_scores` joined to matches, order them by kickoff time, rebuild each user's badge context chronologically, and call the existing evaluator with notifications disabled. This lets historical scores award the same one-time badges without sending old `badge:awarded` toasts.
+
+Alternative considered: publish historical `badge.evaluate` Redis events. That would reuse the live pipeline too literally and could notify connected users about old awards.
+
 ### League deletion is a hard delete owned by the creator
 
 `DELETE /api/v1/leagues/:leagueId` should delete the league only when the authenticated user equals `leagues.createdBy`. PostgreSQL cascades remove `league_memberships` and `mural_posts`; non-league-owned data remains.
@@ -88,7 +95,8 @@ No database schema migration is expected. Deploy steps:
 1. Deploy backend code that can seed and evaluate the expanded badge catalog.
 2. Run the existing badge seed/bootstrap flow to upsert the six new badge rows.
 3. Deploy frontend code with icon mappings and league deletion UI.
-4. Existing users receive new badges only when future scoring evaluations meet the criteria; no retroactive backfill is included.
+4. Run `npm run badges:backfill -- --dry-run` to inspect historical evaluation volume when needed.
+5. Run `npm run badges:backfill` to award historical badges without WebSocket notifications when the operator wants retroactive awards.
 
 Rollback:
 
@@ -98,5 +106,4 @@ Rollback:
 
 ## Open Questions
 
-- Should any of the new badges be backfilled for already-scored beta data later, or remain forward-only for launch simplicity?
-- Should the confirmation require typing the league name, or is a modal confirmation enough for beta?
+- None.

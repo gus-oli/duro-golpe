@@ -21,6 +21,7 @@
     "smoke:lock-outrights": "tsx src/dev/lock-outrights.ts",
     "outrights:resolve": "tsx src/outrights/resolve.ts",
     "outrights:enrich-player-media": "tsx src/outrights/enrich-player-media.ts",
+    "badges:backfill": "tsx src/badges/backfill.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },

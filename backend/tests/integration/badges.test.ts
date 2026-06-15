@@ -108,4 +108,16 @@ describe('Badge award pipeline (integration)', () => {
       }),
     )
   })
+
+  it('can award during backfill without emitting badge:awarded', async () => {
+    const { runEvaluation } = await import('../../src/badges/evaluator.js')
+
+    await runEvaluation(makeContext(), { notify: false })
+
+    expect(state.awarded.get('user-1:PRIMEIRA_CRAVADA')).toMatchObject({
+      userId: 'user-1',
+      badgeType: 'PRIMEIRA_CRAVADA',
+    })
+    expect(sendToUserMock).not.toHaveBeenCalled()
+  })
 })

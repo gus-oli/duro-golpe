@@ -15,6 +15,10 @@ import { REGULARIDADE_RULE } from './rules/regularidade.js'
 import { VOLTA_POR_CIMA_RULE } from './rules/volta-por-cima.js'
 import { sendToUser } from '../realtime/user-sessions.js'
 
+interface RunEvaluationOptions {
+  notify?: boolean
+}
+
 export const BADGE_REGISTRY: BadgeRule[] = [
   O_MESTRE_RULE,
   PE_FRIO_RULE,
@@ -49,10 +53,12 @@ async function broadcastBadgeAwarded(userId: string, badgeType: string): Promise
   })
 }
 
-export async function runEvaluation(ctx: BadgeEvaluationContext): Promise<void> {
+export async function runEvaluation(ctx: BadgeEvaluationContext, options: RunEvaluationOptions = {}): Promise<void> {
+  const notify = options.notify ?? true
+
   for (const rule of BADGE_REGISTRY) {
     const result = await rule.evaluate(ctx)
-    if (result === 'awarded') {
+    if (result === 'awarded' && notify) {
       await broadcastBadgeAwarded(ctx.userId, rule.badgeType)
     }
   }

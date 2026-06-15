@@ -38,3 +38,11 @@
 - [x] 5.3 Run frontend typecheck.
 - [x] 5.4 Run targeted frontend or E2E coverage for creator delete visibility, confirmation, and post-delete navigation.
 - [x] 5.5 Manually verify or smoke test that new badges appear in ranking payloads and badge toasts use the expanded catalog metadata.
+
+## 6. Badge Backfill
+
+- [x] 6.1 Add a no-notification mode to `runEvaluation` so historical awards can be inserted without WebSocket toasts.
+- [x] 6.2 Add a badge backfill command that loads non-superseded match scores in kickoff order and rebuilds badge context per user.
+- [x] 6.3 Add `badges:backfill` npm scripts, including support for `--dry-run`.
+- [x] 6.4 Add unit coverage for chronological context reconstruction and integration coverage for no-toast historical awards.
+- [x] 6.5 Run targeted backfill tests and backend typecheck.
