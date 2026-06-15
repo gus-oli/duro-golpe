@@ -1,6 +1,7 @@
 import cron from 'node-cron'
 import { getMatchesToLock, lockMatch } from './service.js'
 import { publishMatchStatusChanged } from '../realtime/publisher.js'
+import { createOrUpdateSocialOddsSnapshot } from './social-odds.js'
 export { shouldLockMatch } from './lock-utils.js'
 
 export function startLockScheduler(): void {
@@ -11,6 +12,8 @@ export function startLockScheduler(): void {
       for (const match of tolock) {
         const locked = await lockMatch(match.id)
         if (!locked) continue
+
+        await createOrUpdateSocialOddsSnapshot(match.id)
 
         await publishMatchStatusChanged({
           matchId: match.id,

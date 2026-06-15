@@ -4,7 +4,8 @@ import { db } from '../db/index.js'
 import { matchPredictions, matches, teams } from '../db/schema/index.js'
 import { buildMatchDetailDto, buildMatchListItemDto, type MatchDetailDto, type MatchListItemDto } from './dto.js'
 import type { Match } from '../db/schema/matches.js'
-import { getLockableKickoffThreshold } from './lock-utils.js'
+import { getEffectiveMatchStatus, getLockableKickoffThreshold } from './lock-utils.js'
+import { getSocialOddsForMatch } from './social-odds.js'
 
 export interface MatchFilter {
   stage?: string
@@ -13,6 +14,11 @@ export interface MatchFilter {
 
 const homeTeams = alias(teams, 'home_teams')
 const awayTeams = alias(teams, 'away_teams')
+
+function hasCompletePrediction(prediction: { predictedHome: number | null; predictedAway: number | null } | null): boolean {
+  return prediction?.predictedHome !== null && prediction?.predictedHome !== undefined &&
+    prediction.predictedAway !== null && prediction.predictedAway !== undefined
+}
 
 export async function getMatches(filter?: MatchFilter, userId?: string): Promise<MatchListItemDto[]> {
   const conditions = []
@@ -57,12 +63,20 @@ export async function getMatches(filter?: MatchFilter, userId?: string): Promise
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(matches.kickoffTime)
 
-    return rows.map((row) =>
-      buildMatchListItemDto({
+    return Promise.all(rows.map(async (row) => {
+      const hasUserPrediction = hasCompletePrediction(row.prediction)
+      const socialOdds = await getSocialOddsForMatch({
+        matchId: row.id,
+        effectiveStatus: getEffectiveMatchStatus(row.status, row.kickoffTime),
+        hasUserPrediction,
+      })
+
+      return buildMatchListItemDto({
         ...row,
         prediction: row.prediction,
-      }),
-    )
+        socialOdds,
+      })
+    }))
   }
 
   const rows = await db
@@ -93,15 +107,77 @@ export async function getMatches(filter?: MatchFilter, userId?: string): Promise
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(matches.kickoffTime)
 
-  return rows.map((row) =>
-    buildMatchListItemDto({
+  return Promise.all(rows.map(async (row) => {
+    const socialOdds = await getSocialOddsForMatch({
+      matchId: row.id,
+      effectiveStatus: getEffectiveMatchStatus(row.status, row.kickoffTime),
+      hasUserPrediction: false,
+    })
+
+    return buildMatchListItemDto({
       ...row,
       prediction: null,
-    }),
-  )
+      socialOdds,
+    })
+  }))
 }
 
-export async function getMatchById(matchId: string): Promise<MatchDetailDto | undefined> {
+export async function getMatchById(matchId: string, userId?: string): Promise<MatchDetailDto | undefined> {
+  if (userId) {
+    const [row] = await db
+      .select({
+        id: matches.id,
+        kickoffTime: matches.kickoffTime,
+        stage: matches.stage,
+        venue: matches.venue,
+        status: matches.status,
+        homeScore: matches.homeScore,
+        awayScore: matches.awayScore,
+        homeTeam: {
+          id: homeTeams.id,
+          name: homeTeams.name,
+          fifaCode: homeTeams.fifaCode,
+          flagUrl: homeTeams.flagUrl,
+        },
+        awayTeam: {
+          id: awayTeams.id,
+          name: awayTeams.name,
+          fifaCode: awayTeams.fifaCode,
+          flagUrl: awayTeams.flagUrl,
+        },
+        prediction: {
+          predictedHome: matchPredictions.predictedHome,
+          predictedAway: matchPredictions.predictedAway,
+        },
+      })
+      .from(matches)
+      .innerJoin(homeTeams, eq(matches.homeTeamId, homeTeams.id))
+      .innerJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id))
+      .leftJoin(
+        matchPredictions,
+        and(eq(matchPredictions.matchId, matches.id), eq(matchPredictions.userId, userId)),
+      )
+      .where(eq(matches.id, matchId))
+      .limit(1)
+
+    if (!row) {
+      return undefined
+    }
+
+    const hasUserPrediction = hasCompletePrediction(row.prediction)
+    const socialOdds = await getSocialOddsForMatch({
+      matchId: row.id,
+      effectiveStatus: getEffectiveMatchStatus(row.status, row.kickoffTime),
+      hasUserPrediction,
+    })
+
+    return buildMatchDetailDto({
+      ...row,
+      prediction: row.prediction,
+      socialOdds,
+    })
+  }
+
   const [row] = await db
     .select({
       id: matches.id,
@@ -137,6 +213,11 @@ export async function getMatchById(matchId: string): Promise<MatchDetailDto | un
   return buildMatchDetailDto({
     ...row,
     prediction: null,
+    socialOdds: await getSocialOddsForMatch({
+      matchId: row.id,
+      effectiveStatus: getEffectiveMatchStatus(row.status, row.kickoffTime),
+      hasUserPrediction: false,
+    }),
   })
 }
 

@@ -50,6 +50,13 @@
       "when": 1779314040000,
       "tag": "0006_beta_security_final_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1781524800000,
+      "tag": "0007_match_social_odds_snapshots",
+      "breakpoints": true
     }
   ]
 }

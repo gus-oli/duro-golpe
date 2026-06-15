@@ -1,5 +1,6 @@
 import { MatchDetailClient } from '@/components/MatchCard/MatchDetailClient'
 import { ScoreBreakdown } from '@/components/Scoring/ScoreBreakdown'
+import { SocialOddsSummary } from '@/components/SocialOdds/SocialOddsSummary'
 import { MatchLeaguePicks } from '@/components/Social/MatchLeaguePicks'
 import { PageShell, SectionHeader, StatusPill } from '@/components/ui/Primitives'
 import { cookies } from 'next/headers'
@@ -8,6 +9,7 @@ import Link from 'next/link'
 import { formatAppDate, formatAppDateTime, formatAppTime } from '@/lib/date-time'
 import { isRealtimeEnabled } from '@/lib/realtime'
 import { SCORING_REFERENCE_ROUTE } from '@/lib/scoring-reference'
+import type { SocialOddsView } from '@/lib/social-odds'
 
 interface Match {
   id: string
@@ -19,6 +21,7 @@ interface Match {
   awayScore?: number | null
   homeTeam: { id: string; name: string; fifaCode: string; flagUrl?: string | null }
   awayTeam: { id: string; name: string; fifaCode: string; flagUrl?: string | null }
+  socialOdds?: SocialOddsView | null
 }
 
 interface Prediction {
@@ -33,9 +36,12 @@ interface League {
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'
 
-async function getMatch(matchId: string): Promise<Match | null> {
+async function getMatch(matchId: string, token?: string | null): Promise<Match | null> {
   try {
-    const res = await fetch(`${API}/api/v1/matches/${matchId}`, { cache: 'no-store' })
+    const res = await fetch(`${API}/api/v1/matches/${matchId}`, {
+      cache: 'no-store',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
     if (res.status === 404) return null
     return res.json() as Promise<Match>
   } catch {
@@ -108,7 +114,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
   const { matchId } = await params
 
   const [match, prediction, leagues] = await Promise.all([
-    getMatch(matchId),
+    getMatch(matchId, token),
     token ? getUserPrediction(matchId, token) : Promise.resolve(null),
     token ? getMyLeagues(token) : Promise.resolve([]),
   ])
@@ -160,6 +166,16 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
               isAuthenticated={Boolean(token)}
               realtimeEnabled={realtimeEnabled}
             />
+            {match.socialOdds && (
+              <div className="border-t border-[var(--line)] p-4">
+                <SocialOddsSummary
+                  odds={match.socialOdds}
+                  homeLabel={match.homeTeam.fifaCode}
+                  awayLabel={match.awayTeam.fifaCode}
+                  variant="detail"
+                />
+              </div>
+            )}
           </div>
 
           <TeamPanel team={match.awayTeam} />

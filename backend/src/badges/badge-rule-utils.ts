@@ -17,7 +17,7 @@ export function shouldAwardPeFrio(ctx: Pick<BadgeEvaluationContext, 'consecutive
 export function shouldAwardZebraHunter(
   ctx: Pick<BadgeEvaluationContext, 'isZebraMatch' | 'tier'>,
 ): boolean {
-  return ctx.isZebraMatch && ctx.tier !== 'TOTAL_MISS'
+  return ctx.isZebraMatch && isCorrectResult(ctx.tier)
 }
 
 export function shouldAwardPrimeiraCravada(ctx: Pick<BadgeEvaluationContext, 'exactScoreCount'>): boolean {

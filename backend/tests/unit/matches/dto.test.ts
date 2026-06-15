@@ -54,6 +54,7 @@ describe('match DTO builders', () => {
         predictedHome: 2,
         predictedAway: 1,
       },
+      socialOdds: null,
     })
   })
 
@@ -80,6 +81,33 @@ describe('match DTO builders', () => {
         predictedHome: 2,
         predictedAway: 1,
       },
+      socialOdds: null,
+    })
+  })
+
+  it('includes social odds when provided by the match service projection', () => {
+    expect(
+      buildMatchListItemDto({
+        ...projection,
+        socialOdds: {
+          status: 'AVAILABLE',
+          source: 'FROZEN',
+          totalPredictions: 10,
+          minimumSample: 1,
+          underdogThresholdBps: 3000,
+          underdogThresholdPercentage: 30,
+          capturedAt: '2026-06-15T12:00:00.000Z',
+          outcomes: [
+            { outcome: 'HOME_WIN', count: 7, basisPoints: 7000, percentage: 70 },
+            { outcome: 'DRAW', count: 1, basisPoints: 1000, percentage: 10 },
+            { outcome: 'AWAY_WIN', count: 2, basisPoints: 2000, percentage: 20 },
+          ],
+        },
+      }).socialOdds,
+    ).toMatchObject({
+      status: 'AVAILABLE',
+      source: 'FROZEN',
+      totalPredictions: 10,
     })
   })
 })

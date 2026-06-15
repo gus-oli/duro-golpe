@@ -1,5 +1,6 @@
 import type { Match } from '../db/schema/matches.js'
 import { getEffectiveMatchStatus } from './lock-utils.js'
+import type { SocialOddsView } from './social-odds.js'
 
 interface MatchTeamDto {
   id: string
@@ -24,6 +25,7 @@ export interface MatchProjection {
   homeTeam: MatchTeamDto
   awayTeam: MatchTeamDto
   prediction: MatchPredictionDto | null
+  socialOdds?: SocialOddsView | null
 }
 
 export interface MatchListItemDto {
@@ -37,6 +39,7 @@ export interface MatchListItemDto {
   homeTeam: MatchTeamDto
   awayTeam: MatchTeamDto
   userPrediction: { predictedHome: number; predictedAway: number } | null
+  socialOdds: SocialOddsView | null
 }
 
 export interface MatchDetailDto extends MatchListItemDto {
@@ -68,6 +71,7 @@ export function buildMatchListItemDto(projection: MatchProjection): MatchListIte
     homeTeam: projection.homeTeam,
     awayTeam: projection.awayTeam,
     userPrediction: buildUserPrediction(projection.prediction),
+    socialOdds: projection.socialOdds ?? null,
   }
 }
 

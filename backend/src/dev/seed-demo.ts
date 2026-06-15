@@ -7,6 +7,7 @@ import {
   matchPredictions,
   matchResults,
   matchScores,
+  matchSocialOddsSnapshots,
   muralPosts,
   outrightMarketResults,
   outrightMarkets,
@@ -35,6 +36,7 @@ import { score as scoreMatchPrediction } from '../scoring/engine.js'
 import { recomputeUserTotal } from '../scoring/totals.js'
 import { calculateOutrightPoints } from '../outrights/resolution.js'
 import type { OutrightMarketCode } from '../outrights/catalog.js'
+import { createOrUpdateSocialOddsSnapshot } from '../matches/social-odds.js'
 
 function requireRecordValue<T>(record: Record<string, T>, key: string, label: string): T {
   const value = record[key]
@@ -167,6 +169,7 @@ async function clearDemoState(matchIds: string[], userIds: string[], leagueIds: 
   }
 
   if (matchIds.length > 0) {
+    await db.delete(matchSocialOddsSnapshots).where(inArray(matchSocialOddsSnapshots.matchId, matchIds))
     await db.delete(matchScores).where(inArray(matchScores.matchId, matchIds))
     await db.delete(matchResults).where(inArray(matchResults.matchId, matchIds))
     await db.delete(matchPredictions).where(inArray(matchPredictions.matchId, matchIds))
@@ -210,6 +213,19 @@ async function seedPredictions(
       }
     }),
   )
+}
+
+async function seedSocialOddsSnapshots(matchIdsByApiFootballId: Record<string, string>): Promise<void> {
+  const snapshotFixtures = DEMO_MATCH_FIXTURES.filter((fixture) =>
+    ['LOCKED', 'LIVE', 'FINISHED'].includes(fixture.status),
+  )
+
+  for (const fixture of snapshotFixtures) {
+    await createOrUpdateSocialOddsSnapshot(
+      requireRecordValue(matchIdsByApiFootballId, fixture.apiFootballId, 'match id'),
+      new Date(new Date(fixture.kickoffTime).getTime() - 15 * 60 * 1000),
+    )
+  }
 }
 
 async function seedMatchResultsAndScores(
@@ -509,6 +525,7 @@ async function main(): Promise<void> {
   await clearDemoState(demoMatchIds, demoUserIds, demoLeagueIds)
   leagueIdsByKey = await upsertDemoLeagues(userIdsByEmail)
   await seedPredictions(userIdsByEmail, matchIdsByApiFootballId)
+  await seedSocialOddsSnapshots(matchIdsByApiFootballId)
   await seedMatchResultsAndScores(userIdsByEmail, matchIdsByApiFootballId)
   await seedOutrights(userIdsByEmail)
   await seedBadges(userIdsByEmail, matchIdsByApiFootballId)

@@ -1,6 +1,8 @@
 import Link from 'next/link'
+import { SocialOddsSummary } from '@/components/SocialOdds/SocialOddsSummary'
 import { StatusPill } from '@/components/ui/Primitives'
 import { formatAppDateTime, formatAppTime } from '@/lib/date-time'
+import type { SocialOddsView } from '@/lib/social-odds'
 
 interface TeamInfo {
   id: string
@@ -19,6 +21,7 @@ interface MatchCardProps {
   homeScore?: number | null
   awayScore?: number | null
   userPrediction?: { predictedHome: number; predictedAway: number } | null
+  socialOdds?: SocialOddsView | null
 }
 
 function getStatus(match: Pick<MatchCardProps, 'status'>) {
@@ -57,6 +60,7 @@ export function MatchCard({
   homeScore,
   awayScore,
   userPrediction,
+  socialOdds,
 }: MatchCardProps) {
   const isFinished = status === 'FINISHED'
   const statusMeta = getStatus({ status })
@@ -92,6 +96,12 @@ export function MatchCard({
       {userPrediction && (
         <div className="mt-3 rounded-2xl bg-[rgba(22,129,255,0.08)] px-3 py-2 text-center text-sm font-bold text-[var(--accent-strong)]">
           Seu palpite: {userPrediction.predictedHome} - {userPrediction.predictedAway}
+        </div>
+      )}
+
+      {socialOdds && (
+        <div className="mt-3">
+          <SocialOddsSummary odds={socialOdds} homeLabel={homeTeam.fifaCode} awayLabel={awayTeam.fifaCode} />
         </div>
       )}
     </Link>

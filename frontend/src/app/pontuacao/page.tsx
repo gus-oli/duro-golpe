@@ -141,6 +141,38 @@ export default async function ScoringReferencePage() {
           </div>
         </section>
 
+        <section className="space-y-4">
+          <SectionHeader
+            eyebrow="Conquistas"
+            title="Como nasce uma Zebra Hunter"
+            description="A zebra social usa o consenso do bolao, nao odds de casa de aposta."
+          />
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <article className="dg-surface p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent-strong)]">Snapshot</p>
+              <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Congela no lock</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                Quando o jogo fecha, o sistema salva o consenso entre mandante, empate e visitante para aquela partida.
+              </p>
+            </article>
+            <article className="dg-surface p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent-strong)]">Corte</p>
+              <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Qualquer amostra / 30%</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                O consenso usa a quantidade de palpites que houver, e a zebra conta quando o desfecho escolhido tinha no maximo 30%.
+              </p>
+            </article>
+            <article className="dg-surface p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--accent-strong)]">Badge</p>
+              <h2 className="mt-2 text-lg font-black text-[var(--ink)]">Tem que acertar o desfecho</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                A conquista sobe quando voce acerta a zebra no resultado final. Acerto parcial de gols nao incrementa o contador.
+              </p>
+            </article>
+          </div>
+        </section>
+
         <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="dg-surface p-5">
             <SectionHeader

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { MatchesWorkbench } from '@/components/MatchCard/MatchesWorkbench'
 import { EmptyState, PageShell } from '@/components/ui/Primitives'
+import type { SocialOddsView } from '@/lib/social-odds'
 
 interface Match {
   id: string
@@ -14,6 +15,7 @@ interface Match {
   homeTeam: { id: string; name: string; fifaCode: string; flagUrl?: string | null }
   awayTeam: { id: string; name: string; fifaCode: string; flagUrl?: string | null }
   userPrediction?: { predictedHome: number; predictedAway: number } | null
+  socialOdds?: SocialOddsView | null
 }
 
 const API = process.env['API_URL'] ?? 'http://localhost:3001'

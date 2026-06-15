@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { shouldAwardZebraHunter } from '../../../src/badges/badge-rule-utils.js'
 
 describe('Zebra Hunter rule (pure logic)', () => {
-  it('awards when isZebraMatch=true and tier is not TOTAL_MISS (WINNER_OR_DRAW)', () => {
+  it('awards when isZebraMatch=true and tier is a correct result (WINNER_OR_DRAW)', () => {
     expect(shouldAwardZebraHunter({ isZebraMatch: true, tier: 'WINNER_OR_DRAW' })).toBe(true)
   })
 
@@ -26,7 +26,7 @@ describe('Zebra Hunter rule (pure logic)', () => {
     expect(shouldAwardZebraHunter({ isZebraMatch: false, tier: 'TOTAL_MISS' })).toBe(false)
   })
 
-  it('awards when ONE_TEAM_GOALS on a zebra match (partial correct still a win over 0)', () => {
-    expect(shouldAwardZebraHunter({ isZebraMatch: true, tier: 'ONE_TEAM_GOALS' })).toBe(true)
+  it('does not award when ONE_TEAM_GOALS on a zebra match', () => {
+    expect(shouldAwardZebraHunter({ isZebraMatch: true, tier: 'ONE_TEAM_GOALS' })).toBe(false)
   })
 })

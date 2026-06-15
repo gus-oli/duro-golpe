@@ -29,7 +29,16 @@ export async function matchRoutes(app: FastifyInstance): Promise<void> {
     '/api/v1/matches/:matchId',
     { preHandler: validateParams(matchParamsSchema) },
     async (request, reply) => {
-      const match = await getMatchById(request.params.matchId)
+      let userId: string | undefined
+
+      try {
+        await request.jwtVerify()
+        userId = request.user.id
+      } catch {
+        userId = undefined
+      }
+
+      const match = await getMatchById(request.params.matchId, userId)
       if (!match) {
         return reply.status(404).send({ statusCode: 404, error: 'Not Found', message: 'Partida não encontrada' })
       }

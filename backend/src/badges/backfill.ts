@@ -1,16 +1,18 @@
 import { asc, eq } from 'drizzle-orm'
 import { db } from '../db/index.js'
-import { matches, matchScores } from '../db/schema/index.js'
+import { matches, matchPredictions, matchScores } from '../db/schema/index.js'
 import { isCorrectResult } from './badge-rule-utils.js'
 import { runEvaluation } from './evaluator.js'
 import { seedBadges } from './seed.js'
 import type { BadgeEvaluationContext, ScoringTier } from './types.js'
+import { isPredictionSocialUnderdog } from '../matches/social-odds.js'
 
 export interface BadgeBackfillScoreRow {
   userId: string
   matchId: string
   tier: ScoringTier
   points: number
+  isZebraMatch?: boolean
 }
 
 interface UserBackfillState {
@@ -73,7 +75,7 @@ export function buildBadgeBackfillContexts(rows: BadgeBackfillScoreRow[]): Badge
       userId: row.userId,
       matchId: row.matchId,
       tier: row.tier,
-      isZebraMatch: false,
+      isZebraMatch: row.isZebraMatch ?? false,
       consecutiveCorrect: state.consecutiveCorrect,
       consecutiveIncorrect: state.consecutiveIncorrect,
       exactScoreCount: state.exactScoreCount,
@@ -92,18 +94,28 @@ async function loadBackfillRows(): Promise<BadgeBackfillScoreRow[]> {
     .select({
       userId: matchScores.userId,
       matchId: matchScores.matchId,
+      predictedHome: matchPredictions.predictedHome,
+      predictedAway: matchPredictions.predictedAway,
       tier: matchScores.tier,
       points: matchScores.points,
     })
     .from(matchScores)
     .innerJoin(matches, eq(matchScores.matchId, matches.id))
+    .innerJoin(matchPredictions, eq(matchScores.predictionId, matchPredictions.id))
     .where(eq(matchScores.isSuperseded, false))
     .orderBy(asc(matches.kickoffTime), asc(matchScores.calculatedAt), asc(matchScores.id))
 
-  return rows.map((row) => ({
-    ...row,
+  return Promise.all(rows.map(async (row) => ({
+    userId: row.userId,
+    matchId: row.matchId,
     tier: row.tier as ScoringTier,
-  }))
+    points: row.points,
+    isZebraMatch: await isPredictionSocialUnderdog({
+      matchId: row.matchId,
+      predictedHome: row.predictedHome,
+      predictedAway: row.predictedAway,
+    }),
+  })))
 }
 
 export async function backfillBadges(options: { dryRun?: boolean } = {}): Promise<BadgeBackfillResult> {

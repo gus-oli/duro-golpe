@@ -1,11 +1,12 @@
 import { createClient } from 'redis'
 import { config } from '../config.js'
 import { db } from '../db/index.js'
-import { matchScores, userTotals } from '../db/schema/index.js'
+import { matchPredictions, matchScores, userTotals } from '../db/schema/index.js'
 import { eq, and } from 'drizzle-orm'
 import { getPositiveMatchScoreCount, getPreviousConsecutiveIncorrect, getStreaks } from './streak.js'
 import { recomputeUserTotal } from './totals.js'
 import type { BadgeEvaluationContext } from '../badges/types.js'
+import { isPredictionSocialUnderdog } from '../matches/social-odds.js'
 
 interface ScoresUpdatedEvent {
   event: string
@@ -27,11 +28,16 @@ export async function startAggregator(publisher: ReturnType<typeof createClient>
         await recomputeUserTotal(userId)
 
         // Fetch the user's score for this match to publish badge evaluation context
-        const [matchScore] =
-          matchId && matchResultId
-            ? await db
-                .select({ tier: matchScores.tier })
+          const [matchScore] =
+            matchId && matchResultId
+              ? await db
+                .select({
+                  tier: matchScores.tier,
+                  predictedHome: matchPredictions.predictedHome,
+                  predictedAway: matchPredictions.predictedAway,
+                })
                 .from(matchScores)
+                .innerJoin(matchPredictions, eq(matchScores.predictionId, matchPredictions.id))
                 .where(
                   and(
                     eq(matchScores.userId, userId),
@@ -58,13 +64,18 @@ export async function startAggregator(publisher: ReturnType<typeof createClient>
             getPositiveMatchScoreCount(userId),
             getPreviousConsecutiveIncorrect(userId, matchId),
           ])
+          const isZebraMatch = await isPredictionSocialUnderdog({
+            matchId,
+            predictedHome: matchScore.predictedHome,
+            predictedAway: matchScore.predictedAway,
+          })
 
           const payload: BadgeEvaluationContext & { event: 'badge.evaluate' } = {
             event: 'badge.evaluate',
             userId,
             matchId,
             tier: matchScore.tier as BadgeEvaluationContext['tier'],
-            isZebraMatch: false, // populated by scoring engine when API-Football provides underdog flag
+            isZebraMatch,
             consecutiveCorrect: streaks.consecutiveCorrect,
             consecutiveIncorrect: streaks.consecutiveIncorrect,
             exactScoreCount: Number(total?.exactScoreCount ?? 0),

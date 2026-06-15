@@ -2,8 +2,10 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
+import { SocialOddsSummary } from '@/components/SocialOdds/SocialOddsSummary'
 import { EmptyState, SectionHeader, StatusPill } from '@/components/ui/Primitives'
 import { formatAppDate, formatAppDateTime, formatAppTime } from '@/lib/date-time'
+import type { SocialOddsView } from '@/lib/social-odds'
 
 type MatchStatus = 'SCHEDULED' | 'LOCKED' | 'LIVE' | 'FINISHED'
 
@@ -18,6 +20,7 @@ interface Match {
   homeTeam: { id: string; name: string; fifaCode: string; flagUrl?: string | null }
   awayTeam: { id: string; name: string; fifaCode: string; flagUrl?: string | null }
   userPrediction?: { predictedHome: number; predictedAway: number } | null
+  socialOdds?: SocialOddsView | null
 }
 
 type WorkbenchTab = 'agenda' | 'groups' | 'results'
@@ -406,6 +409,16 @@ export function MatchesWorkbench({
           <div className="dg-score-tile min-w-[78px] text-xl sm:min-w-[86px] sm:text-2xl">{scoreLabel}</div>
           <TeamSummary team={match.awayTeam} />
         </div>
+
+        {match.socialOdds && (
+          <div className="mt-4">
+            <SocialOddsSummary
+              odds={match.socialOdds}
+              homeLabel={match.homeTeam.fifaCode}
+              awayLabel={match.awayTeam.fifaCode}
+            />
+          </div>
+        )}
 
         {isResultsMode ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[rgba(12,34,58,0.04)] px-3 py-2 text-sm font-bold">
