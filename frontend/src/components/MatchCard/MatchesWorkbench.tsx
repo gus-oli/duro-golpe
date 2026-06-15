@@ -88,8 +88,7 @@ function TeamSummary({ team, reverse = false }: { team: Match['homeTeam']; rever
           <img src={team.flagUrl} alt={team.name} className="h-7 w-10 rounded-sm object-cover shadow-sm" />
         )}
         <div className="min-w-0">
-          <p className="font-[var(--font-display)] text-lg font-black leading-none text-[var(--ink)]">{team.fifaCode}</p>
-          <p className="mt-1 truncate text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">{team.name}</p>
+          <p className="truncate font-[var(--font-display)] text-lg font-black leading-none text-[var(--ink)]">{team.name}</p>
         </div>
         {reverse && team.flagUrl && (
           <img src={team.flagUrl} alt={team.name} className="h-7 w-10 rounded-sm object-cover shadow-sm" />
@@ -322,7 +321,7 @@ export function MatchesWorkbench({
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="text-center">
             <label htmlFor={`${match.id}-home`} className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">
-              {match.homeTeam.fifaCode}
+              {match.homeTeam.name}
             </label>
             <input
               id={`${match.id}-home`}
@@ -339,7 +338,7 @@ export function MatchesWorkbench({
           <span className="pt-6 text-sm font-black text-[var(--muted)]">x</span>
           <div className="text-center">
             <label htmlFor={`${match.id}-away`} className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--muted)]">
-              {match.awayTeam.fifaCode}
+              {match.awayTeam.name}
             </label>
             <input
               id={`${match.id}-away`}
@@ -414,8 +413,8 @@ export function MatchesWorkbench({
           <div className="mt-4">
             <SocialOddsSummary
               odds={match.socialOdds}
-              homeLabel={match.homeTeam.fifaCode}
-              awayLabel={match.awayTeam.fifaCode}
+              homeLabel={match.homeTeam.name}
+              awayLabel={match.awayTeam.name}
             />
           </div>
         )}

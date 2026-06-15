@@ -33,7 +33,7 @@ export function formatSocialOddsPercentage(value: number): string {
 
 export function getSocialOddsMessage(odds: SocialOddsView | null | undefined): string | null {
   if (!odds) return null
-  if (odds.status === 'UNAVAILABLE') return 'Consenso indisponivel'
+  if (odds.status === 'UNAVAILABLE') return 'Consenso indisponível'
   if (odds.status === 'LOW_SAMPLE') {
     return `Amostra baixa: ${odds.totalPredictions}/${odds.minimumSample} palpites`
   }

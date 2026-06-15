@@ -204,7 +204,7 @@ async function AuthenticatedHome({ token }: { token: string }) {
             }
             description={
               nextMatches[0]
-                ? 'Todos os jogos da proxima janela relevante, para voce resolver a rodada em bloco.'
+                ? 'Todos os jogos da próxima janela relevante, para você resolver a rodada em bloco.'
                 : 'A agenda continua sendo o centro do seu dia de Copa.'
             }
           />
@@ -221,7 +221,7 @@ async function AuthenticatedHome({ token }: { token: string }) {
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--accent-strong)]">{match.stage}</p>
                       <h2 className="mt-2 text-xl font-black text-[var(--ink)]">
-                        {match.homeTeam.fifaCode} x {match.awayTeam.fifaCode}
+                        {match.homeTeam.name} x {match.awayTeam.name}
                       </h2>
                       <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
                         {formatAppDateTime(match.kickoffTime, {
@@ -272,9 +272,9 @@ function PublicHome() {
               </div>
               <div className="py-5">
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center">
-                  <span className="font-[var(--font-display)] text-3xl font-black text-[var(--ink)]">BRA</span>
+                  <span className="font-[var(--font-display)] text-2xl font-black text-[var(--ink)]">Brasil</span>
                   <span className="dg-score-tile text-2xl">2 - 0</span>
-                  <span className="font-[var(--font-display)] text-3xl font-black text-[var(--ink)]">FRA</span>
+                  <span className="font-[var(--font-display)] text-2xl font-black text-[var(--ink)]">França</span>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
@@ -290,9 +290,9 @@ function PublicHome() {
 
         <section className="grid gap-4 lg:grid-cols-3">
           {[
-            ['Partidas e placares', 'Agenda rapida para abrir jogo, bater o olho e mandar o placar.'],
+            ['Partidas e placares', 'Agenda rápida para abrir jogo, bater o olho e mandar o placar.'],
             ['Ligas com ranking vivo', 'Disputa privada com pontos, badges e a tabela sempre a vista.'],
-            ['Especiais que pesam', 'Campeao, finalistas e mercados longos para mexer na classificacao.'],
+            ['Especiais que pesam', 'Campeão, finalistas e mercados longos para mexer na classificação.'],
           ].map(([title, description]) => (
             <div key={title} className="dg-card p-5">
               <p className="dg-eyebrow">Duro Golpe</p>

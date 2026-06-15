@@ -17,6 +17,7 @@
     "sync:provider": "tsx src/data-providers/run-football-data-sync.ts",
     "beta:reset": "tsx src/dev/reset-beta.ts",
     "match:override": "tsx src/dev/override-match.ts",
+    "teams:localize": "tsx src/dev/localize-teams.ts",
     "social-odds:backfill": "tsx src/dev/backfill-social-odds.ts",
     "smoke:lock-match": "tsx src/dev/lock-match.ts",
     "smoke:lock-outrights": "tsx src/dev/lock-outrights.ts",

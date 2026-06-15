@@ -22,7 +22,7 @@ export function SocialOddsSummary({ odds, homeLabel, awayLabel, variant = 'compa
   return (
     <div className={`rounded-2xl border border-[var(--line)] bg-[rgba(12,34,58,0.035)] ${isDetail ? 'p-4' : 'px-3 py-2'}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[var(--muted)]">Consenso do bolao</p>
+        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[var(--muted)]">Consenso do bolão</p>
         <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--accent-strong)]">
           {odds.source === 'FROZEN' ? 'Fechado' : 'Atual'}
         </span>
@@ -51,7 +51,7 @@ export function SocialOddsSummary({ odds, homeLabel, awayLabel, variant = 'compa
 
       {isDetail && odds.status === 'AVAILABLE' && (
         <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
-          {odds.totalPredictions} palpites no corte. Zebra social: ate {formatSocialOddsPercentage(odds.underdogThresholdPercentage)}.
+          {odds.totalPredictions} palpites no corte. Zebra social: até {formatSocialOddsPercentage(odds.underdogThresholdPercentage)}.
         </p>
       )}
     </div>

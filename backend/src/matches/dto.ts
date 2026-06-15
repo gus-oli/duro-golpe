@@ -1,6 +1,7 @@
 import type { Match } from '../db/schema/matches.js'
 import { getEffectiveMatchStatus } from './lock-utils.js'
 import type { SocialOddsView } from './social-odds.js'
+import { localizeTeamName } from '../seeds/team-localization.js'
 
 interface MatchTeamDto {
   id: string
@@ -57,6 +58,13 @@ function buildUserPrediction(prediction: MatchPredictionDto | null): MatchListIt
   }
 }
 
+function buildTeamDto(team: MatchTeamDto): MatchTeamDto {
+  return {
+    ...team,
+    name: localizeTeamName(team.fifaCode, team.name),
+  }
+}
+
 export function buildMatchListItemDto(projection: MatchProjection): MatchListItemDto {
   const status = getEffectiveMatchStatus(projection.status, projection.kickoffTime)
 
@@ -68,8 +76,8 @@ export function buildMatchListItemDto(projection: MatchProjection): MatchListIte
     status,
     homeScore: projection.homeScore,
     awayScore: projection.awayScore,
-    homeTeam: projection.homeTeam,
-    awayTeam: projection.awayTeam,
+    homeTeam: buildTeamDto(projection.homeTeam),
+    awayTeam: buildTeamDto(projection.awayTeam),
     userPrediction: buildUserPrediction(projection.prediction),
     socialOdds: projection.socialOdds ?? null,
   }

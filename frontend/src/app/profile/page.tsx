@@ -115,7 +115,7 @@ export default async function ProfilePage() {
             </div>
           </section>
         ) : (
-          <EmptyState title="Resumo indisponivel" description="Seu placar total volta a aparecer assim que o backend responder esse painel." />
+          <EmptyState title="Resumo indisponível" description="Seu placar total volta a aparecer assim que o backend responder esse painel." />
         )}
 
         <ProfileSettingsForm initialProfile={profile} />

@@ -110,4 +110,18 @@ describe('match DTO builders', () => {
       totalPredictions: 10,
     })
   })
+
+  it('localizes provider team names in match DTOs', () => {
+    const dto = buildMatchListItemDto({
+      ...projection,
+      awayTeam: {
+        id: 'team-away',
+        name: 'France',
+        fifaCode: 'FRA',
+        flagUrl: null,
+      },
+    })
+
+    expect(dto.awayTeam.name).toBe('França')
+  })
 })

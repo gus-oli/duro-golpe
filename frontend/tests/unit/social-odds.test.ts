@@ -45,6 +45,6 @@ describe('social odds UI helpers', () => {
     expect(getSocialOddsMessage(odds({ status: 'LOW_SAMPLE', totalPredictions: 4 }))).toContain('Amostra baixa')
 
     expect(shouldShowSocialOddsBars(odds({ status: 'UNAVAILABLE', outcomes: [] }))).toBe(false)
-    expect(getSocialOddsMessage(odds({ status: 'UNAVAILABLE', outcomes: [] }))).toBe('Consenso indisponivel')
+    expect(getSocialOddsMessage(odds({ status: 'UNAVAILABLE', outcomes: [] }))).toBe('Consenso indisponível')
   })
 })

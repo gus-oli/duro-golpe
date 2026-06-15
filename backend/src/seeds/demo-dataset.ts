@@ -85,14 +85,14 @@ function createAvatarDataUri(initials: string, background: string, accent: strin
 export const DEMO_TEAMS: SeedTeamInput[] = [
   {
     key: 'BRA',
-    name: 'Brazil',
+    name: 'Brasil',
     fifaCode: 'BRA',
     groupLetter: 'A',
     flagUrl: createSeedFlagDataUri('BRA', '#0a7f44', '#f7d64a', '#1d4ed8'),
   },
   {
     key: 'FRA',
-    name: 'France',
+    name: 'França',
     fifaCode: 'FRA',
     groupLetter: 'A',
     flagUrl: createSeedFlagDataUri('FRA', '#0f3bb5', '#ffffff', '#d62839'),
@@ -106,35 +106,35 @@ export const DEMO_TEAMS: SeedTeamInput[] = [
   },
   {
     key: 'GER',
-    name: 'Germany',
+    name: 'Alemanha',
     fifaCode: 'GER',
     groupLetter: 'B',
     flagUrl: createSeedFlagDataUri('GER', '#111827', '#dc2626', '#fbbf24'),
   },
   {
     key: 'ESP',
-    name: 'Spain',
+    name: 'Espanha',
     fifaCode: 'ESP',
     groupLetter: 'C',
     flagUrl: createSeedFlagDataUri('ESP', '#b91c1c', '#f59e0b', '#7c2d12'),
   },
   {
     key: 'ENG',
-    name: 'England',
+    name: 'Inglaterra',
     fifaCode: 'ENG',
     groupLetter: 'C',
     flagUrl: createSeedFlagDataUri('ENG', '#f8fafc', '#dbeafe', '#dc2626'),
   },
   {
     key: 'JPN',
-    name: 'Japan',
+    name: 'Japão',
     fifaCode: 'JPN',
     groupLetter: 'D',
     flagUrl: createSeedFlagDataUri('JPN', '#ffffff', '#e5e7eb', '#dc2626'),
   },
   {
     key: 'MAR',
-    name: 'Morocco',
+    name: 'Marrocos',
     fifaCode: 'MAR',
     groupLetter: 'D',
     flagUrl: createSeedFlagDataUri('MAR', '#b91c1c', '#991b1b', '#0f766e'),
@@ -167,7 +167,7 @@ export const DEMO_USERS: DemoUserFixture[] = [
 export const DEMO_LEAGUES: DemoLeagueFixture[] = [
   {
     key: 'FIRMA',
-    name: 'Bolao da Firma',
+    name: 'Bolão da Firma',
     inviteCode: 'FIRMA26',
     createdByEmail: 'ana@demo.durogolpe.local',
     memberEmails: [
@@ -316,35 +316,35 @@ export const DEMO_LEAGUE_POSTS: DemoMuralPostFixture[] = [
     leagueKey: 'FIRMA',
     matchApiFootballId: 'demo-match-001',
     userEmail: 'ana@demo.durogolpe.local',
-    content: 'Brasil chegou voando. Se o Vini encaixar, esse bolao vai pegar fogo.',
+    content: 'Brasil chegou voando. Se o Vini encaixar, esse bolão vai pegar fogo.',
     minutesAfterKickoff: -180,
   },
   {
     leagueKey: 'FIRMA',
     matchApiFootballId: 'demo-match-001',
     userEmail: 'bruno@demo.durogolpe.local',
-    content: 'Ja deixei meu 1x0 sofrido. Tradicao tambem pontua.',
+    content: 'Já deixei meu 1x0 sofrido. Tradição também pontua.',
     minutesAfterKickoff: -120,
   },
   {
     leagueKey: 'FIRMA',
     matchApiFootballId: 'demo-match-003',
     userEmail: 'diego@demo.durogolpe.local',
-    content: 'Esse Espanha x Inglaterra esta com cara de empate traicoeiro.',
+    content: 'Esse Espanha x Inglaterra está com cara de empate traiçoeiro.',
     minutesAfterKickoff: 12,
   },
   {
     leagueKey: 'VAR',
     matchApiFootballId: 'demo-match-005',
     userEmail: 'diego@demo.durogolpe.local',
-    content: 'Placar exato em Brasil x Alemanha. Quem lidera nao brinca em servico.',
+    content: 'Placar exato em Brasil x Alemanha. Quem lidera não brinca em serviço.',
     minutesAfterKickoff: 140,
   },
   {
     leagueKey: 'VAR',
     matchApiFootballId: 'demo-match-006',
     userEmail: 'ana@demo.durogolpe.local',
-    content: 'Ainda estou indignada com esse gol no fim da Franca. Salvou metade do ranking.',
+    content: 'Ainda estou indignada com esse gol no fim da França. Salvou metade do ranking.',
     minutesAfterKickoff: 85,
   },
 ] as const
@@ -353,7 +353,7 @@ export const DEMO_OUTRIGHT_MARKETS: DemoOutrightMarketFixture[] = [
   {
     marketCode: OUTRIGHT_MARKET_CODES.CHAMPION,
     status: 'RESOLVED',
-    resultLabels: ['Brazil'],
+    resultLabels: ['Brasil'],
   },
   {
     marketCode: OUTRIGHT_MARKET_CODES.TOP_SCORER,
@@ -366,7 +366,7 @@ export const DEMO_OUTRIGHT_MARKETS: DemoOutrightMarketFixture[] = [
   {
     marketCode: OUTRIGHT_MARKET_CODES.FINALISTS,
     status: 'RESOLVED',
-    resultLabels: ['Brazil', 'France'],
+    resultLabels: ['Brasil', 'França'],
   },
   {
     marketCode: OUTRIGHT_MARKET_CODES.REVELATION,
@@ -375,7 +375,7 @@ export const DEMO_OUTRIGHT_MARKETS: DemoOutrightMarketFixture[] = [
   {
     marketCode: OUTRIGHT_MARKET_CODES.BEST_ATTACK,
     status: 'RESOLVED',
-    resultLabels: ['Brazil'],
+    resultLabels: ['Brasil'],
   },
   {
     marketCode: OUTRIGHT_MARKET_CODES.LAST_PLACE,
@@ -384,37 +384,37 @@ export const DEMO_OUTRIGHT_MARKETS: DemoOutrightMarketFixture[] = [
 ] as const
 
 export const DEMO_OUTRIGHT_PREDICTIONS: DemoOutrightPredictionFixture[] = [
-  { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.CHAMPION, optionLabels: ['Brazil'] },
+  { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.CHAMPION, optionLabels: ['Brasil'] },
   { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.TOP_SCORER, optionLabels: ['Vinicius Junior'] },
   { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.GOLDEN_BALL, optionLabels: ['Jude Bellingham'] },
-  { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.FINALISTS, optionLabels: ['Brazil', 'Argentina'] },
+  { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.FINALISTS, optionLabels: ['Brasil', 'Argentina'] },
   { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.REVELATION, optionLabels: ['Lamine Yamal'] },
-  { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.BEST_ATTACK, optionLabels: ['Brazil'] },
-  { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.LAST_PLACE, optionLabels: ['Japan'] },
+  { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.BEST_ATTACK, optionLabels: ['Brasil'] },
+  { userEmail: 'ana@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.LAST_PLACE, optionLabels: ['Japão'] },
 
-  { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.CHAMPION, optionLabels: ['France'] },
+  { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.CHAMPION, optionLabels: ['França'] },
   { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.TOP_SCORER, optionLabels: ['Harry Kane'] },
   { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.GOLDEN_BALL, optionLabels: ['Rodri'] },
-  { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.FINALISTS, optionLabels: ['Brazil', 'France'] },
+  { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.FINALISTS, optionLabels: ['Brasil', 'França'] },
   { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.REVELATION, optionLabels: ['Endrick'] },
-  { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.BEST_ATTACK, optionLabels: ['England'] },
-  { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.LAST_PLACE, optionLabels: ['Morocco'] },
+  { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.BEST_ATTACK, optionLabels: ['Inglaterra'] },
+  { userEmail: 'bruno@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.LAST_PLACE, optionLabels: ['Marrocos'] },
 
-  { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.CHAMPION, optionLabels: ['Germany'] },
+  { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.CHAMPION, optionLabels: ['Alemanha'] },
   { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.TOP_SCORER, optionLabels: ['Erling Haaland'] },
   { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.GOLDEN_BALL, optionLabels: ['Pedri'] },
-  { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.FINALISTS, optionLabels: ['Germany', 'Spain'] },
+  { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.FINALISTS, optionLabels: ['Alemanha', 'Espanha'] },
   { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.REVELATION, optionLabels: ['Warren Zaire-Emery'] },
-  { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.BEST_ATTACK, optionLabels: ['France'] },
-  { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.LAST_PLACE, optionLabels: ['Brazil'] },
+  { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.BEST_ATTACK, optionLabels: ['França'] },
+  { userEmail: 'carla@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.LAST_PLACE, optionLabels: ['Brasil'] },
 
-  { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.CHAMPION, optionLabels: ['Brazil'] },
+  { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.CHAMPION, optionLabels: ['Brasil'] },
   { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.TOP_SCORER, optionLabels: ['Kylian Mbappe'] },
   { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.GOLDEN_BALL, optionLabels: ['Vinicius Junior'] },
-  { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.FINALISTS, optionLabels: ['Brazil', 'France'] },
+  { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.FINALISTS, optionLabels: ['Brasil', 'França'] },
   { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.REVELATION, optionLabels: ['Lamine Yamal'] },
-  { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.BEST_ATTACK, optionLabels: ['Brazil'] },
-  { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.LAST_PLACE, optionLabels: ['Japan'] },
+  { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.BEST_ATTACK, optionLabels: ['Brasil'] },
+  { userEmail: 'diego@demo.durogolpe.local', marketCode: OUTRIGHT_MARKET_CODES.LAST_PLACE, optionLabels: ['Japão'] },
 ] as const
 
 export const DEMO_BADGES: DemoBadgeFixture[] = [

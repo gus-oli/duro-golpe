@@ -14,6 +14,7 @@ import { scoreResolvedOutrightMarket } from './scoring.js'
 import { normalizeOutrightOptionIds, validateSelectionCardinality } from './outright-utils.js'
 import { assertActiveLeagueMember } from '../auth/access-control.js'
 import { hasColumns } from '../db/optional-columns.js'
+import { localizeTeamName } from '../seeds/team-localization.js'
 
 export { validateFinalistsPrediction } from './outright-utils.js'
 
@@ -68,6 +69,16 @@ function sortMarketOptions<T extends OutrightOption>(options: T[]): T[] {
   })
 }
 
+function buildOutrightOptionLabel(option: {
+  label: string
+  teamId: string | null
+  teamName?: string | null
+  teamFifaCode?: string | null
+}): string {
+  if (!option.teamId || !option.teamFifaCode) return option.label
+  return localizeTeamName(option.teamFifaCode, option.teamName ?? option.label)
+}
+
 async function hasOutrightPlayerMediaColumns(): Promise<boolean> {
   return hasColumns('outright_options', ['player_photo_url', 'player_photo_source', 'player_photo_updated_at'])
 }
@@ -106,6 +117,8 @@ export async function getOutrights(userId: string): Promise<unknown[]> {
         isFeatured: outrightOptions.isFeatured,
         sortOrder: outrightOptions.sortOrder,
         teamLabel: outrightOptions.teamLabel,
+        teamName: teams.name,
+        teamFifaCode: teams.fifaCode,
         teamFlagUrl: teams.flagUrl,
         playerPhotoUrl: hasPlayerMedia ? outrightOptions.playerPhotoUrl : sql<string | null>`null`,
         playerPhotoSource: hasPlayerMedia ? outrightOptions.playerPhotoSource : sql<string | null>`null`,
@@ -120,6 +133,10 @@ export async function getOutrights(userId: string): Promise<unknown[]> {
 
   return markets.map((market) => {
     const marketOptions = sortMarketOptions(options.filter((option) => option.marketId === market.id))
+      .map((option) => ({
+        ...option,
+        label: buildOutrightOptionLabel(option),
+      }))
     const selectedOptionIds = userPredictions
       .filter((prediction) => prediction.marketId === market.id)
       .map((prediction) => prediction.optionId)
@@ -212,6 +229,8 @@ export async function getLeagueOutrightPredictions(
       teamLabel: outrightOptions.teamLabel,
       sourceTier: outrightOptions.sourceTier,
       teamId: outrightOptions.teamId,
+      teamName: teams.name,
+      teamFifaCode: teams.fifaCode,
       teamFlagUrl: teams.flagUrl,
       playerPhotoUrl: hasPlayerMedia ? outrightOptions.playerPhotoUrl : sql<string | null>`null`,
       submittedAt: outrightPredictions.submittedAt,
@@ -240,7 +259,12 @@ export async function getLeagueOutrightPredictions(
     if (row.optionId && row.label) {
       existing.selections.push({
         optionId: row.optionId,
-        label: row.label,
+        label: buildOutrightOptionLabel({
+          label: row.label,
+          teamId: row.teamId ?? null,
+          teamName: row.teamName ?? null,
+          teamFifaCode: row.teamFifaCode ?? null,
+        }),
         teamLabel: row.teamLabel ?? null,
         sourceTier: row.sourceTier ?? null,
         teamId: row.teamId ?? null,
@@ -279,6 +303,8 @@ export async function getLeagueUserOutrightSelections(
       teamLabel: outrightOptions.teamLabel,
       sourceTier: outrightOptions.sourceTier,
       teamId: outrightOptions.teamId,
+      teamName: teams.name,
+      teamFifaCode: teams.fifaCode,
       teamFlagUrl: teams.flagUrl,
       playerPhotoUrl: hasPlayerMedia ? outrightOptions.playerPhotoUrl : sql<string | null>`null`,
       submittedAt: outrightPredictions.submittedAt,
@@ -304,7 +330,7 @@ export async function getLeagueUserOutrightSelections(
     if (row.optionId && row.label) {
       existing.selections.push({
         optionId: row.optionId,
-        label: row.label,
+        label: buildOutrightOptionLabel(row),
         teamLabel: row.teamLabel ?? null,
         sourceTier: row.sourceTier ?? null,
         teamId: row.teamId ?? null,

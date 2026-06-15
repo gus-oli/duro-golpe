@@ -69,7 +69,7 @@ export function AppShell({ isAuthenticated, children }: { isAuthenticated: boole
                     </span>
                     <span className="min-w-0">
                       <span className="block text-[0.58rem] font-bold uppercase tracking-[0.22em] text-white/70">
-                        bolao da copa
+                        bolão da copa
                       </span>
                       <span className="block font-[var(--font-display)] text-base font-black uppercase tracking-[0.16em] text-white sm:text-lg">
                         Duro Golpe

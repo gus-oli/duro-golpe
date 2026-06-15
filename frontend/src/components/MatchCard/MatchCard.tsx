@@ -39,8 +39,7 @@ function TeamBlock({ team, align = 'left' }: { team: TeamInfo; align?: 'left' | 
           <img src={team.flagUrl} alt={team.name} className="h-7 w-10 rounded-sm object-cover shadow-sm" />
         )}
         <div className="min-w-0">
-          <p className="font-[var(--font-display)] text-lg font-black leading-none text-[var(--ink)] sm:text-xl">{team.fifaCode}</p>
-          <p className="mt-1 truncate text-xs font-bold uppercase tracking-[0.08em] text-[var(--muted)]">{team.name}</p>
+          <p className="truncate font-[var(--font-display)] text-lg font-black leading-none text-[var(--ink)] sm:text-xl">{team.name}</p>
         </div>
         {align === 'right' && team.flagUrl && (
           <img src={team.flagUrl} alt={team.name} className="h-7 w-10 rounded-sm object-cover shadow-sm" />
@@ -101,7 +100,7 @@ export function MatchCard({
 
       {socialOdds && (
         <div className="mt-3">
-          <SocialOddsSummary odds={socialOdds} homeLabel={homeTeam.fifaCode} awayLabel={awayTeam.fifaCode} />
+          <SocialOddsSummary odds={socialOdds} homeLabel={homeTeam.name} awayLabel={awayTeam.name} />
         </div>
       )}
     </Link>

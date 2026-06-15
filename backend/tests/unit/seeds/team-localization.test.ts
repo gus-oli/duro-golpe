@@ -4,7 +4,7 @@ import { localizeTeamName } from '../../../src/seeds/team-localization.js'
 describe('localizeTeamName', () => {
   it('returns Brazilian Portuguese names when a FIFA code mapping exists', () => {
     expect(localizeTeamName('BRA', 'Brazil')).toBe('Brasil')
-    expect(localizeTeamName('FRA', 'France')).toBe('Franca')
+    expect(localizeTeamName('FRA', 'France')).toBe('França')
     expect(localizeTeamName('GER', 'Germany')).toBe('Alemanha')
   })
 

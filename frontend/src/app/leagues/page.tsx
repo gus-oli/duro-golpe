@@ -99,7 +99,7 @@ export default async function LeaguesPage() {
                       </p>
                       {league.createdBy === userId && (
                         <p className="mt-2 inline-flex rounded-md bg-[rgba(12,143,79,0.12)] px-2 py-1 text-xs font-black uppercase tracking-[0.08em] text-[var(--pitch-dark)]">
-                          Criada por voce
+                          Criada por você
                         </p>
                       )}
                     </div>

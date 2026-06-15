@@ -543,7 +543,7 @@ function WallchartBracket({
               <TeamBadge team={champion} selected={Boolean(champion)} />
             </div>
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent-strong)]">Campeao</p>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--accent-strong)]">Campeão</p>
               <p className="mt-1 font-[var(--font-display)] text-2xl font-black text-[var(--ink)]">{champion?.fifaCode ?? '---'}</p>
             </div>
             {finalMatch && <MatchNode match={finalMatch} onPick={onPick} />}
@@ -744,7 +744,7 @@ export function WorldCupSimulator({ initialTeams }: { initialTeams: SimulatorTea
   if (!hasCompleteGroups(groupedTeams)) {
     return (
       <EmptyState
-        title="Simulador indisponivel"
+        title="Simulador indisponível"
         description="Quando os 12 grupos da Copa 2026 estiverem carregados com quatro selecoes cada, o bracket oficial aparece aqui."
       />
     )
@@ -897,7 +897,7 @@ export function WorldCupSimulator({ initialTeams }: { initialTeams: SimulatorTea
           <SectionHeader
             eyebrow="Mata-mata"
             title="Clique nos vencedores"
-            description="O Round of 32 foi montado com os slots oficiais da Copa 2026. Trocar um vencedor anterior limpa escolhas que nao fazem mais sentido."
+            description="O Round of 32 foi montado com os slots oficiais da Copa 2026. Trocar um vencedor anterior limpa escolhas que não fazem mais sentido."
             actions={
               <>
                 <StatusPill tone={champion ? 'success' : 'neutral'}>{champion ? `${champion.name} campeao` : 'Em aberto'}</StatusPill>
@@ -911,7 +911,7 @@ export function WorldCupSimulator({ initialTeams }: { initialTeams: SimulatorTea
           />
           {!readyForBracket || !completeRanking ? (
             <EmptyState
-              title="Bracket ainda nao pode ser gerado"
+              title="Bracket ainda não pode ser gerado"
               description="Complete os grupos e selecione exatamente oito terceiros para liberar o chaveamento."
             />
           ) : (

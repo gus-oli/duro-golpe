@@ -79,7 +79,7 @@ export function MatchLeaguePicks({ matchId, leagues }: MatchLeaguePicksProps) {
       {isLoading && <p className="text-sm font-bold text-[var(--muted)]">Carregando palpites da liga...</p>}
       {error && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</p>}
       {!isLoading && !error && loadedLeagueId && rows.length === 0 && (
-        <EmptyState title="Ninguem palpitou ainda" description="Quando os palpites aparecerem, a comparacao entra aqui." />
+        <EmptyState title="Ninguém palpitou ainda" description="Quando os palpites aparecerem, a comparação entra aqui." />
       )}
 
       {rows.length > 0 && (

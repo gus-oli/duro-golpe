@@ -100,8 +100,7 @@ function TeamPanel({ team }: { team: Match['homeTeam'] }) {
       {team.flagUrl && (
         <img src={team.flagUrl} alt={team.name} className="mx-auto h-16 w-24 rounded-md object-cover shadow-md" />
       )}
-      <p className="mt-4 font-[var(--font-display)] text-4xl font-black leading-none text-[var(--ink)]">{team.fifaCode}</p>
-      <p className="mt-2 text-sm font-bold uppercase tracking-[0.1em] text-[var(--muted)]">{team.name}</p>
+      <p className="mt-4 font-[var(--font-display)] text-4xl font-black leading-none text-[var(--ink)]">{team.name}</p>
     </div>
   )
 }
@@ -170,8 +169,8 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ ma
               <div className="border-t border-[var(--line)] p-4">
                 <SocialOddsSummary
                   odds={match.socialOdds}
-                  homeLabel={match.homeTeam.fifaCode}
-                  awayLabel={match.awayTeam.fifaCode}
+                  homeLabel={match.homeTeam.name}
+                  awayLabel={match.awayTeam.name}
                   variant="detail"
                 />
               </div>

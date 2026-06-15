@@ -117,7 +117,7 @@ export function RankingClient({ leagueId, initialRanking, realtimeEnabled }: Ran
   )
 
   if (ranking.length === 0) {
-    return <EmptyState title="A liga ainda esta vazia" description="Convide a galera e deixe a tabela pegar fogo." />
+    return <EmptyState title="A liga ainda está vazia" description="Convide a galera e deixe a tabela pegar fogo." />
   }
 
   return (

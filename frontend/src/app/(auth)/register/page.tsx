@@ -59,7 +59,7 @@ export default function RegisterPage() {
         <div className="bg-[linear-gradient(135deg,var(--night),var(--pitch-dark))] px-6 py-7 text-white">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--gold)]">Copa 2026</p>
           <h1 className="mt-2 text-3xl font-black">Criar conta</h1>
-          <p className="mt-2 text-sm leading-6 text-white/72">Entre no bolao antes do apito inicial.</p>
+          <p className="mt-2 text-sm leading-6 text-white/72">Entre no bolão antes do apito inicial.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
