@@ -26,6 +26,9 @@ interface RankingEntry {
   exactScoreCount: number
   winnerGoalDiffCount: number
   position: number
+  previousPosition: number | null
+  positionDelta: number
+  movement: 'up' | 'down' | 'same' | 'new'
   badges: Array<{
     type: string
     labelPt: string

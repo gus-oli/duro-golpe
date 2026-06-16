@@ -22,6 +22,9 @@ interface RankingEntry {
   exactScoreCount: number
   winnerGoalDiffCount: number
   position: number
+  previousPosition: number | null
+  positionDelta: number
+  movement: 'up' | 'down' | 'same' | 'new'
   badges: Badge[]
 }
 
@@ -41,6 +44,60 @@ function podiumClass(position: number) {
   if (position === 2) return 'bg-[rgba(120,182,255,0.22)] text-[var(--accent-strong)]'
   if (position === 3) return 'bg-[rgba(255,93,99,0.16)] text-[#9e2430]'
   return 'bg-[var(--surface-muted)] text-[var(--muted)]'
+}
+
+function positionWord(amount: number) {
+  return amount === 1 ? 'posicao' : 'posicoes'
+}
+
+function movementLabel(entry: RankingEntry) {
+  if (entry.movement === 'new') return 'Novo no ranking desde o ultimo jogo'
+  if (entry.movement === 'up') {
+    const amount = Math.abs(entry.positionDelta)
+    return `Subiu ${amount} ${positionWord(amount)} desde o ultimo jogo`
+  }
+  if (entry.movement === 'down') {
+    const amount = Math.abs(entry.positionDelta)
+    return `Desceu ${amount} ${positionWord(amount)} desde o ultimo jogo`
+  }
+  return 'Manteve a posicao desde o ultimo jogo'
+}
+
+function movementClass(movement: RankingEntry['movement']) {
+  if (movement === 'up') return 'bg-[rgba(12,143,79,0.13)] text-[var(--pitch-dark)]'
+  if (movement === 'down') return 'bg-[rgba(255,93,99,0.16)] text-[#9e2430]'
+  if (movement === 'new') return 'bg-[rgba(255,205,71,0.26)] text-[#7a5200]'
+  return 'bg-[var(--surface-muted)] text-[var(--muted)]'
+}
+
+function MovementIndicator({ entry }: { entry: RankingEntry }) {
+  if (entry.previousPosition == null && entry.movement !== 'new') return null
+
+  const label = movementLabel(entry)
+  const amount = Math.abs(entry.positionDelta)
+
+  return (
+    <span
+      className={`inline-flex h-7 min-w-9 shrink-0 items-center justify-center gap-1 rounded-full px-2 text-[10px] font-black leading-none ${movementClass(entry.movement)}`}
+      aria-label={label}
+      title={label}
+    >
+      {entry.movement === 'up' && (
+        <span
+          className="h-0 w-0 border-x-[4px] border-b-[7px] border-x-transparent border-b-[currentColor]"
+          aria-hidden="true"
+        />
+      )}
+      {entry.movement === 'down' && (
+        <span
+          className="h-0 w-0 border-x-[4px] border-t-[7px] border-x-transparent border-t-[currentColor]"
+          aria-hidden="true"
+        />
+      )}
+      {entry.movement === 'same' && <span className="h-0.5 w-3 rounded-full bg-current" aria-hidden="true" />}
+      {entry.movement === 'new' ? <span>Novo</span> : amount > 0 ? <span>{amount}</span> : null}
+    </span>
+  )
 }
 
 export function RankingClient({ leagueId, initialRanking, realtimeEnabled }: RankingClientProps) {
@@ -122,7 +179,7 @@ export function RankingClient({ leagueId, initialRanking, realtimeEnabled }: Ran
 
   return (
     <section className="dg-surface overflow-hidden">
-      <div className="grid grid-cols-[64px_minmax(0,1fr)_96px] gap-3 border-b border-[var(--line)] bg-[rgba(255,255,255,0.7)] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted)] sm:grid-cols-[72px_minmax(0,1.2fr)_160px_140px]">
+      <div className="grid grid-cols-[88px_minmax(0,1fr)_96px] gap-3 border-b border-[var(--line)] bg-[rgba(255,255,255,0.7)] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted)] sm:grid-cols-[104px_minmax(0,1.2fr)_160px_140px]">
         <span>Pos.</span>
         <span>Jogador</span>
         <span className="text-right">Pontos</span>
@@ -138,15 +195,18 @@ export function RankingClient({ leagueId, initialRanking, realtimeEnabled }: Ran
             data-user-id={entry.userId}
             data-user-name={entry.displayName}
             data-total-points={entry.totalPoints}
+            data-ranking-movement={entry.movement}
+            data-position-delta={entry.positionDelta}
           >
-            <div className="grid gap-3 sm:grid-cols-[72px_minmax(0,1.2fr)_160px_140px] sm:items-center">
-              <div className="flex items-center gap-3">
+            <div className="grid gap-3 sm:grid-cols-[104px_minmax(0,1.2fr)_160px_140px] sm:items-center">
+              <div className="flex items-center gap-2">
                 <span
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl font-[var(--font-display)] text-xl font-black ${podiumClass(entry.position)}`}
                   aria-label={`${entry.position} lugar`}
                 >
                   {entry.position}
                 </span>
+                <MovementIndicator entry={entry} />
               </div>
 
               <div className="flex min-w-0 items-center gap-3">

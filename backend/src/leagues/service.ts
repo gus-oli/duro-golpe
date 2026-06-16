@@ -1,8 +1,9 @@
 import { db } from '../db/index.js'
-import { badges, leagues, leagueMemberships, userBadges, users, userTotals } from '../db/schema/index.js'
+import { badges, leagues, leagueMemberships, matchResults, matchScores, userBadges, users, userTotals } from '../db/schema/index.js'
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { generateInviteCode } from './invite-code.js'
 import type { League, LeagueMembership } from '../db/schema/leagues.js'
+import { appendRankingMovement, type RankingMovement, type RankingMovementContext } from './ranking-movement.js'
 
 export async function createLeague(userId: string, name: string): Promise<League> {
   const inviteCode = await generateInviteCode()
@@ -81,6 +82,9 @@ export interface RankingEntry {
   exactScoreCount: number
   winnerGoalDiffCount: number
   position: number
+  previousPosition: number | null
+  positionDelta: number
+  movement: RankingMovement
   badges: Array<{
     type: string
     labelPt: string
@@ -88,6 +92,53 @@ export interface RankingEntry {
     iconKey: string
     zebraCount: number | null
   }>
+}
+
+async function getLatestMatchMovementContext(memberIds: string[]): Promise<RankingMovementContext | null> {
+  if (memberIds.length === 0) return null
+
+  const [latestScore] = await db
+    .select({
+      matchId: matchScores.matchId,
+      scoredAt: sql<Date>`COALESCE(${matchResults.confirmedAt}, ${matchResults.createdAt}, ${matchScores.calculatedAt})`,
+    })
+    .from(matchScores)
+    .innerJoin(matchResults, eq(matchScores.matchResultId, matchResults.id))
+    .where(and(inArray(matchScores.userId, memberIds), eq(matchScores.isSuperseded, false)))
+    .orderBy(
+      desc(sql`COALESCE(${matchResults.confirmedAt}, ${matchResults.createdAt}, ${matchScores.calculatedAt})`),
+      desc(matchScores.calculatedAt),
+    )
+    .limit(1)
+
+  if (!latestScore) return null
+
+  const scoreImpacts = await db
+    .select({
+      userId: matchScores.userId,
+      points: sql<number>`COALESCE(SUM(${matchScores.points}), 0)`,
+      exactScoreCount: sql<number>`COUNT(CASE WHEN ${matchScores.tier} = 'EXACT_SCORE' THEN 1 END)`,
+      winnerGoalDiffCount: sql<number>`COUNT(CASE WHEN ${matchScores.tier} = 'WINNER_AND_GOAL_DIFF' THEN 1 END)`,
+    })
+    .from(matchScores)
+    .where(
+      and(
+        inArray(matchScores.userId, memberIds),
+        eq(matchScores.matchId, latestScore.matchId),
+        eq(matchScores.isSuperseded, false),
+      ),
+    )
+    .groupBy(matchScores.userId)
+
+  return {
+    scoredAt: latestScore.scoredAt,
+    scoreImpacts: scoreImpacts.map((impact) => ({
+      userId: impact.userId,
+      points: Number(impact.points),
+      exactScoreCount: Number(impact.exactScoreCount),
+      winnerGoalDiffCount: Number(impact.winnerGoalDiffCount),
+    })),
+  }
 }
 
 export async function getLeagueRanking(leagueId: string, requestingUserId: string): Promise<RankingEntry[]> {
@@ -116,6 +167,7 @@ export async function getLeagueRanking(leagueId: string, requestingUserId: strin
       totalPoints: sql<number>`COALESCE(${userTotals.totalPoints}, 0)`,
       exactScoreCount: sql<number>`COALESCE(${userTotals.exactScoreCount}, 0)`,
       winnerGoalDiffCount: sql<number>`COALESCE(${userTotals.winnerGoalDiffCount}, 0)`,
+      joinedAt: leagueMemberships.joinedAt,
     })
     .from(leagueMemberships)
     .innerJoin(users, eq(leagueMemberships.userId, users.id))
@@ -129,10 +181,10 @@ export async function getLeagueRanking(leagueId: string, requestingUserId: strin
     )
 
   const memberIds = members.map((member) => member.userId)
-  const badgeRows =
+  const [badgeRows, movementContext] = await Promise.all([
     memberIds.length === 0
-      ? []
-      : await db
+      ? Promise.resolve([])
+      : db
           .select({
             userId: userBadges.userId,
             type: badges.type,
@@ -144,7 +196,9 @@ export async function getLeagueRanking(leagueId: string, requestingUserId: strin
           .from(userBadges)
           .innerJoin(badges, eq(userBadges.badgeType, badges.type))
           .where(inArray(userBadges.userId, memberIds))
-          .orderBy(userBadges.awardedAt)
+          .orderBy(userBadges.awardedAt),
+    getLatestMatchMovementContext(memberIds),
+  ])
 
   const badgesByUser = new Map<string, RankingEntry['badges']>()
   for (const badgeRow of badgeRows) {
@@ -159,12 +213,31 @@ export async function getLeagueRanking(leagueId: string, requestingUserId: strin
     badgesByUser.set(badgeRow.userId, current)
   }
 
-  return members.map((m, idx) => ({
-    ...m,
+  const rankingWithMovement = appendRankingMovement(
+    members.map((m, idx) => ({
+      userId: m.userId,
+      displayName: m.displayName,
+      avatarUrl: m.avatarUrl,
+      totalPoints: Number(m.totalPoints),
+      exactScoreCount: Number(m.exactScoreCount),
+      winnerGoalDiffCount: Number(m.winnerGoalDiffCount),
+      position: idx + 1,
+      joinedAt: m.joinedAt,
+    })),
+    movementContext,
+  )
+
+  return rankingWithMovement.map((m) => ({
+    userId: m.userId,
+    displayName: m.displayName,
+    avatarUrl: m.avatarUrl,
     totalPoints: Number(m.totalPoints),
     exactScoreCount: Number(m.exactScoreCount),
     winnerGoalDiffCount: Number(m.winnerGoalDiffCount),
-    position: idx + 1,
+    position: m.position,
+    previousPosition: m.previousPosition,
+    positionDelta: m.positionDelta,
+    movement: m.movement,
     badges: badgesByUser.get(m.userId) ?? [],
   }))
 }
