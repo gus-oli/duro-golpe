@@ -19,7 +19,7 @@ describe('appendRankingMovement', () => {
         entry({ userId: 'user-a', displayName: 'Ana', totalPoints: 100, position: 2 }),
       ],
       {
-        scoredAt: new Date('2026-06-15T21:00:00.000Z'),
+        scoredAt: '2026-06-15T21:00:00.000Z',
         scoreImpacts: [{ userId: 'user-b', points: 20, exactScoreCount: 0, winnerGoalDiffCount: 0 }],
       },
     )

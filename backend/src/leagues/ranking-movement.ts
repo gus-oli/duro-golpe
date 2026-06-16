@@ -18,7 +18,7 @@ export interface RankingScoreImpact {
 }
 
 export interface RankingMovementContext {
-  scoredAt: Date
+  scoredAt: Date | string | number
   scoreImpacts: RankingScoreImpact[]
 }
 
@@ -56,7 +56,9 @@ export function appendRankingMovement<T extends RankingMovementEntry>(
   if (!context) return withoutMovementContext(entries)
 
   const impactsByUser = new Map(context.scoreImpacts.map((impact) => [impact.userId, impact]))
-  const scoredAtMs = context.scoredAt.getTime()
+  const scoredAtMs = context.scoredAt instanceof Date ? context.scoredAt.getTime() : new Date(context.scoredAt).getTime()
+  if (Number.isNaN(scoredAtMs)) return withoutMovementContext(entries)
+
   const previousEntries = entries
     .filter((entry) => !entry.joinedAt || entry.joinedAt.getTime() <= scoredAtMs)
     .map((entry) => {
