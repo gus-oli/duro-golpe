@@ -121,6 +121,14 @@ function groupByStage(matches: Match[]) {
   return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b, 'pt-BR'))
 }
 
+function getInitialCollapsedAgenda(matches: Match[]): Record<string, boolean> {
+  return Object.fromEntries(
+    groupByAgenda(matches)
+      .filter(([, dayMatches]) => dayMatches.length > 0 && dayMatches.every((match) => match.status === 'FINISHED'))
+      .map(([date]) => [date, true]),
+  )
+}
+
 export function MatchesWorkbench({
   initialMatches,
   isAuthenticated,
@@ -134,7 +142,7 @@ export function MatchesWorkbench({
   const [feedback, setFeedback] = useState<Record<string, SaveFeedback>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [summaryMessage, setSummaryMessage] = useState<string | null>(null)
-  const [collapsedAgenda, setCollapsedAgenda] = useState<Record<string, boolean>>({})
+  const [collapsedAgenda, setCollapsedAgenda] = useState<Record<string, boolean>>(() => getInitialCollapsedAgenda(initialMatches))
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({})
 
   const openMatches = useMemo(() => matches.filter((match) => match.status === 'SCHEDULED'), [matches])
@@ -494,27 +502,32 @@ export function MatchesWorkbench({
           <EmptyState title="Nenhuma partida disponível" description="Quando o calendário estiver carregado, os jogos aparecem aqui." />
         ) : (
           <div className="space-y-7">
-            {agendaSections.map(([date, dayMatches]) => (
-              <section key={date} className="space-y-4">
-                <SectionHeader
-                  eyebrow="Agenda"
-                  title={date}
-                  actions={
-                    <>
-                      <StatusPill tone="neutral">{dayMatches.length} jogos</StatusPill>
-                      <button type="button" className="dg-button-secondary px-4 py-2 text-xs" onClick={() => toggleAgendaSection(date)}>
-                        {collapsedAgenda[date] ? 'Expandir' : 'Colapsar'}
-                      </button>
-                    </>
-                  }
-                />
-                {!collapsedAgenda[date] && (
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    {dayMatches.map((match) => renderMatchCard(match, 'editable'))}
-                  </div>
-                )}
-              </section>
-            ))}
+            {agendaSections.map(([date, dayMatches]) => {
+              const dayIsFinished = dayMatches.every((match) => match.status === 'FINISHED')
+
+              return (
+                <section key={date} className="space-y-4">
+                  <SectionHeader
+                    eyebrow="Agenda"
+                    title={date}
+                    actions={
+                      <>
+                        <StatusPill tone="neutral">{dayMatches.length} jogos</StatusPill>
+                        {dayIsFinished && <StatusPill tone="resolved">Finalizados</StatusPill>}
+                        <button type="button" className="dg-button-secondary px-4 py-2 text-xs" onClick={() => toggleAgendaSection(date)}>
+                          {collapsedAgenda[date] ? 'Expandir' : 'Colapsar'}
+                        </button>
+                      </>
+                    }
+                  />
+                  {!collapsedAgenda[date] && (
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      {dayMatches.map((match) => renderMatchCard(match, 'editable'))}
+                    </div>
+                  )}
+                </section>
+              )
+            })}
           </div>
         )
       )}
