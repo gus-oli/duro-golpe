@@ -13,7 +13,13 @@ const state = vi.hoisted(() => {
       lastUpdated: string
       homeTeam: { id: number | null; name: string | null; tla: string | null; crest: string | null }
       awayTeam: { id: number | null; name: string | null; tla: string | null; crest: string | null }
-      score: { fullTime: { home: number | null; away: number | null } }
+      score: {
+        duration?: string | null
+        fullTime: { home: number | null; away: number | null }
+        regularTime?: { home: number | null; away: number | null } | null
+        extraTime?: { home: number | null; away: number | null } | null
+        penalties?: { home: number | null; away: number | null } | null
+      }
     }>,
     applyResults: [] as Array<'missing' | 'noop' | 'updated' | 'confirmed' | 'amended'>,
     appliedSnapshots: [] as Array<Record<string, unknown>>,
@@ -49,9 +55,13 @@ vi.mock('../../../src/db/index.js', () => ({
   },
 }))
 
-vi.mock('../../../src/data-providers/football-data.js', () => ({
-  getWorldCupMatches: vi.fn(async () => state.providerMatches),
-}))
+vi.mock('../../../src/data-providers/football-data.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/data-providers/football-data.js')>()
+  return {
+    ...actual,
+    getWorldCupMatches: vi.fn(async () => state.providerMatches),
+  }
+})
 
 vi.mock('../../../src/seeds/support.js', () => ({
   upsertTeams: vi.fn(async (teams: Array<{ key: string }>) => {
@@ -157,6 +167,42 @@ describe('syncFootballDataOnce', () => {
     })
   })
 
+  it('excludes penalty-shootout goals from finished football-data results', async () => {
+    state.providerMatches = [
+      {
+        id: 204,
+        status: 'FINISHED',
+        utcDate: '2026-06-28T20:00:00.000Z',
+        venue: null,
+        stage: 'LAST_32',
+        group: null,
+        lastUpdated: '2026-06-28T22:45:00.000Z',
+        homeTeam: { id: 3, name: 'France', tla: 'FRA', crest: null },
+        awayTeam: { id: 4, name: 'Argentina', tla: 'ARG', crest: null },
+        score: {
+          duration: 'PENALTY_SHOOTOUT',
+          fullTime: { home: 7, away: 6 },
+          regularTime: { home: 1, away: 1 },
+          extraTime: { home: 0, away: 0 },
+          penalties: { home: 6, away: 5 },
+        },
+      },
+    ]
+    state.applyResults = ['confirmed']
+
+    const summary = await syncFootballDataOnce(new Date('2026-06-28T23:00:00.000Z'))
+
+    expect(summary.processed).toBe(1)
+    expect(summary.applied).toBe(1)
+    expect(state.appliedSnapshots[0]).toMatchObject({
+      providerMatchId: '204',
+      status: 'FINISHED',
+      homeScore: 1,
+      awayScore: 1,
+      source: 'football-data-v4-poll',
+    })
+  })
+
   it('counts ignored and missing provider snapshots safely', async () => {
     state.providerMatches = [
       {
@@ -216,7 +262,7 @@ describe('syncFootballDataOnce', () => {
     expect(state.upsertedTeams).toHaveLength(1)
     expect(state.upsertedTeams[0]).toEqual([
       expect.objectContaining({ key: '11', fifaCode: 'BRA', name: 'Brasil' }),
-      expect.objectContaining({ key: '19', fifaCode: 'MEX', name: 'Mexico' }),
+      expect.objectContaining({ key: '19', fifaCode: 'MEX', name: 'M\u00e9xico' }),
     ])
     expect(state.updatedMatches).toContainEqual({
       homeTeamId: 'team-1',
@@ -245,7 +291,7 @@ describe('syncFootballDataOnce', () => {
 
     expect(state.upsertedTeams[0]).toEqual([
       expect.objectContaining({ name: 'Brasil', fifaCode: 'BRA' }),
-      expect.objectContaining({ name: 'Franca', fifaCode: 'FRA' }),
+      expect.objectContaining({ name: 'Fran\u00e7a', fifaCode: 'FRA' }),
     ])
   })
 })

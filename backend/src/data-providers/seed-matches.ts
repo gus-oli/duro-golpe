@@ -1,4 +1,4 @@
-import { getWorldCupMatches, getWorldCupTeams, formatFootballDataStage } from './football-data.js'
+import { getPlayableFootballDataScore, getWorldCupMatches, getWorldCupTeams, formatFootballDataStage } from './football-data.js'
 import { mapFootballDataStatus } from '../realtime/events.js'
 import { validateTournamentCounts } from '../tournament/constants.js'
 import type { SeedTeamInput } from '../seeds/support.js'
@@ -109,19 +109,23 @@ async function seedMatches(teamIdMap: Map<number, string>): Promise<void> {
   }
 
   await upsertMatches(
-    fixtures.map((fixture) => ({
-      apiFootballId: String(fixture.id),
-      homeTeamKey:
-        fixture.homeTeam.id != null ? String(fixture.homeTeam.id) : `slot:${fixture.id}:home`,
-      awayTeamKey:
-        fixture.awayTeam.id != null ? String(fixture.awayTeam.id) : `slot:${fixture.id}:away`,
-      kickoffTime: new Date(fixture.utcDate),
-      stage: formatFootballDataStage(fixture.stage, fixture.group),
-      venue: fixture.venue,
-      status: mapFootballDataStatus(fixture.status) ?? 'SCHEDULED',
-      homeScore: fixture.score.fullTime.home,
-      awayScore: fixture.score.fullTime.away,
-    })),
+    fixtures.map((fixture) => {
+      const playableScore = getPlayableFootballDataScore(fixture.score)
+
+      return {
+        apiFootballId: String(fixture.id),
+        homeTeamKey:
+          fixture.homeTeam.id != null ? String(fixture.homeTeam.id) : `slot:${fixture.id}:home`,
+        awayTeamKey:
+          fixture.awayTeam.id != null ? String(fixture.awayTeam.id) : `slot:${fixture.id}:away`,
+        kickoffTime: new Date(fixture.utcDate),
+        stage: formatFootballDataStage(fixture.stage, fixture.group),
+        venue: fixture.venue,
+        status: mapFootballDataStatus(fixture.status) ?? 'SCHEDULED',
+        homeScore: playableScore.home,
+        awayScore: playableScore.away,
+      }
+    }),
     teamIdsByKey,
   )
 

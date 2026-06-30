@@ -46,6 +46,19 @@ interface FootballDataTeamsResponse {
   teams: FootballDataTeam[]
 }
 
+export interface FootballDataScoreLine {
+  home: number | null
+  away: number | null
+}
+
+export interface FootballDataScore {
+  duration?: 'REGULAR' | 'EXTRA_TIME' | 'PENALTY_SHOOTOUT' | string | null
+  fullTime: FootballDataScoreLine
+  regularTime?: FootballDataScoreLine | null
+  extraTime?: FootballDataScoreLine | null
+  penalties?: FootballDataScoreLine | null
+}
+
 export interface FootballDataMatch {
   id: number
   utcDate: string
@@ -56,12 +69,7 @@ export interface FootballDataMatch {
   lastUpdated: string
   homeTeam: FootballDataTeam
   awayTeam: FootballDataTeam
-  score: {
-    fullTime: {
-      home: number | null
-      away: number | null
-    }
-  }
+  score: FootballDataScore
 }
 
 interface FootballDataMatchesResponse {
@@ -83,6 +91,51 @@ function buildQuery(params: Record<string, string | number | undefined>): string
 }
 
 export { formatFootballDataStage } from './football-data-formatting.js'
+
+function hasCompleteScoreLine(score: FootballDataScoreLine | null | undefined): score is { home: number; away: number } {
+  return typeof score?.home === 'number' && typeof score.away === 'number'
+}
+
+function addScoreLines(
+  first: FootballDataScoreLine | null | undefined,
+  second: FootballDataScoreLine | null | undefined,
+): FootballDataScoreLine | null {
+  if (!hasCompleteScoreLine(first) || !hasCompleteScoreLine(second)) {
+    return null
+  }
+
+  return {
+    home: first.home + second.home,
+    away: first.away + second.away,
+  }
+}
+
+function subtractScoreLines(
+  total: FootballDataScoreLine | null | undefined,
+  subtract: FootballDataScoreLine | null | undefined,
+): FootballDataScoreLine | null {
+  if (!hasCompleteScoreLine(total) || !hasCompleteScoreLine(subtract)) {
+    return null
+  }
+
+  const home = total.home - subtract.home
+  const away = total.away - subtract.away
+  if (home < 0 || away < 0) {
+    return null
+  }
+
+  return { home, away }
+}
+
+export function getPlayableFootballDataScore(score: FootballDataScore): FootballDataScoreLine {
+  if (score.duration !== 'PENALTY_SHOOTOUT') {
+    return score.fullTime
+  }
+
+  return addScoreLines(score.regularTime, score.extraTime)
+    ?? subtractScoreLines(score.fullTime, score.penalties)
+    ?? score.fullTime
+}
 
 export async function getWorldCupTeams(): Promise<FootballDataTeam[]> {
   const path = `/competitions/${config.FOOTBALL_DATA_COMPETITION_CODE}/teams${buildQuery({

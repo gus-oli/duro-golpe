@@ -2,7 +2,7 @@ import { and, eq, gte, inArray, lte, or } from 'drizzle-orm'
 import { db } from '../db/index.js'
 import { matches } from '../db/schema/index.js'
 import { config } from '../config.js'
-import { getWorldCupMatches, type FootballDataMatch } from './football-data.js'
+import { getPlayableFootballDataScore, getWorldCupMatches, type FootballDataMatch } from './football-data.js'
 import { applyProviderMatchSnapshot } from './match-reconciliation.js'
 import { mapFootballDataStatus } from '../realtime/events.js'
 import { upsertTeams } from '../seeds/support.js'
@@ -150,11 +150,12 @@ export async function syncFootballDataOnce(now = new Date()): Promise<FootballDa
     }
 
     processed += 1
+    const playableScore = getPlayableFootballDataScore(providerMatch.score)
     const result = await applyProviderMatchSnapshot({
       providerMatchId: String(providerMatch.id),
       status: mappedStatus,
-      homeScore: providerMatch.score.fullTime.home,
-      awayScore: providerMatch.score.fullTime.away,
+      homeScore: playableScore.home,
+      awayScore: playableScore.away,
       changedAt: providerMatch.lastUpdated ? new Date(providerMatch.lastUpdated) : now,
       source: 'football-data-v4-poll',
     })
