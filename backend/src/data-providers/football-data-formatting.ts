@@ -6,6 +6,8 @@ export function formatFootballDataStage(stage: string | null, group: string | nu
   switch (stage) {
     case 'GROUP_STAGE':
       return 'Fase de grupos'
+    case 'LAST_32':
+      return 'Round of 32'
     case 'LAST_16':
       return 'Oitavas'
     case 'QUARTER_FINALS':

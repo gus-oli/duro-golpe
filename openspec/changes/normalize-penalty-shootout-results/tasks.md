@@ -11,4 +11,5 @@
 ## 3. Verification
 
 - [x] 3.1 Add regression coverage for a penalty-shootout provider payload where the local result remains tied after 120 minutes.
-- [x] 3.2 Run focused backend tests and relevant type checks.
+- [x] 3.2 Add an idempotent provider-sync repair command that reconciles confirmed match scores and user totals without requiring Redis subscribers.
+- [x] 3.3 Run focused backend tests and relevant type checks.

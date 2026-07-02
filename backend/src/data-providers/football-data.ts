@@ -2,6 +2,7 @@ import { config } from '../config.js'
 import { formatFootballDataStage } from './football-data-formatting.js'
 
 const BASE_URL = 'https://api.football-data.org/v4'
+const FOOTBALL_DATA_FETCH_TIMEOUT_MS = 15_000
 
 function requireFootballDataToken(): string {
   if (!config.FOOTBALL_DATA_TOKEN) {
@@ -14,11 +15,28 @@ function requireFootballDataToken(): string {
 }
 
 async function footballDataFetch<T>(path: string): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    headers: {
-      'X-Auth-Token': requireFootballDataToken(),
-    },
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => {
+    controller.abort()
+  }, FOOTBALL_DATA_FETCH_TIMEOUT_MS)
+
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      headers: {
+        'X-Auth-Token': requireFootballDataToken(),
+      },
+      signal: controller.signal,
+    })
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`football-data.org request timed out after ${FOOTBALL_DATA_FETCH_TIMEOUT_MS}ms`)
+    }
+
+    throw error
+  } finally {
+    clearTimeout(timeout)
+  }
 
   if (!response.ok) {
     let details = `${response.status} ${response.statusText}`

@@ -12,6 +12,7 @@ const ACTIVE_POLL_DELAY_MS = 10_000
 const IDLE_POLL_DELAY_MS = 60_000
 const ACTIVE_LOOKBACK_HOURS = 4
 const ACTIVE_LOOKAHEAD_HOURS = 4
+const ACTIVE_PROVIDER_LOOKAHEAD_DAYS = 5
 const IDLE_LOOKAHEAD_DAYS = 2
 const DATE_WINDOW_BUFFER_DAYS = 1
 const MAX_TIMEOUT_MS = 2_147_483_647
@@ -117,7 +118,7 @@ async function hasActiveWindow(now: Date): Promise<boolean> {
 function buildWindow(now: Date, active: boolean): { dateFrom: string; dateTo: string; nextDelayMs: number } {
   const dateFrom = formatDate(addDays(now, -DATE_WINDOW_BUFFER_DAYS))
   const dateTo = active
-    ? formatDate(addDays(now, DATE_WINDOW_BUFFER_DAYS))
+    ? formatDate(addDays(now, ACTIVE_PROVIDER_LOOKAHEAD_DAYS))
     : formatDate(addDays(now, IDLE_LOOKAHEAD_DAYS))
 
   return {

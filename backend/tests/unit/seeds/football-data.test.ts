@@ -8,6 +8,7 @@ describe('formatFootballDataStage', () => {
   })
 
   it('maps knockout stages into compact product labels', () => {
+    expect(formatFootballDataStage('LAST_32', null)).toBe('Round of 32')
     expect(formatFootballDataStage('LAST_16', null)).toBe('Oitavas')
     expect(formatFootballDataStage('QUARTER_FINALS', null)).toBe('Quartas')
     expect(formatFootballDataStage('SEMI_FINALS', null)).toBe('Semifinais')

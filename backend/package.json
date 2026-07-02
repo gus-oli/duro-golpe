@@ -15,6 +15,7 @@
     "seed:demo": "tsx src/dev/seed-demo.ts",
     "seed:smoke": "tsx src/dev/seed-smoke.ts",
     "sync:provider": "tsx src/data-providers/run-football-data-sync.ts",
+    "sync:provider:repair": "tsx src/data-providers/run-football-data-sync-and-repair.ts",
     "beta:reset": "tsx src/dev/reset-beta.ts",
     "match:override": "tsx src/dev/override-match.ts",
     "teams:localize": "tsx src/dev/localize-teams.ts",

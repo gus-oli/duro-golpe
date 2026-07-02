@@ -25,6 +25,7 @@
     "seed": "npm --workspace=backend run seed",
     "seed:demo": "npm --workspace=backend run seed:demo",
     "sync:provider": "npm --workspace=backend run sync:provider",
+    "sync:provider:repair": "npm --workspace=backend run sync:provider:repair",
     "match:override": "npm --workspace=backend run match:override --",
     "badges:backfill": "npm --workspace=backend run badges:backfill --",
     "audit:prod": "npm audit --omit=dev",
