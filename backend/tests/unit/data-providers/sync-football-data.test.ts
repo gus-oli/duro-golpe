@@ -109,6 +109,8 @@ describe('syncFootballDataOnce', () => {
     const summary = await syncFootballDataOnce(new Date('2026-06-10T12:00:00.000Z'))
 
     expect(summary.nextDelayMs).toBe(60000)
+    expect(summary.dateFrom).toBe('2026-06-09')
+    expect(summary.dateTo).toBe('2026-06-17')
     expect(summary.processed).toBe(1)
     expect(summary.applied).toBe(1)
     expect(summary.skipped).toBe(0)
@@ -167,14 +169,14 @@ describe('syncFootballDataOnce', () => {
     })
   })
 
-  it('keeps a five-day provider lookahead during active windows', async () => {
+  it('keeps a seven-day provider lookahead during active windows', async () => {
     state.activeRows = [{ id: 'nearby-match' }]
 
     const summary = await syncFootballDataOnce(new Date('2026-07-02T12:00:00.000Z'))
 
     expect(summary.nextDelayMs).toBe(10000)
     expect(summary.dateFrom).toBe('2026-07-01')
-    expect(summary.dateTo).toBe('2026-07-07')
+    expect(summary.dateTo).toBe('2026-07-09')
   })
 
   it('excludes penalty-shootout goals from finished football-data results', async () => {
